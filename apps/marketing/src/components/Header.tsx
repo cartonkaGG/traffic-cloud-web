@@ -15,9 +15,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
 
   const navItems = [
     { name: 'Головна', id: 'hero' },
-    { name: 'Про нас', id: 'about' },
-    { name: 'Джерела', id: 'sources' },
-    { name: 'Статистика', id: 'stats' },
+    { name: 'Можливості', id: 'about' },
     { name: 'Контакти', id: 'contact' },
   ];
 
