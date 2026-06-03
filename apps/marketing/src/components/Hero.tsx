@@ -32,7 +32,7 @@ export default function Hero({ onContactClick }: HeroProps) {
             >
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping" />
               <span className="font-mono text-[10px] sm:text-xs text-blue-300 font-semibold tracking-wider uppercase">
-                Telegram outreach
+                Media buying · Traffic
               </span>
             </motion.div>
 
@@ -42,9 +42,8 @@ export default function Hero({ onContactClick }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl sm:text-6xl font-sans font-extrabold tracking-tight text-white leading-none mb-6"
             >
-              Traffic Cloud —{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-rose-400">
-                панель у браузері
+                Traffic Cloud
               </span>
             </motion.h1>
 
@@ -54,8 +53,9 @@ export default function Hero({ onContactClick }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-base sm:text-lg text-gray-400 font-sans max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed"
             >
-              Керуйте акаунтами, джерелами аудиторії, шаблонами повідомлень і кампаніями розсилки.
-              Без десктоп-додатка — лише сайт та хмарний API.
+              Ми займаємося трафіком: заливаємо обсяги на різні платформи, масштабуємо кампанії
+              та працюємо з цільовою аудиторією в потрібних гео. Допомагаємо партнерам отримувати
+              стабільний потік лідів і рости в прибутку.
             </motion.p>
 
             <motion.div
