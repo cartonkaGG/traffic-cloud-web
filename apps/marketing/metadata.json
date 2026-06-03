@@ -1,0 +1,6 @@
+{
+  "name": "Traffic Cloud",
+  "description": "Сучасний односторінковий сайт-візитка для арбітражної команди Traffic Cloud з унікальними анімаціями, інтерактивною 3D-хмаркою та ефектом завантаження сторінки.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

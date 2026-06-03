@@ -1,0 +1,235 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { Bell, ChevronDown, LogOut } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/context/AuthContext'
+import { useLogs } from '@/context/LogContext'
+
+const ROUTE_TITLES: Record<string, { title: string; kicker?: string }> = {
+  '/': { title: 'Обзор', kicker: 'Операционная панель' },
+  '/browser': { title: 'Anti-detect браузер', kicker: 'Профили · изоляция · Telegram Web' },
+  '/accounts': { title: 'Аккаунты Telegram', kicker: 'Сессии · прокси · health' },
+  '/sources': { title: 'Парсер источников', kicker: 'Чаты · каналы · аудитория' },
+  '/messages': { title: 'Сообщения', kicker: 'Шаблоны · переменные · спинтакс' },
+  '/filters': { title: 'Фильтры', kicker: 'Аудитория · безопасность' },
+  '/humanization': { title: 'Гуманизация', kicker: 'Задержки · симуляция поведения' },
+  '/campaigns': { title: 'Кампании', kicker: 'DM outreach · очереди' },
+  '/proxy': { title: 'Прокси', kicker: 'HTTP · SOCKS5 · ротация' },
+  '/analytics': { title: 'Аналитика', kicker: 'Воронка · качество аккаунтов' },
+  '/logs': { title: 'Логи', kicker: 'События в реальном времени' },
+  '/settings': { title: 'Настройки', kicker: 'Трекинг бота · конверсии' }
+}
+
+const BELL_LAST_READ_TS_KEY = 'trafficcloud-bell-last-read-ts'
+
+function formatBellTime(ts: number): string {
+  return new Intl.DateTimeFormat('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(new Date(ts))
+}
+
+function kindShort(kind: string): string {
+  if (kind === 'outreach_alert') return 'Важливо'
+  return kind.replaceAll('_', ' ')
+}
+
+export function TopBar(): JSX.Element {
+  const { pathname } = useLocation()
+  const { email, logout } = useAuth()
+  const { entries } = useLogs()
+  const meta = ROUTE_TITLES[pathname] ?? {
+    title: 'Traffic Cloud',
+    kicker: 'Рабочее пространство'
+  }
+
+  const short = useMemo(() => email?.split('@')[0] ?? 'you', [email])
+
+  const [bellOpen, setBellOpen] = useState(false)
+  const [lastReadBellTs, setLastReadBellTs] = useState(() => {
+    if (typeof window === 'undefined') return 0
+    const raw = window.sessionStorage.getItem(BELL_LAST_READ_TS_KEY)
+    const n = raw ? Number(raw) : 0
+    return Number.isFinite(n) ? n : 0
+  })
+  const bellWrapRef = useRef<HTMLDivElement>(null)
+
+  const bellFeed = useMemo(() => entries.slice(0, 35), [entries])
+
+  const unreadAlertCount = useMemo(
+    () => entries.filter((e) => e.kind === 'outreach_alert' && e.ts > lastReadBellTs).length,
+    [entries, lastReadBellTs]
+  )
+
+  useEffect(() => {
+    if (!bellOpen) return
+    const onDoc = (ev: MouseEvent) => {
+      const el = bellWrapRef.current
+      if (el && !el.contains(ev.target as Node)) setBellOpen(false)
+    }
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') setBellOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [bellOpen])
+
+  const toggleBell = () => {
+    setBellOpen((wasOpen) => {
+      if (!wasOpen) {
+        const now = Date.now()
+        setLastReadBellTs(now)
+        try {
+          window.sessionStorage.setItem(BELL_LAST_READ_TS_KEY, String(now))
+        } catch {
+          /* ignore */
+        }
+      }
+      return !wasOpen
+    })
+  }
+
+  return (
+    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink/75 px-8 py-4 backdrop-blur-2xl">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex min-w-0 items-start gap-4">
+          <div className="mt-0.5 hidden h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent sm:flex sm:items-center sm:justify-center">
+            <img
+              src="./cloud-icon.png"
+              alt=""
+              width={44}
+              height={44}
+              className="h-11 w-11 object-contain"
+              draggable={false}
+            />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-500">
+              {meta.kicker}
+            </div>
+            <h1 className="mt-1 truncate text-lg font-semibold tracking-tight text-white">{meta.title}</h1>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 lg:flex">
+            Консоль DM outreach
+          </div>
+
+          <div className="relative" ref={bellWrapRef}>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={toggleBell}
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-zinc-300 shadow-glass transition-colors hover:border-accent/30 hover:text-white"
+              aria-label="Сповіщення та останні події"
+              aria-expanded={bellOpen}
+            >
+              <Bell className="h-[18px] w-[18px]" />
+              {unreadAlertCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-[0_0_12px_rgba(251,113,133,0.65)]">
+                  {unreadAlertCount > 9 ? '9+' : unreadAlertCount}
+                </span>
+              ) : (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent/40 shadow-[0_0_8px_rgba(94,200,255,0.35)]" />
+              )}
+            </motion.button>
+
+            <AnimatePresence>
+              {bellOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-[calc(100%+10px)] z-[100] w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-white/[0.1] bg-zinc-950/95 py-2 shadow-2xl backdrop-blur-xl"
+                  role="dialog"
+                  aria-label="Сповіщення"
+                >
+                  <div className="border-b border-white/[0.06] px-4 py-2">
+                    <div className="text-sm font-semibold text-white">Сповіщення</div>
+                    <div className="text-[11px] text-zinc-500">
+                      Критичні події outreach і останні записи з логів
+                    </div>
+                  </div>
+                  <div className="max-h-[min(70vh,420px)] overflow-y-auto px-2 py-2">
+                    {bellFeed.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-[13px] text-zinc-500">Поки порожньо</div>
+                    ) : (
+                      bellFeed.map((e) => {
+                        const critical = e.kind === 'outreach_alert'
+                        return (
+                          <div
+                            key={e.id}
+                            className={[
+                              'mb-1 rounded-xl px-3 py-2.5 text-left transition-colors',
+                              critical ? 'bg-rose-500/10 border border-rose-400/20' : 'hover:bg-white/[0.04]'
+                            ].join(' ')}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span
+                                className={[
+                                  'shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+                                  critical
+                                    ? 'border-rose-400/30 bg-rose-500/20 text-rose-100'
+                                    : 'border-white/10 bg-white/[0.06] text-zinc-400'
+                                ].join(' ')}
+                              >
+                                {kindShort(e.kind)}
+                              </span>
+                              <span className="shrink-0 font-mono text-[10px] text-zinc-500">
+                                {formatBellTime(e.ts)}
+                              </span>
+                            </div>
+                            <p className="mt-1.5 text-[12px] leading-snug text-zinc-200">{e.message}</p>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
+          <div className="hidden h-8 w-px bg-white/10 sm:block" />
+
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 shadow-glass transition-colors hover:border-white/[0.14]"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-white/15 to-white/5 text-sm font-semibold text-white">
+              {short.slice(0, 2).toUpperCase()}
+            </div>
+            <div className="hidden text-left sm:block">
+              <div className="text-sm font-medium text-white">{short}</div>
+              <div className="text-[11px] text-zinc-500">{email ?? '—'}</div>
+            </div>
+            <ChevronDown className="hidden h-4 w-4 text-zinc-500 sm:block" aria-hidden />
+          </motion.button>
+
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={logout}
+            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-transparent px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-200"
+          >
+            <LogOut className="h-4 w-4" aria-hidden />
+            <span className="hidden sm:inline">Выйти</span>
+          </motion.button>
+        </div>
+      </div>
+    </header>
+  )
+}

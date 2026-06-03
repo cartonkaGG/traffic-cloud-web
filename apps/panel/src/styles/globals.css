@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    @apply text-zinc-100/90 font-sans tracking-tight;
+    background-color: #050507;
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -30%, rgba(94, 200, 255, 0.12), transparent),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size:
+      auto,
+      56px 56px,
+      56px 56px;
+    background-position:
+      center top,
+      center,
+      center;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-white/10 hover:bg-white/15;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-glass backdrop-blur-2xl;
+  }
+
+  .glass-panel-strong {
+    @apply rounded-2xl border border-white/[0.12] bg-white/[0.06] shadow-glass backdrop-blur-2xl;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-br from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent;
+  }
+}

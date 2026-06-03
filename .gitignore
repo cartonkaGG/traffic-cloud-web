@@ -1,0 +1,10 @@
+node_modules/
+dist/
+apps/marketing/dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.idea/
+.vscode/
