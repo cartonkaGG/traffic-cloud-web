@@ -46,3 +46,7 @@ npm run build
 Backend: [traffic-cloud-api](https://github.com/cartonkaGG/traffic-cloud-api)
 
 Перед `npm run build` задайте `VITE_API_BASE_URL` у `.env`.
+
+## Деплой (Vercel + Render)
+
+Покроково: **[DEPLOY.md](./DEPLOY.md)** — тільки веб, без Electron.
