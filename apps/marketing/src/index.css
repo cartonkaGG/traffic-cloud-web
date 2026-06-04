@@ -4,6 +4,8 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-neon-cloud: hsl(195, 100%, 55%);
+  --color-cloud-accent: var(--color-neon-cloud);
 }
 
 @layer base {
@@ -89,10 +91,538 @@
     rgba(255, 255, 255, 0.2) 60%,
     rgba(255, 255, 255, 0) 100%
   );
-  animation: shimmer 2.5s infinite;
 }
 
-/* Perspective settings for the 3D grid tilt */
+.shimmer-btn:hover::after {
+  animation: shimmer 1.1s ease-out;
+}
+
+/* Hero copy block */
+.hero-copy {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.hero-copy::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    hsl(195 100% 55%),
+    hsl(220 90% 58%),
+    hsl(195 100% 45% / 0.2)
+  );
+  box-shadow: 0 0 18px hsl(195 100% 50% / 0.45);
+}
+
+.hero-title {
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #fff;
+}
+
+.hero-title-glow {
+  background: linear-gradient(120deg, #e0f7ff 0%, hsl(195, 100%, 62%) 45%, #a5f3fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px hsl(195 100% 50% / 0.35));
+}
+
+.hero-lead {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: rgb(209 213 219 / 0.92);
+}
+
+/* Hero cloud — симетричне центрування */
+.hero-cloud-visual {
+  position: relative;
+  width: min(300px, 78vw);
+  height: min(300px, 78vw);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-cloud-visual .hero-cloud-aura {
+  width: 260px !important;
+  height: 260px !important;
+  max-width: none;
+  max-height: none;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hero-cloud-visual .hero-cloud-pulse-ring {
+  top: 50% !important;
+  left: 50%;
+  width: 220px !important;
+  height: 220px !important;
+  max-width: none;
+  max-height: none;
+  border-radius: 50% !important;
+  transform: translate(-50%, -50%);
+}
+
+.hero-cloud-visual .hero-cloud-pulse-ring--2 {
+  display: none;
+}
+
+.hero-cloud-visual .hero-cloud-shimmer {
+  width: 240px !important;
+  height: 240px !important;
+  top: 50%;
+  left: 50%;
+}
+
+.hero-cloud-visual .hero-cloud-ground-glow {
+  top: 56% !important;
+  left: 50%;
+  bottom: auto !important;
+  width: 180px !important;
+  max-width: none;
+  transform: translate(-50%, -50%) !important;
+}
+
+.hero-cloud-visual .hero-cloud-float {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-cta-primary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #0891b2, #0284c7, #4f46e5);
+  box-shadow: 0 4px 28px rgb(34 211 238 / 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-cta-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 32px rgb(34 211 238 / 0.38);
+}
+
+.hero-cta-secondary {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.hero-cta-secondary:hover {
+  border-color: rgb(34 211 238 / 0.35);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.hero-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-ambient-glow--cyan {
+  top: 22%;
+  left: 50%;
+  width: min(720px, 92vw);
+  height: min(380px, 48vh);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, hsl(195 100% 50% / 0.14), transparent 68%);
+}
+
+.hero-ambient-glow--indigo {
+  bottom: 5%;
+  right: -5%;
+  width: min(420px, 55vw);
+  height: min(320px, 40vh);
+  background: radial-gradient(ellipse, hsl(244 63% 55% / 0.06), transparent 70%);
+}
+
+@keyframes hero-scroll-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+.hero-scroll-chevron {
+  animation: hero-scroll-bob 2.4s ease-in-out infinite;
+}
+
+#hero {
+  contain: layout style;
+}
+
+.hero-cloud-showcase {
+  contain: layout style paint;
+}
+
+/* Perspective for 3D cloud */
 .perspective-800 {
   perspective: 800px;
+}
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+/* Hero aurora background */
+@keyframes aurora-shift {
+  0%, 100% {
+    opacity: 0.85;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(2%, -1%) scale(1.05);
+  }
+}
+
+.hero-aurora {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(34, 211, 238, 0.14), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 80% 30%, rgba(99, 102, 241, 0.12), transparent 50%),
+    radial-gradient(ellipse 70% 40% at 50% 90%, rgba(244, 63, 94, 0.06), transparent 55%);
+  animation: aurora-shift 12s ease-in-out infinite;
+}
+
+/* Neon cloud (референс) */
+.neon-cloud-glow {
+  text-shadow:
+    0 0 5px hsl(195, 100%, 65%),
+    0 0 15px hsl(195, 100%, 45%);
+}
+
+.neon-glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(0px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(6, 182, 212, 0.05);
+}
+
+/* Сцена hero: крапки як на референсі */
+.neon-cloud-stage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 3rem;
+  border-radius: 1.25rem;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.neon-cloud-svg {
+  overflow: visible;
+}
+
+.neon-cloud-icon {
+  color: var(--color-neon-cloud);
+  filter:
+    drop-shadow(0 0 5px hsl(195, 100%, 65%))
+    drop-shadow(0 0 15px hsl(195, 100%, 45%));
+}
+
+/* Додатковий неон навколо aerodynamic-хмарки */
+.neon-cloud-mark {
+  color: var(--color-neon-cloud);
+  filter:
+    drop-shadow(0 0 8px hsl(195, 100%, 70%))
+    drop-shadow(0 0 22px hsl(195, 100%, 55%))
+    drop-shadow(0 0 40px hsl(195, 100%, 45% / 0.65));
+}
+
+/* ——— Hero cloud showcase (головна) ——— */
+@keyframes hero-cloud-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes hero-cloud-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+
+@keyframes hero-cloud-pulse-ring {
+  0% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+}
+
+@keyframes hero-cloud-shimmer-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes hero-cloud-particle-drift {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  15% { opacity: 0.9; }
+  50% {
+    opacity: 0.35;
+    transform: translateY(-28px) scale(1);
+  }
+  85% { opacity: 0; }
+}
+
+@keyframes hero-neon-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.88; }
+  94% { opacity: 1; }
+  96% { opacity: 0.92; }
+  97% { opacity: 1; }
+}
+
+.hero-cloud-showcase {
+  isolation: isolate;
+}
+
+.hero-cloud-aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(420px, 95vw);
+  height: min(280px, 55vh);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    hsl(195 100% 55% / 0.22),
+    hsl(195 100% 45% / 0.06) 45%,
+    transparent 70%
+  );
+  animation: hero-cloud-breathe 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hero-cloud-ground-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  width: 70%;
+  max-width: 360px;
+  height: 40px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 80% 100% at 50% 100%, hsl(195 100% 50% / 0.35), transparent);
+  filter: blur(18px);
+  animation: hero-cloud-breathe 5s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+.hero-cloud-pulse-ring {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(320px, 78vw);
+  height: min(200px, 42vw);
+  transform: translate(-50%, -50%);
+  border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  border: 1px solid hsl(195 100% 60% / 0.35);
+  box-shadow: 0 0 30px hsl(195 100% 50% / 0.15);
+  animation: hero-cloud-pulse-ring 4.5s ease-out infinite;
+  pointer-events: none;
+}
+
+.hero-cloud-pulse-ring--2 {
+  animation-delay: 2.25s;
+}
+
+.hero-cloud-shimmer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 340px;
+  height: 340px;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    hsl(195 100% 70% / 0.12) 40deg,
+    transparent 80deg,
+    hsl(195 100% 55% / 0.08) 160deg,
+    transparent 220deg,
+    hsl(195 100% 80% / 0.1) 300deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  animation: hero-cloud-shimmer-spin 18s linear infinite;
+  pointer-events: none;
+  mask-image: radial-gradient(circle, black 20%, transparent 62%);
+  -webkit-mask-image: radial-gradient(circle, black 20%, transparent 62%);
+}
+
+.hero-cloud-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: hsl(195 100% 75%);
+  box-shadow: 0 0 8px hsl(195 100% 60%);
+  animation: hero-cloud-particle-drift 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hero-cloud-mark-main {
+  animation: hero-neon-flicker 8s ease-in-out infinite;
+}
+
+.hero-cloud-neon .hero-neon-bloom {
+  animation: hero-cloud-breathe 4s ease-in-out infinite;
+}
+
+.hero-cloud-neon .hero-neon-core {
+  animation: hero-neon-flicker 6s ease-in-out infinite;
+}
+
+/* ——— Loader ——— */
+@keyframes loader-halo-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes loader-ring-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px hsl(195 100% 55% / 0.35)); }
+  50% { filter: drop-shadow(0 0 14px hsl(195 100% 65% / 0.55)); }
+}
+
+@keyframes loader-beam-drift {
+  0%, 100% { opacity: 0.35; transform: translateX(-8%) rotate(-12deg); }
+  50% { opacity: 0.55; transform: translateX(8%) rotate(-8deg); }
+}
+
+.loader-vignette {
+  background: radial-gradient(ellipse 55% 50% at 50% 45%, transparent 0%, #030712 72%);
+  pointer-events: none;
+}
+
+.loader-light-beam {
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    hsl(195 100% 60% / 0.04) 48%,
+    hsl(195 100% 70% / 0.08) 50%,
+    hsl(195 100% 60% / 0.04) 52%,
+    transparent 62%
+  );
+  animation: loader-beam-drift 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.loader-stack {
+  gap: 2.25rem;
+}
+
+.loader-caption {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: lowercase;
+  color: hsl(195 100% 72% / 0.75);
+  text-shadow: 0 0 20px hsl(195 100% 55% / 0.35);
+}
+
+.loader-scene {
+  position: relative;
+  isolation: isolate;
+  width: min(300px, 82vw);
+  height: min(300px, 82vw);
+  flex-shrink: 0;
+}
+
+.loader-core {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    hsl(195 100% 55% / 0.2) 0%,
+    hsl(195 100% 45% / 0.06) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.loader-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 228px;
+  height: 228px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid hsl(195 100% 55% / 0.2);
+  box-shadow: 0 0 24px hsl(195 100% 50% / 0.12);
+  animation: loader-halo-spin 16s linear infinite;
+  pointer-events: none;
+}
+
+.loader-mark-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-progress-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.loader-progress-ring-stroke {
+  transition: stroke-dashoffset 0.08s linear;
+  animation: loader-ring-glow 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora,
+  .hero-scroll-chevron,
+  .shimmer-btn::after,
+  .hero-cloud-aura,
+  .hero-cloud-ground-glow,
+  .hero-cloud-pulse-ring,
+  .hero-cloud-shimmer,
+  .hero-cloud-particle,
+  .hero-cloud-mark-main,
+  .hero-cloud-neon .hero-neon-bloom,
+  .hero-cloud-neon .hero-neon-core,
+  .hero-cloud-float,
+  .loader-halo,
+  .loader-progress-ring-stroke,
+  .loader-light-beam {
+    animation: none !important;
+  }
 }

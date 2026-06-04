@@ -5,6 +5,8 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import About from './components/About';
 import ContactForm from './components/ContactForm';
+import ScrollProgressBar from './components/ScrollProgressBar';
+import { ScrollReveal } from './components/ScrollReveal';
 import { ArrowUp } from 'lucide-react';
 
 export default function App() {
@@ -51,12 +53,17 @@ export default function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let animationFrameId: number;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
+    let lastFrame = 0;
+    const frameInterval = 1000 / 24;
 
     class Particle {
       x: number;
@@ -71,24 +78,19 @@ export default function App() {
       constructor() {
         this.x = Math.random() * width;
         this.y = Math.random() * height;
-        this.size = Math.random() * 2 + 0.5;
-        this.speedX = (Math.random() - 0.5) * 0.35;
-        this.speedY = -Math.random() * 0.5 - 0.1;
-        this.maxAlpha = Math.random() * 0.4 + 0.1;
-        this.alpha = 0;
-        const colors = [
-          'rgba(99, 102, 241, ',
-          'rgba(59, 130, 246, ',
-          'rgba(244, 63, 94, ',
-          'rgba(6, 182, 212, '
-        ];
+        this.size = Math.random() * 1.5 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.25;
+        this.speedY = -Math.random() * 0.35 - 0.08;
+        this.maxAlpha = Math.random() * 0.35 + 0.08;
+        this.alpha = Math.random() * this.maxAlpha;
+        const colors = ['rgba(59, 130, 246, ', 'rgba(6, 182, 212, '];
         this.color = colors[Math.floor(Math.random() * colors.length)];
       }
 
       update() {
         this.x += this.speedX;
         this.y += this.speedY;
-        if (this.alpha < this.maxAlpha) this.alpha += 0.01;
+        if (this.alpha < this.maxAlpha) this.alpha += 0.008;
         if (this.y < 0 || this.x < 0 || this.x > width) {
           this.x = Math.random() * width;
           this.y = height + 10;
@@ -104,10 +106,8 @@ export default function App() {
       }
     }
 
-    const particles: Particle[] = [];
-    for (let i = 0; i < Math.min(60, Math.floor(width / 24)); i++) {
-      particles.push(new Particle());
-    }
+    const count = Math.min(28, Math.floor(width / 40));
+    const particles: Particle[] = Array.from({ length: count }, () => new Particle());
 
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
@@ -115,15 +115,18 @@ export default function App() {
     };
     window.addEventListener('resize', handleResize);
 
-    const render = () => {
+    const render = (time: number) => {
+      animationFrameId = requestAnimationFrame(render);
+      if (document.hidden) return;
+      if (time - lastFrame < frameInterval) return;
+      lastFrame = time;
       ctx.clearRect(0, 0, width, height);
       particles.forEach((p) => {
         p.update();
         p.draw(ctx);
       });
-      animationFrameId = requestAnimationFrame(render);
     };
-    render();
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -153,7 +156,8 @@ export default function App() {
 
       {!isLoading && (
         <div id="traffic-cloud-homepage" className="min-h-screen relative flex flex-col bg-gray-950 text-gray-100">
-          <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-80" />
+          <ScrollProgressBar />
+          <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-50" />
 
           <Header onContactClick={scrollToContact} activeSection={activeSection} />
 
@@ -163,21 +167,23 @@ export default function App() {
             <ContactForm />
           </main>
 
-          <footer className="relative bg-gray-950 border-t border-gray-900 py-12 z-20">
+          <footer className="relative bg-gray-950 border-t border-gray-900 py-12 z-20 overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <span className="font-sans font-extrabold text-white tracking-widest text-base">
-                    TRAFFIC CLOUD
-                  </span>
-                  <p className="text-xs text-gray-500 font-sans mt-2 max-w-md">
-                    Панель для Telegram outreach: акаунти, джерела, кампанії та аналітика.
+              <ScrollReveal variant="up" amount={0.25}>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <span className="font-sans font-extrabold text-white tracking-widest text-base">
+                      TRAFFIC CLOUD
+                    </span>
+                    <p className="text-xs text-gray-500 font-sans mt-2 max-w-md">
+                      Панель для Telegram outreach: акаунти, джерела, кампанії та аналітика.
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-gray-600 font-sans">
+                    © {new Date().getFullYear()} Traffic Cloud
                   </p>
                 </div>
-                <p className="text-[10px] text-gray-600 font-sans">
-                  © {new Date().getFullYear()} Traffic Cloud
-                </p>
-              </div>
+              </ScrollReveal>
             </div>
           </footer>
 

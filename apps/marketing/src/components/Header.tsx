@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Cloud, Menu, X, ArrowUpRight, MessageSquareCode, LayoutDashboard } from 'lucide-react';
+import { Menu, X, ArrowUpRight, MessageSquareCode, LayoutDashboard } from 'lucide-react';
+import TrafficCloudMark from './brand/TrafficCloudMark';
 
 const PANEL_HREF = '/app/';
 
@@ -61,18 +62,12 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
             onClick={() => scrollToSection('hero')}
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-500/20 blur-md rounded-full group-hover:bg-blue-500/40 transition-all" />
-              <Cloud className="w-8 h-8 text-blue-400 relative z-10 transition-transform duration-300 group-hover:scale-110" />
+            <div className="relative w-9 h-9 flex items-center justify-center overflow-visible">
+              <TrafficCloudMark size={32} variant="logo" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-sans font-extrabold text-sm md:text-base tracking-widest text-white leading-tight">
-                TRAFFIC CLOUD
-              </span>
-              <span className="font-mono text-[9px] text-gray-500 tracking-wider">
-                MEDIA BUYING HUB
-              </span>
-            </div>
+            <span className="font-sans font-extrabold text-sm md:text-base tracking-widest text-white leading-tight">
+              TRAFFIC CLOUD
+            </span>
           </div>
 
           {/* Desktop Navigation */}
