@@ -42,6 +42,7 @@ export type RegisterResponse =
       email: string
       message: string
       emailSent?: boolean
+      emailError?: string
     }
 
 export type BootstrapResponse = {
@@ -188,7 +189,13 @@ export async function apiVerifyEmail(token: string): Promise<{ ok: boolean; emai
 
 export async function apiResendVerification(
   email: string
-): Promise<{ ok: boolean; cooldownSec?: number }> {
+): Promise<{
+  ok: boolean
+  cooldownSec?: number
+  emailSent?: boolean
+  emailError?: string
+  hint?: string
+}> {
   return fetchJson('/v1/auth/resend-verification', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

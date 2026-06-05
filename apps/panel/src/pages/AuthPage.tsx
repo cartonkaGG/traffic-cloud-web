@@ -69,7 +69,10 @@ export function AuthPage(): JSX.Element {
     if (raw.includes('email_taken')) {
       return 'Цей email вже зареєстровано та підтверджено. Увійдіть або скиньте пароль.'
     }
-    if (raw.includes('register_failed') || raw.includes('Connection timeout')) {
+    if (raw.includes('smtp_not_configured')) {
+      return 'Пошта не налаштована на сервері. Додайте SMTP_USER і SMTP_PASS у Render → Environment.'
+    }
+    if (raw.includes('register_failed') || raw.includes('Connection timeout') || raw.includes('ETIMEDOUT')) {
       return 'Сервер не відповів вчасно. Спробуйте ще раз — акаунт міг уже створитись, перевірте пошту.'
     }
     if (raw.includes('Підтвердіть email') || raw.includes('email_not_verified')) {
@@ -97,6 +100,9 @@ export function AuthPage(): JSX.Element {
         if (result.needsEmailVerification) {
           const normalized = email.trim().toLowerCase()
           setInitialEmailSent(result.emailSent !== false)
+          if (result.emailError) {
+            setFormError(mapAuthError(new Error(result.emailError)))
+          }
           setPendingVerifyEmail(normalized)
           startResendCooldown(normalized, RESEND_COOLDOWN_SEC)
           setCooldownLeft(RESEND_COOLDOWN_SEC)
@@ -120,9 +126,15 @@ export function AuthPage(): JSX.Element {
     setResendOk(false)
     setFormError(null)
     try {
-      await apiResendVerification(activeEmail)
+      const res = await apiResendVerification(activeEmail)
       startResendCooldown(activeEmail, RESEND_COOLDOWN_SEC)
       setCooldownLeft(RESEND_COOLDOWN_SEC)
+      if (res.emailSent === false) {
+        setFormError(
+          mapAuthError(new Error(res.emailError ?? res.hint ?? 'smtp_not_configured'))
+        )
+        return
+      }
       setResendOk(true)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : String(err))
