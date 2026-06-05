@@ -41,6 +41,7 @@ export type RegisterResponse =
       needsEmailVerification: true
       email: string
       message: string
+      emailSent?: boolean
     }
 
 export type BootstrapResponse = {

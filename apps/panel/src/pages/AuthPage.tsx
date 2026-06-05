@@ -29,6 +29,8 @@ export function AuthPage(): JSX.Element {
   const [resendOk, setResendOk] = useState(false)
   const [cooldownLeft, setCooldownLeft] = useState(0)
   const [emailJustVerified, setEmailJustVerified] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [initialEmailSent, setInitialEmailSent] = useState(true)
 
   const title = useMemo(() => (mode === 'login' ? 'Вхід' : 'Реєстрація'), [mode])
   const activeEmail = pendingVerifyEmail ?? email.trim().toLowerCase()
@@ -62,10 +64,26 @@ export function AuthPage(): JSX.Element {
     return () => window.clearInterval(poll)
   }, [pendingVerifyEmail, emailJustVerified, navigate])
 
+  function mapAuthError(err: unknown): string {
+    const raw = err instanceof Error ? err.message : String(err)
+    if (raw.includes('email_taken')) {
+      return 'Цей email вже зареєстровано та підтверджено. Увійдіть або скиньте пароль.'
+    }
+    if (raw.includes('register_failed') || raw.includes('Connection timeout')) {
+      return 'Сервер не відповів вчасно. Спробуйте ще раз — акаунт міг уже створитись, перевірте пошту.'
+    }
+    if (raw.includes('Підтвердіть email') || raw.includes('email_not_verified')) {
+      return 'Підтвердіть email — відкрийте лист у пошті або надішліть його повторно.'
+    }
+    return raw
+  }
+
   async function submit(e: FormEvent): Promise<void> {
     e.preventDefault()
+    if (submitting) return
     setFormError(null)
     setResendOk(false)
+    setSubmitting(true)
     try {
       if (mode === 'login') {
         await login(email, password)
@@ -78,6 +96,7 @@ export function AuthPage(): JSX.Element {
         const result = await register(email, password)
         if (result.needsEmailVerification) {
           const normalized = email.trim().toLowerCase()
+          setInitialEmailSent(result.emailSent !== false)
           setPendingVerifyEmail(normalized)
           startResendCooldown(normalized, RESEND_COOLDOWN_SEC)
           setCooldownLeft(RESEND_COOLDOWN_SEC)
@@ -90,7 +109,9 @@ export function AuthPage(): JSX.Element {
         navigate(safe)
       }
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : String(err))
+      setFormError(mapAuthError(err))
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -136,9 +157,20 @@ export function AuthPage(): JSX.Element {
                   </div>
                   <h1 className="mt-5 text-xl font-semibold text-white">Підтвердіть email</h1>
                   <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-                    Лист надіслано на{' '}
-                    <span className="font-medium text-white">{pendingVerifyEmail}</span>. Відкрийте
-                    посилання у листі — ця сторінка оновиться автоматично.
+                    {initialEmailSent ? (
+                      <>
+                        Лист надіслано на{' '}
+                        <span className="font-medium text-white">{pendingVerifyEmail}</span>. Відкрийте
+                        посилання у листі — ця сторінка оновиться автоматично.
+                      </>
+                    ) : (
+                      <>
+                        Акаунт для{' '}
+                        <span className="font-medium text-white">{pendingVerifyEmail}</span> створено.
+                        Лист не надіслано — натисніть кнопку нижче, щоб отримати посилання
+                        підтвердження.
+                      </>
+                    )}
                   </p>
                   <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-zinc-500">
                     <Loader2 className="h-3 w-3 animate-spin text-accent" />
@@ -301,12 +333,22 @@ export function AuthPage(): JSX.Element {
 
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="group relative w-full overflow-hidden rounded-xl border border-accent/35 bg-gradient-to-r from-accent/20 via-accent/10 to-transparent px-4 py-3 text-sm font-semibold text-white shadow-[0_0_40px_-18px_rgba(94,200,255,0.85)] transition-[box-shadow] hover:shadow-[0_0_52px_-18px_rgba(94,200,255,0.95)]"
+                disabled={submitting}
+                whileHover={submitting ? undefined : { scale: 1.01 }}
+                whileTap={submitting ? undefined : { scale: 0.99 }}
+                className="group relative w-full overflow-hidden rounded-xl border border-accent/35 bg-gradient-to-r from-accent/20 via-accent/10 to-transparent px-4 py-3 text-sm font-semibold text-white shadow-[0_0_40px_-18px_rgba(94,200,255,0.85)] transition-[box-shadow] hover:shadow-[0_0_52px_-18px_rgba(94,200,255,0.95)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span className="relative z-10">
-                  {mode === 'login' ? 'Увійти' : 'Створити акаунт'}
+                <span className="relative z-10 inline-flex items-center justify-center gap-2">
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {mode === 'login' ? 'Вхід…' : 'Створення…'}
+                    </>
+                  ) : mode === 'login' ? (
+                    'Увійти'
+                  ) : (
+                    'Створити акаунт'
+                  )}
                 </span>
               </motion.button>
             </form>

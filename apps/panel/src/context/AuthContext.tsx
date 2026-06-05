@@ -22,7 +22,10 @@ type AuthContextValue = {
   role: UserRole
   isAdmin: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<{ needsEmailVerification: boolean }>
+  register: (
+    email: string,
+    password: string
+  ) => Promise<{ needsEmailVerification: boolean; emailSent?: boolean }>
   logout: () => void
   setRole: (role: UserRole) => void
 }
@@ -47,9 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, [setRole])
 
   const register = useCallback(async (e: string, password: string) => {
-    const res = await apiRegister({ email: e.trim(), password })
+    const res = await apiRegister({ email: e.trim().toLowerCase(), password })
     if ('needsEmailVerification' in res && res.needsEmailVerification) {
-      return { needsEmailVerification: true }
+      return { needsEmailVerification: true, emailSent: res.emailSent !== false }
     }
     const auth = res as { token: string; user: { email: string; role?: UserRole } }
     const userRole = auth.user.role ?? 'user'
