@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n site,panel -c green,magenta \"npm run dev --prefix apps/marketing\" \"npm run dev:panel\"",
+    "predev:full": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-dev-ports.ps1",
+    "dev:full": "concurrently -n site,panel,api -c green,magenta,cyan \"npm run dev --prefix apps/marketing\" \"npm run dev:panel\" \"npm run dev --prefix ../traffic-cloud-api\"",
+    "dev:kill": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-dev-ports.ps1",
     "dev:panel": "vite --config config/vite.panel.ts",
     "dev:marketing": "npm run dev --prefix apps/marketing",
     "build": "npm run build --prefix apps/marketing && vite build --config config/vite.panel.ts && node scripts/finalize-web-app-build.mjs",

@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-neon-cloud: hsl(195, 100%, 55%);
+  --color-cloud-accent: var(--color-neon-cloud);
+}
+
 @layer base {
   html,
   body,
@@ -11,46 +16,74 @@
   }
 
   body {
-    @apply text-zinc-100/90 font-sans tracking-tight;
-    background-color: #050507;
+    @apply text-gray-100/90 font-sans tracking-tight antialiased;
+    background-color: #030712;
     background-image:
-      radial-gradient(ellipse 120% 80% at 50% -30%, rgba(94, 200, 255, 0.12), transparent),
+      radial-gradient(ellipse 120% 80% at 50% -30%, rgba(34, 211, 238, 0.1), transparent),
+      radial-gradient(ellipse 70% 50% at 100% 0%, rgba(99, 102, 241, 0.08), transparent 55%),
       linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size:
+      auto,
       auto,
       56px 56px,
       56px 56px;
     background-position:
       center top,
+      top right,
       center,
       center;
   }
 
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: #030712;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-white/10 hover:bg-white/15;
+    @apply rounded-full bg-gray-700/80 hover:bg-gray-600;
   }
 }
 
 @layer utilities {
   .glass-panel {
-    @apply rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-glass backdrop-blur-2xl;
+    @apply rounded-2xl border border-gray-800/80 bg-gray-950/60 shadow-glass backdrop-blur-xl;
   }
 
   .glass-panel-strong {
-    @apply rounded-2xl border border-white/[0.12] bg-white/[0.06] shadow-glass backdrop-blur-2xl;
+    @apply rounded-2xl border border-gray-700/60 bg-gray-950/75 shadow-glass backdrop-blur-xl;
   }
 
   .text-gradient {
-    @apply bg-gradient-to-br from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-white via-cyan-100/90 to-blue-300/80 bg-clip-text text-transparent;
+  }
+
+  .neon-cloud-svg {
+    overflow: visible;
+  }
+
+  .neon-cloud-icon {
+    color: var(--color-neon-cloud);
+    filter:
+      drop-shadow(0 0 5px hsl(195, 100%, 65%))
+      drop-shadow(0 0 15px hsl(195, 100%, 45%));
+  }
+
+  .neon-cloud-mark {
+    color: var(--color-neon-cloud);
+    filter:
+      drop-shadow(0 0 8px hsl(195, 100%, 70%))
+      drop-shadow(0 0 22px hsl(195, 100%, 55%))
+      drop-shadow(0 0 40px hsl(195, 100%, 45% / 0.65));
+  }
+
+  .hub-tile-active:hover {
+    box-shadow:
+      0 0 0 1px rgba(94, 200, 255, 0.2),
+      0 20px 50px -24px var(--hub-glow, rgba(94, 200, 255, 0.45));
   }
 }

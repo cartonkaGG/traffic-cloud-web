@@ -1,27 +1,25 @@
-import { CLOUD_SHAPE_PATH, CLOUD_VIEWBOX, cloudMarkAspect } from './cloudMarkPaths';
+import { CLOUD_SHAPE_PATH, CLOUD_VIEWBOX, cloudMarkAspect } from './cloudMarkPaths'
 
 type Props = {
-  className?: string;
-  size?: number;
-  glowColor?: string;
-  /** hero — неон; logo/ambient — легший */
-  variant?: 'hero' | 'logo' | 'ambient';
-  /** lean — один bloom замість трьох (швидше на головній) */
-  glow?: 'full' | 'lean';
-};
+  className?: string
+  size?: number
+  glowColor?: string
+  variant?: 'hero' | 'logo' | 'ambient'
+  glow?: 'full' | 'lean'
+}
 
 export default function TrafficCloudMark({
   className = '',
   size = 120,
   glowColor = 'var(--color-neon-cloud, hsl(195, 100%, 55%))',
   variant = 'hero',
-  glow = 'full',
+  glow = 'full'
 }: Props) {
-  const height = Math.round(size * cloudMarkAspect);
-  const isLight = variant === 'logo' || variant === 'ambient';
-  const leanHero = variant === 'hero' && glow === 'lean';
+  const height = Math.round(size * cloudMarkAspect)
+  const isLight = variant === 'logo' || variant === 'ambient'
+  const leanHero = variant === 'hero' && glow === 'lean'
   const markClass =
-    variant === 'hero' ? 'neon-cloud-mark hero-cloud-neon' : 'neon-cloud-icon opacity-90';
+    variant === 'hero' ? 'neon-cloud-mark hero-cloud-neon' : 'neon-cloud-icon opacity-90'
 
   return (
     <div className={`relative inline-block ${markClass} ${className}`.trim()}>
@@ -111,5 +109,5 @@ export default function TrafficCloudMark({
         />
       </svg>
     </div>
-  );
+  )
 }

@@ -13,12 +13,14 @@ import {
   apiBootstrap,
   apiFetchBundle,
   wsUrlFromHttpBase,
+  type BillingPlanInfo,
+  type SubscriptionInfo,
+  type UserRole,
   type WorkspaceBundle
 } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import { getApiBaseUrl } from '@/lib/settings'
 import { useLogs } from '@/context/LogContext'
-import { useAuth } from '@/context/AuthContext'
-
 export type ApiConnectionStatus = 'idle' | 'loading' | 'online' | 'offline'
 
 export type ParseProgressEntry = { percent: number; phase?: string }
@@ -29,6 +31,9 @@ type WorkspaceDataValue = {
   workspaceId: string | null
   workspaceName: string | null
   bundle: WorkspaceBundle | null
+  role: UserRole
+  subscription: SubscriptionInfo | null
+  billingPlan: BillingPlanInfo | null
   refetch: () => Promise<void>
   apiBaseUrl: string
   /** Прогрес парсингу джерела за id (оновлюється по WebSocket). */
@@ -39,12 +44,15 @@ const WorkspaceDataContext = createContext<WorkspaceDataValue | null>(null)
 
 export function WorkspaceDataProvider({ children }: { children: ReactNode }): JSX.Element {
   const { replaceEntries, ingest } = useLogs()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, setRole } = useAuth()
   const [status, setStatus] = useState<ApiConnectionStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [workspaceName, setWorkspaceName] = useState<string | null>(null)
   const [bundle, setBundle] = useState<WorkspaceBundle | null>(null)
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null)
+  const [billingPlan, setBillingPlan] = useState<BillingPlanInfo | null>(null)
+  const [role, setRoleState] = useState<UserRole>('user')
   const [parseProgressBySourceId, setParseProgressBySourceId] = useState<
     Record<string, ParseProgressEntry>
   >({})
@@ -100,32 +108,50 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
     [ingest]
   )
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { background?: boolean }) => {
     const base = getApiBaseUrl()
     setApiBaseUrl(base)
-    setStatus('loading')
-    setError(null)
+    const background = options?.background ?? false
+    if (!background) {
+      setStatus('loading')
+      setError(null)
+    }
     try {
       const boot = await apiBootstrap()
       setWorkspaceId(boot.workspaceId)
       setWorkspaceName(boot.workspaceName)
+      if (boot.role) {
+        setRoleState(boot.role)
+        setRole(boot.role)
+      }
+      setSubscription(boot.subscription ?? null)
+      setBillingPlan(boot.billingPlan ?? null)
       const b = await apiFetchBundle(boot.workspaceId)
       setBundle(b)
       replaceEntries(b.logs)
       setStatus('online')
       connectWs(boot.workspaceId, base)
     } catch (e) {
-      setStatus('offline')
+      if (!background) {
+        setStatus('offline')
+        setWorkspaceId(null)
+        setWorkspaceName(null)
+        setBundle(null)
+        setSubscription(null)
+        setBillingPlan(null)
+        setRoleState('user')
+        setParseProgressBySourceId({})
+        wsRef.current?.close()
+        wsRef.current = null
+        widRef.current = null
+      }
       setError(e instanceof Error ? e.message : String(e))
-      setWorkspaceId(null)
-      setWorkspaceName(null)
-      setBundle(null)
-      setParseProgressBySourceId({})
-      wsRef.current?.close()
-      wsRef.current = null
-      widRef.current = null
     }
-  }, [connectWs, replaceEntries])
+  }, [connectWs, replaceEntries, setRole])
+
+  const refetch = useCallback(async () => {
+    await load({ background: true })
+  }, [load])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -134,6 +160,9 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
       setWorkspaceId(null)
       setWorkspaceName(null)
       setBundle(null)
+      setSubscription(null)
+      setBillingPlan(null)
+      setRoleState('user')
       setParseProgressBySourceId({})
       wsRef.current?.close()
       wsRef.current = null
@@ -156,11 +185,26 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
       workspaceId,
       workspaceName,
       bundle,
-      refetch: load,
+      role,
+      subscription,
+      billingPlan,
+      refetch,
       apiBaseUrl,
       parseProgressBySourceId
     }),
-    [status, error, workspaceId, workspaceName, bundle, load, apiBaseUrl, parseProgressBySourceId]
+    [
+      status,
+      error,
+      workspaceId,
+      workspaceName,
+      bundle,
+      role,
+      subscription,
+      billingPlan,
+      refetch,
+      apiBaseUrl,
+      parseProgressBySourceId
+    ]
   )
 
   return (

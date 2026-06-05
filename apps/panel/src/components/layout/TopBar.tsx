@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, ChevronDown, LogOut } from 'lucide-react'
+import { Bell, CreditCard, Grid3x3, Home } from 'lucide-react'
+import { AccountMenu } from '@/components/account/AccountMenu'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/context/AuthContext'
+import TrafficCloudMark from '@/components/brand/TrafficCloudMark'
+import { useSoftware } from '@/context/SoftwareContext'
+import { getMarketingHomeUrl } from '@/lib/site'
 import { useLogs } from '@/context/LogContext'
 
 const ROUTE_TITLES: Record<string, { title: string; kicker?: string }> = {
@@ -39,14 +43,13 @@ function kindShort(kind: string): string {
 
 export function TopBar(): JSX.Element {
   const { pathname } = useLocation()
-  const { email, logout } = useAuth()
+  const navigate = useNavigate()
+  const { selectedSoftware } = useSoftware()
   const { entries } = useLogs()
   const meta = ROUTE_TITLES[pathname] ?? {
     title: 'Traffic Cloud',
     kicker: 'Рабочее пространство'
   }
-
-  const short = useMemo(() => email?.split('@')[0] ?? 'you', [email])
 
   const [bellOpen, setBellOpen] = useState(false)
   const [lastReadBellTs, setLastReadBellTs] = useState(() => {
@@ -97,18 +100,11 @@ export function TopBar(): JSX.Element {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink/75 px-8 py-4 backdrop-blur-2xl">
+    <header className="sticky top-0 z-20 border-b border-gray-800/60 bg-gray-950/80 px-8 py-4 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
-          <div className="mt-0.5 hidden h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent sm:flex sm:items-center sm:justify-center">
-            <img
-              src="./cloud-icon.png"
-              alt=""
-              width={44}
-              height={44}
-              className="h-11 w-11 object-contain"
-              draggable={false}
-            />
+          <div className="mt-0.5 hidden shrink-0 items-center justify-center overflow-visible sm:flex">
+            <TrafficCloudMark size={30} variant="logo" />
           </div>
           <div className="min-w-0">
             <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-500">
@@ -119,9 +115,35 @@ export function TopBar(): JSX.Element {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 lg:flex">
-            Консоль DM outreach
-          </div>
+          <a
+            href={getMarketingHomeUrl()}
+            className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:border-accent/25 hover:text-zinc-300 md:flex"
+            title="На головну сторінку"
+          >
+            <Home className="h-3.5 w-3.5 text-accent/70" />
+            Головна
+          </a>
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/billing')}
+            className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:border-accent/25 hover:text-zinc-300 lg:flex"
+          >
+            <CreditCard className="h-3.5 w-3.5 text-accent/70" />
+            Підписка
+          </motion.button>
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/hub')}
+            className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:border-accent/25 hover:text-zinc-300 lg:flex"
+            title="Повернутися до Traffic Cloud Hub"
+          >
+            <Grid3x3 className="h-3.5 w-3.5 text-accent/70" />
+            {selectedSoftware?.name ?? 'Traffic Cloud Hub'}
+          </motion.button>
 
           <div className="relative" ref={bellWrapRef}>
             <motion.button
@@ -202,32 +224,7 @@ export function TopBar(): JSX.Element {
 
           <div className="hidden h-8 w-px bg-white/10 sm:block" />
 
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 shadow-glass transition-colors hover:border-white/[0.14]"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-white/15 to-white/5 text-sm font-semibold text-white">
-              {short.slice(0, 2).toUpperCase()}
-            </div>
-            <div className="hidden text-left sm:block">
-              <div className="text-sm font-medium text-white">{short}</div>
-              <div className="text-[11px] text-zinc-500">{email ?? '—'}</div>
-            </div>
-            <ChevronDown className="hidden h-4 w-4 text-zinc-500 sm:block" aria-hidden />
-          </motion.button>
-
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={logout}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-transparent px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-200"
-          >
-            <LogOut className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">Выйти</span>
-          </motion.button>
+          <AccountMenu />
         </div>
       </div>
     </header>

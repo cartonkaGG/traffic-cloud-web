@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import LoaderCloud3D from './LoaderCloud3D';
+import { useIsMobile } from '../lib/useMediaQuery';
 
 interface LoaderProps {
   onComplete: () => void;
@@ -9,9 +10,10 @@ interface LoaderProps {
 export default function Loader({ onComplete }: LoaderProps) {
   const [progress, setProgress] = useState(0);
   const [exiting, setExiting] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    const duration = 3000;
+    const duration = isMobile ? 2200 : 3000;
     const tick = 36;
     const step = 100 / (duration / tick);
     const timer = setInterval(() => {
@@ -26,7 +28,7 @@ export default function Loader({ onComplete }: LoaderProps) {
       });
     }, tick);
     return () => clearInterval(timer);
-  }, [onComplete]);
+  }, [onComplete, isMobile]);
 
   return (
     <motion.div
@@ -39,7 +41,7 @@ export default function Loader({ onComplete }: LoaderProps) {
     >
       <div className="hero-aurora absolute inset-0 opacity-80" />
       <div className="loader-vignette absolute inset-0" aria-hidden />
-      <div className="loader-light-beam absolute inset-0" aria-hidden />
+      {!isMobile && <div className="loader-light-beam absolute inset-0" aria-hidden />}
 
       <div className="loader-stack relative z-10 flex flex-col items-center">
         <LoaderCloud3D progress={progress} exiting={exiting} />

@@ -42,11 +42,11 @@ export function DashboardPage(): JSX.Element {
   }, [])
 
   useEffect(() => {
-    if (!workspaceId || status !== 'online') return
+    if (!workspaceId || status !== 'online' || bundle) return
     if (bundleRefetchForWid.current === workspaceId) return
     bundleRefetchForWid.current = workspaceId
     void refetch()
-  }, [workspaceId, status, refetch])
+  }, [workspaceId, status, bundle, refetch])
 
   const statItems = useMemo(() => {
     if (bundle?.dashboardStats?.length) return mapDashboardStats(bundle.dashboardStats)

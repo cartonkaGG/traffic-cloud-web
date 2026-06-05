@@ -15,6 +15,11 @@
     font-family: var(--font-sans);
     scroll-behavior: smooth;
     overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Custom Scrollbar */
@@ -67,6 +72,20 @@
   background: rgba(17, 24, 39, 0.85);
   border-color: rgba(99, 102, 241, 0.25);
   box-shadow: 0 0 25px rgba(99, 102, 241, 0.15);
+}
+
+.contact-form-panel {
+  background: rgba(17, 24, 39, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@media (hover: hover) {
+  .pillar-card:hover {
+    transform: translateY(-4px);
+    border-color: rgb(34 211 238 / 0.25);
+    box-shadow: 0 0 30px rgb(34 211 238 / 0.08);
+  }
 }
 
 /* Shimmer animation */
@@ -145,61 +164,157 @@
 /* Hero cloud — симетричне центрування */
 .hero-cloud-visual {
   position: relative;
-  width: min(300px, 78vw);
-  height: min(300px, 78vw);
+  width: min(320px, 82vw);
+  height: min(320px, 82vw);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.hero-cloud-visual .hero-cloud-aura {
-  width: 260px !important;
-  height: 260px !important;
-  max-width: none;
-  max-height: none;
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.hero-cloud-visual .hero-cloud-pulse-ring {
-  top: 50% !important;
-  left: 50%;
-  width: 220px !important;
-  height: 220px !important;
-  max-width: none;
-  max-height: none;
-  border-radius: 50% !important;
-  transform: translate(-50%, -50%);
-}
-
-.hero-cloud-visual .hero-cloud-pulse-ring--2 {
-  display: none;
-}
-
-.hero-cloud-visual .hero-cloud-shimmer {
-  width: 240px !important;
-  height: 240px !important;
-  top: 50%;
-  left: 50%;
-}
-
-.hero-cloud-visual .hero-cloud-ground-glow {
-  top: 56% !important;
-  left: 50%;
-  bottom: auto !important;
-  width: 180px !important;
-  max-width: none;
-  transform: translate(-50%, -50%) !important;
-}
-
-.hero-cloud-visual .hero-cloud-float {
+.hero-cloud-float {
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.hero-cloud-hub {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  flex-shrink: 0;
+}
+
+.hero-cloud-fx-clip {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-cloud-fx-clip .hero-cloud-aura,
+.hero-cloud-fx-clip .hero-cloud-halo,
+.hero-cloud-fx-clip .hero-cloud-orbit,
+.hero-cloud-fx-clip .hero-cloud-shimmer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 0;
+}
+
+.hero-cloud-hub .hero-cloud-aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300px;
+  height: 300px;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hero-cloud-hub .hero-cloud-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 248px;
+  height: 248px;
+  margin: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid hsl(195 100% 60% / 0.22);
+  box-shadow:
+    0 0 48px hsl(195 100% 50% / 0.14),
+    inset 0 0 36px hsl(195 100% 55% / 0.08);
+  pointer-events: none;
+}
+
+.hero-cloud-hub .hero-cloud-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 276px;
+  height: 276px;
+  margin: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  border: 1px dashed hsl(195 100% 65% / 0.14);
+  pointer-events: none;
+  animation: hero-cloud-orbit-spin 28s linear infinite;
+}
+
+/* У hub не застосовувати глобальний pulse-ring (зсував друге коло) */
+.hero-cloud-hub .hero-cloud-pulse-ring {
+  display: none;
+}
+
+.hero-cloud-hub .hero-cloud-shimmer {
+  width: 268px;
+  height: 268px;
+  max-width: none;
+  max-height: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+}
+
+.hero-cloud-hub .hero-cloud-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: hsl(195 100% 88%);
+  box-shadow: 0 0 8px hsl(195 100% 70%), 0 0 16px hsl(195 100% 55% / 0.5);
+  animation: hero-cloud-spark-twinkle 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hero-cloud-hub .hero-cloud-particle {
+  position: absolute;
+}
+
+.hero-cloud-hub .hero-cloud-mark-main {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(calc(-50% - 5px), calc(-50% - 10px));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+@keyframes hero-cloud-orbit-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes hero-cloud-spark-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.hero-ambient-floater {
+  position: absolute;
+  opacity: 0.09;
+  animation: hero-ambient-floater 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes hero-ambient-floater {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.07;
+  }
+  50% {
+    transform: translate(0, -16px) rotate(4deg);
+    opacity: 0.13;
+  }
 }
 
 .hero-cta-primary {
@@ -354,12 +469,12 @@
 
 @keyframes hero-cloud-pulse-ring {
   0% {
-    opacity: 0.5;
-    transform: translate(-50%, -50%) scale(0.72);
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.78);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1.35);
+    transform: translate(-50%, -50%) scale(1.28);
   }
 }
 
@@ -607,9 +722,92 @@
   animation: loader-ring-glow 3s ease-in-out infinite;
 }
 
+/* ——— Mobile ——— */
+@media (max-width: 767px) {
+  .hero-title {
+    font-size: clamp(1.75rem, 9vw, 2.35rem);
+  }
+
+  .hero-title-glow {
+    filter: drop-shadow(0 0 16px hsl(195 100% 50% / 0.28));
+  }
+
+  .hero-lead {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .hero-copy {
+    padding-left: 0.75rem;
+  }
+
+  .hero-copy::before {
+    width: 2px;
+  }
+
+  .hero-cloud-visual {
+    width: min(252px, 74vw);
+    height: min(252px, 74vw);
+  }
+
+  .hero-cloud-hub {
+    width: 240px;
+    height: 240px;
+  }
+
+  .hero-cloud-hub .hero-cloud-aura {
+    width: 240px;
+    height: 240px;
+  }
+
+  .hero-cloud-hub .hero-cloud-halo {
+    width: 208px;
+    height: 208px;
+  }
+
+  .hero-cloud-hub .hero-cloud-shimmer {
+    width: 228px;
+    height: 228px;
+  }
+
+  .hero-aurora {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .hero-ambient-glow--cyan {
+    width: min(520px, 110vw);
+    height: min(280px, 40vh);
+  }
+
+  .loader-scene {
+    width: min(252px, 76vw);
+    height: min(252px, 76vw);
+  }
+
+  .loader-caption {
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+  }
+
+  .contact-form-panel,
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(17, 24, 39, 0.94);
+  }
+
+  #traffic-cloud-homepage footer {
+    padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora,
   .hero-scroll-chevron,
+  .hero-ambient-floater,
+  .hero-cloud-orbit,
+  .hero-cloud-spark,
   .shimmer-btn::after,
   .hero-cloud-aura,
   .hero-cloud-ground-glow,

@@ -9,12 +9,16 @@ import {
   ScrollText,
   Server,
   Settings,
+  Shield,
   Timer,
   Users,
-  Mail
+  Mail,
+  CreditCard
 } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import { motion } from 'framer-motion'
+import { PanelBrand } from '@/components/brand/PanelBrand'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
@@ -55,30 +59,29 @@ const sections: NavSection[] = [
 ]
 
 export function AppShell(): JSX.Element {
+  const { isAdmin } = useAuth()
+
+  const systemItems: NavItem[] = [
+    { to: '/settings', label: 'Настройки', icon: Settings, end: false },
+    { to: '/billing', label: 'Підписка', icon: CreditCard, end: false }
+  ]
+  if (isAdmin) {
+    systemItems.push({ to: '/admin', label: 'Адмін', icon: Shield, end: false })
+  }
+
+  const allSections: NavSection[] = sections.map((section) =>
+    section.title === 'Система' ? { ...section, items: systemItems } : section
+  )
+
   return (
     <div className="flex h-full min-h-0 bg-ink">
       <Sidebar>
-        <div className="mb-10 flex items-center gap-3 px-2">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-transparent shadow-glow">
-            <img
-              src="./cloud-icon.png"
-              alt=""
-              width={44}
-              height={44}
-              className="h-11 w-11 object-contain"
-              draggable={false}
-            />
-          </div>
-          <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-500">
-              Traffic Cloud
-            </div>
-            <div className="text-sm font-semibold text-gradient">Outreach OS</div>
-          </div>
+        <div className="mb-10 px-2">
+          <PanelBrand layout="sidebar" />
         </div>
 
         <nav className="flex flex-1 flex-col gap-6 overflow-y-auto pr-1">
-          {sections.map((section) => (
+          {allSections.map((section) => (
             <div key={section.title}>
               <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-600">
                 {section.title}

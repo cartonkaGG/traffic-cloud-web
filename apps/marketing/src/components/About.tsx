@@ -31,7 +31,7 @@ export default function About() {
   ];
 
   return (
-    <section id="about" className="relative py-24 bg-gray-950 overflow-hidden">
+    <section id="about" className="relative py-16 sm:py-24 bg-gray-950 overflow-hidden">
       <div className="absolute top-0 inset-x-0 flex justify-center px-8 pointer-events-none">
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
@@ -43,9 +43,9 @@ export default function About() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
           <ScrollReveal variant="up">
-            <h2 className="text-3xl sm:text-5xl font-sans font-extrabold text-white tracking-tight mb-6">
+            <h2 className="text-2xl sm:text-5xl font-sans font-extrabold text-white tracking-tight mb-4 sm:mb-6">
               Що вміє панель
             </h2>
           </ScrollReveal>
@@ -56,24 +56,20 @@ export default function About() {
           </ScrollReveal>
         </div>
 
-        <ScrollRevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ScrollRevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {pillars.map((p) => {
             const Icon = p.icon;
             return (
               <motion.div
                 key={p.title}
                 variants={staggerItem}
-                whileHover={{ y: -6, scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="p-6 rounded-2xl bg-gray-950/60 border border-gray-900 hover:border-cyan-500/25 hover:shadow-[0_0_30px_rgba(34,211,238,0.08)] transition-[border-color,box-shadow]"
+                className="pillar-card p-5 sm:p-6 rounded-2xl bg-gray-950/60 border border-gray-900 transition-[border-color,box-shadow]"
               >
-                <motion.div
-                  whileHover={{ rotate: [0, -8, 8, 0] }}
-                  transition={{ duration: 0.5 }}
+                <div
                   className={`w-10 h-10 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center mb-4`}
                 >
                   <Icon className="w-5 h-5 text-white" />
-                </motion.div>
+                </div>
                 <h3 className="text-lg font-sans font-bold text-white mb-2">{p.title}</h3>
                 <p className="text-sm text-gray-500 font-sans leading-relaxed">{p.desc}</p>
               </motion.div>

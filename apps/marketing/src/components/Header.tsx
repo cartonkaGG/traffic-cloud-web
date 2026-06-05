@@ -17,6 +17,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const navItems = [
     { name: 'Головна', id: 'hero' },
     { name: 'Можливості', id: 'about' },
+    { name: 'Pro', id: 'pricing' },
     { name: 'Контакти', id: 'contact' },
   ];
 
@@ -49,10 +50,10 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 pt-[env(safe-area-inset-top)] ${
           scrolled
-            ? 'bg-gray-950/75 backdrop-blur-md border-b border-gray-800/60 py-3 shadow-lg'
-            : 'bg-transparent py-5 border-b border-transparent'
+            ? 'bg-gray-950/95 md:bg-gray-950/75 md:backdrop-blur-md border-b border-gray-800/60 py-3 shadow-lg'
+            : 'bg-transparent py-4 sm:py-5 border-b border-transparent'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -117,7 +118,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
           <div className="flex md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white cursor-pointer"
+              className="p-2.5 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white cursor-pointer touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -133,7 +134,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-x-0 top-16 z-35 md:hidden bg-gray-950/95 border-b border-gray-800/80 backdrop-blur-lg shadow-2xl"
+            className="fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-40 md:hidden bg-gray-950/98 border-b border-gray-800/80 shadow-2xl"
           >
             <div className="px-5 pt-3 pb-6 flex flex-col gap-4">
               <div className="flex flex-col gap-1">

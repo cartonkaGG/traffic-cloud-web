@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { useWorkspaceData } from './context/WorkspaceDataContext'
+import { useSoftware } from './context/SoftwareContext'
+import { hasPanelAccess } from './lib/subscriptionAccess'
 import { AppShell } from './components/layout/AppShell'
+import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
 import { AccountsPage } from './pages/AccountsPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { AuthPage } from './pages/AuthPage'
@@ -14,7 +18,33 @@ import { LogsPage } from './pages/LogsPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { ProxyPage } from './pages/ProxyPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AdminPage } from './pages/AdminPage'
+import { BillingPage } from './pages/BillingPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { SoftwareHubPage } from './pages/SoftwareHubPage'
 import { SourcesPage } from './pages/SourcesPage'
+import { VerifyEmailPage } from './pages/VerifyEmailPage'
+import { BILLING_SUBSCRIBE_PATH, SUBSCRIBE_ENTRY_PATH } from './lib/panelRoutes'
+
+function PostAuthRedirect(): JSX.Element {
+  const { isAdmin } = useAuth()
+  const { subscription, status } = useWorkspaceData()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
+
+  if (status === 'loading' && subscription === null) {
+    return <PanelLoadingScreen label="Завантаження…" />
+  }
+
+  const safe =
+    redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+      ? redirectTo
+      : null
+  if (safe) return <Navigate to={safe} replace />
+  if (hasPanelAccess(subscription, isAdmin)) return <Navigate to="/hub" replace />
+  return <Navigate to={BILLING_SUBSCRIBE_PATH} replace />
+}
 
 function Protected({
   children,
@@ -24,14 +54,43 @@ function Protected({
   invert?: boolean
 }): JSX.Element {
   const { isAuthenticated } = useAuth()
-  if (invert && isAuthenticated) return <Navigate to="/" replace />
-  if (!invert && !isAuthenticated) return <Navigate to="/auth" replace />
+  const location = useLocation()
+  if (invert && isAuthenticated) return <PostAuthRedirect />
+  if (!invert && !isAuthenticated) {
+    const redirect = encodeURIComponent(`${location.pathname}${location.search}`)
+    return <Navigate to={`/auth?redirect=${redirect}`} replace />
+  }
+  return <>{children}</>
+}
+
+function RequireSoftware({ children }: { children: ReactNode }): JSX.Element {
+  const { selectedSoftwareId } = useSoftware()
+  if (!selectedSoftwareId) return <Navigate to="/hub" replace />
+  return <>{children}</>
+}
+
+function RequireAdmin({ children }: { children: ReactNode }): JSX.Element {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <Navigate to="/hub" replace />
+  return <>{children}</>
+}
+
+function RequireSubscription({ children }: { children: ReactNode }): JSX.Element {
+  const { isAdmin } = useAuth()
+  const { subscription, status } = useWorkspaceData()
+  if (status === 'loading' && subscription === null) {
+    return <PanelLoadingScreen label="Перевірка підписки…" />
+  }
+  if (!hasPanelAccess(subscription, isAdmin)) {
+    return <Navigate to={BILLING_SUBSCRIBE_PATH} replace />
+  }
   return <>{children}</>
 }
 
 export default function App(): JSX.Element {
   return (
     <Routes>
+      <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
       <Route
         path="/auth"
         element={
@@ -40,11 +99,46 @@ export default function App(): JSX.Element {
           </Protected>
         }
       />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route
+        path="/hub"
+        element={
+          <Protected>
+            <RequireSubscription>
+              <SoftwareHubPage />
+            </RequireSubscription>
+          </Protected>
+        }
+      />
+      <Route
+        path="/billing"
+        element={
+          <Protected>
+            <BillingPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <Protected>
+            <RequireAdmin>
+              <AdminPage />
+            </RequireAdmin>
+          </Protected>
+        }
+      />
       <Route
         path="/"
         element={
           <Protected>
-            <AppShell />
+            <RequireSoftware>
+              <RequireSubscription>
+                <AppShell />
+              </RequireSubscription>
+            </RequireSoftware>
           </Protected>
         }
       >

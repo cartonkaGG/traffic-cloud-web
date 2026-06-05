@@ -15,16 +15,70 @@ import type {
 import { getAccessToken } from './authSession'
 import { getApiBaseUrl } from './settings'
 
+export type UserRole = 'user' | 'admin'
+
+export type SubscriptionInfo = {
+  status: string
+  currentPeriodEnd: string | null
+  isActive: boolean
+}
+
+export type BillingPlanInfo = {
+  monthlyPriceUsd: number
+  currency: string
+  planTitle: string
+}
+
 export type AuthResponse = {
   token: string
-  user: { id: string; email: string }
+  user: { id: string; email: string; role?: UserRole }
   workspaceId: string
 }
+
+export type RegisterResponse =
+  | AuthResponse
+  | {
+      needsEmailVerification: true
+      email: string
+      message: string
+    }
 
 export type BootstrapResponse = {
   workspaceId: string
   workspaceName: string
   activeMessageTemplateId?: string | null
+  role?: UserRole
+  subscription?: SubscriptionInfo
+  billingPlan?: BillingPlanInfo
+}
+
+export type BillingStatusResponse = {
+  subscription: SubscriptionInfo
+  plan: BillingPlanInfo
+}
+
+export type CheckoutResponse = {
+  orderId: string
+  invoiceUrl: string
+  amountUsd: number
+  currency: string
+  planTitle: string
+}
+
+export type AdminPaymentRow = {
+  id: string
+  orderId: string
+  userId: string
+  userEmail: string
+  amountUsd: number
+  currency: string
+  status: string
+  invoiceUrl: string | null
+  payCurrency: string | null
+  actuallyPaid: number | null
+  nowPaymentsId: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export type DashboardStatRemote = {
@@ -76,16 +130,20 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const text = await res.text()
     let hint: string | undefined
+    let detail: string | undefined
     let errKey: string | undefined
     try {
-      const j = JSON.parse(text) as { hint?: unknown; error?: unknown }
+      const j = JSON.parse(text) as { hint?: unknown; error?: unknown; detail?: unknown }
       if (typeof j.hint === 'string') hint = j.hint
+      if (typeof j.detail === 'string') detail = j.detail
       if (typeof j.error === 'string') errKey = j.error
     } catch {
       /* not JSON */
     }
     const message =
-      hint ?? (errKey ? `${errKey} (${res.status})` : `${res.status} ${text}`)
+      hint ??
+      detail ??
+      (errKey ? `${errKey} (${res.status})` : `${res.status} ${text}`)
     throw new Error(message)
   }
   return res.json() as Promise<T>
@@ -99,12 +157,48 @@ export async function apiLogin(body: { email: string; password: string }): Promi
   })
 }
 
-export async function apiRegister(body: { email: string; password: string }): Promise<AuthResponse> {
-  return fetchJson<AuthResponse>('/v1/auth/register', {
+export async function apiRegister(body: { email: string; password: string }): Promise<RegisterResponse> {
+  return fetchJson<RegisterResponse>('/v1/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
+}
+
+export async function apiForgotPassword(email: string): Promise<{ ok: boolean }> {
+  return fetchJson('/v1/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+}
+
+export async function apiResetPassword(token: string, password: string): Promise<{ ok: boolean }> {
+  return fetchJson('/v1/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password })
+  })
+}
+
+export async function apiVerifyEmail(token: string): Promise<{ ok: boolean; email: string }> {
+  return fetchJson(`/v1/auth/verify-email?token=${encodeURIComponent(token)}`)
+}
+
+export async function apiResendVerification(
+  email: string
+): Promise<{ ok: boolean; cooldownSec?: number }> {
+  return fetchJson('/v1/auth/resend-verification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+}
+
+export async function apiVerificationStatus(email: string): Promise<{ verified: boolean }> {
+  return fetchJson(
+    `/v1/auth/verification-status?email=${encodeURIComponent(email.trim().toLowerCase())}`
+  )
 }
 
 export async function apiUpdateBrowserProfile(
@@ -207,6 +301,37 @@ export async function apiDeleteBrowserProfile(
 
 export async function apiBootstrap(): Promise<BootstrapResponse> {
   return fetchJson<BootstrapResponse>('/v1/bootstrap')
+}
+
+export async function apiBillingStatus(): Promise<BillingStatusResponse> {
+  return fetchJson<BillingStatusResponse>('/v1/billing/status')
+}
+
+export async function apiBillingCheckout(
+  acceptedTerms: boolean,
+  payCurrency: string
+): Promise<CheckoutResponse> {
+  return fetchJson<CheckoutResponse>('/v1/billing/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acceptedTerms, payCurrency })
+  })
+}
+
+export async function apiAdminGetPlan(): Promise<BillingPlanInfo> {
+  return fetchJson<BillingPlanInfo>('/v1/admin/billing/plan')
+}
+
+export async function apiAdminUpdatePlan(body: Partial<BillingPlanInfo>): Promise<BillingPlanInfo> {
+  return fetchJson<BillingPlanInfo>('/v1/admin/billing/plan', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiAdminPayments(): Promise<{ items: AdminPaymentRow[] }> {
+  return fetchJson<{ items: AdminPaymentRow[] }>('/v1/admin/payments')
 }
 
 export async function apiFetchBundle(workspaceId: string): Promise<WorkspaceBundle> {

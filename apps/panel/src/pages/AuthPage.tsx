@@ -1,74 +1,206 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles } from 'lucide-react'
+import { CheckCircle2, Loader2, Mail } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { PanelBrand } from '@/components/brand/PanelBrand'
+import { AuthPageBackdrop } from '@/components/layout/AuthPageBackdrop'
 import { useAuth } from '@/context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { apiResendVerification, apiVerificationStatus } from '@/lib/api'
+import { BILLING_SUBSCRIBE_PATH } from '@/lib/panelRoutes'
+import {
+  getResendCooldownLeft,
+  RESEND_COOLDOWN_SEC,
+  startResendCooldown
+} from '@/lib/resendCooldown'
+import { getMarketingHomeUrl } from '@/lib/site'
 
 export function AuthPage(): JSX.Element {
   const { login, register } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || BILLING_SUBSCRIBE_PATH
+  const subscribeFlow = redirectTo.includes('/billing')
+
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [pendingVerifyEmail, setPendingVerifyEmail] = useState<string | null>(null)
+  const [resendOk, setResendOk] = useState(false)
+  const [cooldownLeft, setCooldownLeft] = useState(0)
+  const [emailJustVerified, setEmailJustVerified] = useState(false)
 
-  const title = useMemo(() => (mode === 'login' ? 'Вход' : 'Регистрация'), [mode])
+  const title = useMemo(() => (mode === 'login' ? 'Вхід' : 'Реєстрація'), [mode])
+  const activeEmail = pendingVerifyEmail ?? email.trim().toLowerCase()
+
+  useEffect(() => {
+    if (!pendingVerifyEmail) return
+    setCooldownLeft(getResendCooldownLeft(pendingVerifyEmail))
+    const tick = window.setInterval(() => {
+      setCooldownLeft(getResendCooldownLeft(pendingVerifyEmail))
+    }, 1000)
+    return () => window.clearInterval(tick)
+  }, [pendingVerifyEmail])
+
+  useEffect(() => {
+    if (!pendingVerifyEmail || emailJustVerified) return
+    const poll = window.setInterval(() => {
+      void (async () => {
+        try {
+          const res = await apiVerificationStatus(pendingVerifyEmail)
+          if (res.verified) {
+            setEmailJustVerified(true)
+            window.setTimeout(() => {
+              navigate('/subscribe', { replace: true })
+            }, 1800)
+          }
+        } catch {
+          /* ignore poll errors */
+        }
+      })()
+    }, 3000)
+    return () => window.clearInterval(poll)
+  }, [pendingVerifyEmail, emailJustVerified, navigate])
 
   async function submit(e: FormEvent): Promise<void> {
     e.preventDefault()
     setFormError(null)
+    setResendOk(false)
     try {
-      if (mode === 'login') await login(email, password)
-      else await register(email, password)
-      navigate('/')
+      if (mode === 'login') {
+        await login(email, password)
+        const safe =
+          redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+            ? redirectTo
+            : BILLING_SUBSCRIBE_PATH
+        navigate(safe)
+      } else {
+        const result = await register(email, password)
+        if (result.needsEmailVerification) {
+          const normalized = email.trim().toLowerCase()
+          setPendingVerifyEmail(normalized)
+          startResendCooldown(normalized, RESEND_COOLDOWN_SEC)
+          setCooldownLeft(RESEND_COOLDOWN_SEC)
+          return
+        }
+        const safe =
+          redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+            ? redirectTo
+            : BILLING_SUBSCRIBE_PATH
+        navigate(safe)
+      }
     } catch (err) {
       setFormError(err instanceof Error ? err.message : String(err))
     }
   }
 
-  return (
-    <div className="relative flex min-h-full items-center justify-center overflow-hidden px-6 py-16">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-90"
-        aria-hidden
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 70% at 50% -10%, rgba(94,200,255,0.35), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 20%, rgba(120,160,255,0.18), transparent 50%), radial-gradient(ellipse 60% 50% at 0% 80%, rgba(94,200,255,0.12), transparent 55%), linear-gradient(180deg, #050507 0%, #07080c 100%)'
-        }}
-      />
-      <motion.div
-        className="pointer-events-none absolute -left-40 top-24 h-[520px] w-[520px] rounded-full bg-accent/20 blur-[120px]"
-        animate={{ opacity: [0.35, 0.6, 0.35], scale: [1, 1.05, 1] }}
-        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        aria-hidden
-      />
-      <motion.div
-        className="pointer-events-none absolute -right-32 bottom-10 h-[460px] w-[460px] rounded-full bg-indigo-500/15 blur-[110px]"
-        animate={{ opacity: [0.25, 0.45, 0.25], scale: [1.03, 1, 1.03] }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-        aria-hidden
-      />
+  async function resendVerification(): Promise<void> {
+    if (!activeEmail || cooldownLeft > 0) return
+    setResendOk(false)
+    setFormError(null)
+    try {
+      await apiResendVerification(activeEmail)
+      startResendCooldown(activeEmail, RESEND_COOLDOWN_SEC)
+      setCooldownLeft(RESEND_COOLDOWN_SEC)
+      setResendOk(true)
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : String(err))
+      const left = getResendCooldownLeft(activeEmail)
+      if (left > 0) setCooldownLeft(left)
+    }
+  }
 
+  if (pendingVerifyEmail) {
+    return (
+      <AuthPageBackdrop>
+        <motion.div
+          initial={{ opacity: 0, y: 14, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full max-w-[440px]"
+        >
+          <div className="glass-panel-strong relative overflow-hidden p-8 text-center shadow-glow">
+            <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-[0.35]" />
+            <div className="relative">
+              <PanelBrand layout="auth" />
+              {emailJustVerified ? (
+                <div className="mt-8">
+                  <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
+                  <h1 className="mt-4 text-xl font-semibold text-white">Email підтверджено!</h1>
+                  <p className="mt-2 text-sm text-zinc-400">Перенаправляємо до входу…</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mx-auto mt-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-500/10 shadow-[0_0_40px_-12px_rgba(34,211,238,0.5)]">
+                    <Mail className="h-7 w-7 text-cyan-200" />
+                  </div>
+                  <h1 className="mt-5 text-xl font-semibold text-white">Підтвердіть email</h1>
+                  <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+                    Лист надіслано на{' '}
+                    <span className="font-medium text-white">{pendingVerifyEmail}</span>. Відкрийте
+                    посилання у листі — ця сторінка оновиться автоматично.
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-zinc-500">
+                    <Loader2 className="h-3 w-3 animate-spin text-accent" />
+                    Очікуємо підтвердження…
+                  </div>
+                  {resendOk ? (
+                    <p className="mt-4 text-sm text-emerald-300">Лист надіслано повторно.</p>
+                  ) : null}
+                  {formError ? (
+                    <p className="mt-4 rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-200">
+                      {formError}
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={cooldownLeft > 0}
+                    onClick={() => void resendVerification()}
+                    className="mt-6 w-full rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {cooldownLeft > 0
+                      ? `Надіслати знову через ${cooldownLeft} с`
+                      : 'Надіслати лист ще раз'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingVerifyEmail(null)
+                      setMode('login')
+                    }}
+                    className="mt-4 text-sm text-zinc-500 hover:text-zinc-300"
+                  >
+                    Повернутися до входу
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      </AuthPageBackdrop>
+    )
+  }
+
+  return (
+    <AuthPageBackdrop>
       <motion.div
         initial={{ opacity: 0, y: 14, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-[440px]"
       >
         <div className="glass-panel-strong relative overflow-hidden p-8 shadow-glow">
           <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-[0.35]" />
           <div className="relative">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] shadow-[0_0_40px_-16px_rgba(94,200,255,0.65)]">
-                <Sparkles className="h-5 w-5 text-accent" aria-hidden />
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
-                  Traffic Cloud
-                </div>
-                <div className="text-xl font-semibold tracking-tight text-white">{title}</div>
-              </div>
+            <PanelBrand layout="auth" />
+            <div className="mt-6 text-xl font-semibold tracking-tight text-white">
+              {subscribeFlow ? 'Увійдіть для підписки' : title}
             </div>
+            {subscribeFlow ? (
+              <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                Спочатку увійдіть або зареєструйтесь — потім відкриється сторінка оплати.
+              </p>
+            ) : null}
 
             <div className="mt-8 flex rounded-2xl border border-white/[0.08] bg-black/30 p-1">
               {(['login', 'register'] as const).map((m) => {
@@ -90,7 +222,7 @@ export function AuthPage(): JSX.Element {
                         transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                       />
                     )}
-                    <span className="relative z-10">{m === 'login' ? 'Вход' : 'Регистрация'}</span>
+                    <span className="relative z-10">{m === 'login' ? 'Вхід' : 'Реєстрація'}</span>
                   </button>
                 )
               })}
@@ -112,8 +244,15 @@ export function AuthPage(): JSX.Element {
               </label>
 
               <label className="block">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                  Пароль
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Пароль
+                  </div>
+                  {mode === 'login' ? (
+                    <Link to="/forgot-password" className="text-[11px] text-accent hover:underline">
+                      Забули пароль?
+                    </Link>
+                  ) : null}
                 </div>
                 <input
                   value={password}
@@ -126,9 +265,23 @@ export function AuthPage(): JSX.Element {
               </label>
 
               {formError ? (
-                <p className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-200/95">
-                  {formError}
-                </p>
+                <div className="space-y-2">
+                  <p className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-200/95">
+                    {formError}
+                  </p>
+                  {formError.includes('Підтвердіть email') ? (
+                    <button
+                      type="button"
+                      disabled={getResendCooldownLeft(email.trim().toLowerCase()) > 0}
+                      onClick={() => void resendVerification()}
+                      className="text-[13px] text-accent hover:underline disabled:opacity-50"
+                    >
+                      {getResendCooldownLeft(email.trim().toLowerCase()) > 0
+                        ? `Повторний лист через ${getResendCooldownLeft(email.trim().toLowerCase())} с`
+                        : 'Надіслати лист підтвердження ще раз'}
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
 
               <AnimatePresence mode="wait">
@@ -141,8 +294,8 @@ export function AuthPage(): JSX.Element {
                   className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-[13px] leading-relaxed text-zinc-500"
                 >
                   {mode === 'login'
-                    ? 'Учётная запись хранится в MongoDB (email и хеш пароля). Остальные данные приложения — только на этом компьютере.'
-                    : 'Минимум 8 символов в пароле. После регистрации данные workspace создаются локально на ПК.'}
+                    ? 'Після входу без активної підписки ви потрапите на сторінку оплати.'
+                    : 'Мінімум 8 символів. Після реєстрації надішлемо лист для підтвердження email.'}
                 </motion.div>
               </AnimatePresence>
 
@@ -153,25 +306,19 @@ export function AuthPage(): JSX.Element {
                 className="group relative w-full overflow-hidden rounded-xl border border-accent/35 bg-gradient-to-r from-accent/20 via-accent/10 to-transparent px-4 py-3 text-sm font-semibold text-white shadow-[0_0_40px_-18px_rgba(94,200,255,0.85)] transition-[box-shadow] hover:shadow-[0_0_52px_-18px_rgba(94,200,255,0.95)]"
               >
                 <span className="relative z-10">
-                  {mode === 'login' ? 'Войти в консоль' : 'Создать аккаунт'}
+                  {mode === 'login' ? 'Увійти' : 'Створити акаунт'}
                 </span>
-                <motion.span
-                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                  style={{
-                    background:
-                      'linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.10) 45%, transparent 70%)'
-                  }}
-                  aria-hidden
-                />
               </motion.button>
             </form>
 
             <div className="mt-6 text-center text-[12px] text-zinc-600">
-              Нажимая кнопку, вы соглашаетесь с условиями использования (черновик).
+              <a href={getMarketingHomeUrl()} className="text-accent hover:underline">
+                На головний сайт
+              </a>
             </div>
           </div>
         </div>
       </motion.div>
-    </div>
+    </AuthPageBackdrop>
   )
 }

@@ -6,53 +6,77 @@ import {
   useState,
   type ReactNode
 } from 'react'
-import { apiLogin, apiRegister } from '@/lib/api'
+import { apiLogin, apiRegister, type UserRole } from '@/lib/api'
 import {
   clearAccessSession,
   getAccessToken,
   getStoredEmail,
-  setAccessSession
+  getStoredRole,
+  setAccessSession,
+  setStoredRole
 } from '@/lib/authSession'
 
 type AuthContextValue = {
   isAuthenticated: boolean
   email: string | null
+  role: UserRole
+  isAdmin: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string) => Promise<{ needsEmailVerification: boolean }>
   logout: () => void
+  setRole: (role: UserRole) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [email, setEmail] = useState<string | null>(() => getStoredEmail())
+  const [role, setRoleState] = useState<UserRole>(() => getStoredRole() ?? 'user')
+
+  const setRole = useCallback((next: UserRole) => {
+    setStoredRole(next)
+    setRoleState(next)
+  }, [])
 
   const login = useCallback(async (e: string, password: string) => {
     const res = await apiLogin({ email: e.trim(), password })
-    setAccessSession(res.token, res.user.email)
+    const userRole = res.user.role ?? 'user'
+    setAccessSession(res.token, res.user.email, userRole)
     setEmail(res.user.email)
-  }, [])
+    setRole(userRole)
+  }, [setRole])
 
   const register = useCallback(async (e: string, password: string) => {
     const res = await apiRegister({ email: e.trim(), password })
-    setAccessSession(res.token, res.user.email)
-    setEmail(res.user.email)
-  }, [])
+    if ('needsEmailVerification' in res && res.needsEmailVerification) {
+      return { needsEmailVerification: true }
+    }
+    const auth = res as { token: string; user: { email: string; role?: UserRole } }
+    const userRole = auth.user.role ?? 'user'
+    setAccessSession(auth.token, auth.user.email, userRole)
+    setEmail(auth.user.email)
+    setRole(userRole)
+    return { needsEmailVerification: false }
+  }, [setRole])
 
   const logout = useCallback(() => {
     clearAccessSession()
     setEmail(null)
+    setRoleState('user')
   }, [])
 
   const value = useMemo(
     () => ({
-      isAuthenticated: Boolean(email),
+      isAuthenticated: Boolean(email && getAccessToken()),
       email,
+      role,
+      isAdmin: role === 'admin',
       login,
       register,
-      logout
+      logout,
+      setRole
     }),
-    [email, login, register, logout]
+    [email, role, login, register, logout, setRole]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

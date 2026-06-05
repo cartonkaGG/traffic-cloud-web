@@ -4,10 +4,15 @@ import Loader from './components/Loader';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import About from './components/About';
+import PricingPro from './components/PricingPro';
 import ContactForm from './components/ContactForm';
 import ScrollProgressBar from './components/ScrollProgressBar';
 import { ScrollReveal } from './components/ScrollReveal';
 import { ArrowUp } from 'lucide-react';
+
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 767px)').matches;
+}
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -18,7 +23,7 @@ export default function App() {
   useEffect(() => {
     if (isLoading) return;
 
-    const sections = ['hero', 'about', 'contact'];
+    const sections = ['hero', 'about', 'pricing', 'contact'];
     const observers = sections.map((secId) => {
       const el = document.getElementById(secId);
       if (!el) return null;
@@ -38,7 +43,7 @@ export default function App() {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 500);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -54,7 +59,7 @@ export default function App() {
     if (!canvas) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) return;
+    if (reduceMotion || isMobileViewport()) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -63,7 +68,7 @@ export default function App() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
     let lastFrame = 0;
-    const frameInterval = 1000 / 24;
+    const frameInterval = 1000 / 20;
 
     class Particle {
       x: number;
@@ -157,13 +162,17 @@ export default function App() {
       {!isLoading && (
         <div id="traffic-cloud-homepage" className="min-h-screen relative flex flex-col bg-gray-950 text-gray-100">
           <ScrollProgressBar />
-          <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-50" />
+          <canvas
+            ref={canvasRef}
+            className="fixed inset-0 pointer-events-none z-0 opacity-50 hidden md:block"
+          />
 
           <Header onContactClick={scrollToContact} activeSection={activeSection} />
 
           <main className="flex-grow relative z-10">
             <Hero onContactClick={scrollToContact} />
             <About />
+            <PricingPro />
             <ContactForm />
           </main>
 
@@ -194,7 +203,7 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: 10 }}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="fixed bottom-6 right-6 z-30 p-3 rounded-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 hover:text-white shadow-xl cursor-pointer"
+                className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-30 p-3.5 rounded-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 hover:text-white shadow-xl cursor-pointer touch-manipulation"
                 title="Нагору"
               >
                 <ArrowUp className="w-4 h-4" />

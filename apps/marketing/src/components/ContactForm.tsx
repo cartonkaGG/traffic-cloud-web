@@ -26,7 +26,7 @@ export default function ContactForm() {
   };
 
   return (
-    <section id="contact" className="relative py-24 bg-gray-950 overflow-hidden">
+    <section id="contact" className="relative py-16 sm:py-24 bg-gray-950 overflow-hidden">
       <ScrollReveal variant="scale" amount={0.4} className="absolute top-0 inset-x-0 flex justify-center pointer-events-none">
         <div className="h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
       </ScrollReveal>
@@ -46,12 +46,7 @@ export default function ContactForm() {
         </div>
 
         <ScrollReveal variant="scale" delay={0.08}>
-          <motion.div
-            whileInView={{ boxShadow: ['0 0 0 rgba(34,211,238,0)', '0 0 40px rgba(34,211,238,0.06)'] }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.2 }}
-            className="glass rounded-3xl p-6 sm:p-8 border border-gray-800/80 relative"
-          >
+          <div className="contact-form-panel rounded-3xl p-5 sm:p-8 border border-gray-800/80 relative">
             <form onSubmit={handleSubmit} className="space-y-5">
             <ScrollRevealStagger className="space-y-5">
               <motion.div variants={staggerItem} className="flex flex-col gap-1.5">
@@ -64,7 +59,7 @@ export default function ContactForm() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="px-4 py-3 bg-gray-950/60 border border-gray-900 rounded-xl text-white text-sm outline-none focus:border-cyan-500/50 font-sans transition-colors"
+                  className="w-full min-h-[48px] px-4 py-3 bg-gray-950/60 border border-gray-900 rounded-xl text-white text-base outline-none focus:border-cyan-500/50 font-sans transition-colors"
                 />
               </motion.div>
 
@@ -79,7 +74,7 @@ export default function ContactForm() {
                   placeholder="@username"
                   value={telegram}
                   onChange={(e) => setTelegram(e.target.value)}
-                  className="px-4 py-3 bg-gray-950/60 border border-gray-900 rounded-xl text-white text-sm outline-none focus:border-cyan-500/50 font-sans transition-colors"
+                  className="w-full min-h-[48px] px-4 py-3 bg-gray-950/60 border border-gray-900 rounded-xl text-white text-base outline-none focus:border-cyan-500/50 font-sans transition-colors"
                 />
               </motion.div>
 
@@ -92,7 +87,7 @@ export default function ContactForm() {
                   rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="px-4 py-3 bg-gray-950/60 border border-gray-900 rounded-xl text-white text-sm outline-none focus:border-cyan-500/50 font-sans resize-none transition-colors"
+                  className="w-full min-h-[120px] px-4 py-3 bg-gray-950/60 border border-gray-900 rounded-xl text-white text-base outline-none focus:border-cyan-500/50 font-sans resize-none transition-colors"
                 />
               </motion.div>
 
@@ -100,7 +95,7 @@ export default function ContactForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 text-white font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99] transition-transform shadow-[0_4px_28px_rgba(34,211,238,0.25)]"
+                  className="w-full min-h-[48px] py-4 rounded-xl bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 text-white font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.99] transition-transform shadow-[0_4px_28px_rgba(34,211,238,0.25)] touch-manipulation"
                 >
                   {isLoading ? (
                     <>
@@ -135,7 +130,7 @@ export default function ContactForm() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute inset-4 rounded-2xl glass flex flex-col items-center justify-center text-center p-6 z-20"
+                  className="absolute inset-4 rounded-2xl contact-form-panel flex flex-col items-center justify-center text-center p-6 z-20"
                 >
                   <motion.div
                     initial={{ scale: 0 }}
@@ -149,7 +144,7 @@ export default function ContactForm() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </ScrollReveal>
       </div>
     </section>

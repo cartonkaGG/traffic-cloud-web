@@ -5,11 +5,11 @@ export default {
     extend: {
       colors: {
         ink: {
-          DEFAULT: '#050507',
-          raised: '#0a0a0d',
-          panel: '#0f1014',
-          graphite: '#15161c',
-          muted: '#1a1c24'
+          DEFAULT: '#030712',
+          raised: '#0a0f1a',
+          panel: '#0f172a',
+          graphite: '#111827',
+          muted: '#1f2937'
         },
         frost: {
           DEFAULT: 'rgba(255,255,255,0.06)',
@@ -22,7 +22,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
       },
       boxShadow: {
