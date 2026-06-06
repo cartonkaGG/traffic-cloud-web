@@ -371,7 +371,10 @@ export function AccountsPage(): JSX.Element {
         { signal: ac.signal }
       )
       if (r.ok) {
-        pushToast('MTProto-сесію збережено. Можна «Запустити спам» по розпарсеній базі.', 'ok')
+        pushToast(
+          'Session string згенеровано і збережено автоматично. Можна «Запустити спам» по розпарсеній базі.',
+          'ok'
+        )
         closeMtprotoModal()
         await refetch()
         return
@@ -793,8 +796,9 @@ export function AccountsPage(): JSX.Element {
                   MTProto API (опционально)
                 </p>
                 <p className="text-[12px] text-zinc-500">
-                  Вкажіть api_id/api_hash. Якщо вставите session string — збережеться одразу; інакше після
-                  збереження відкриється вхід по коду.
+                  Вкажіть api_id та api_hash. Session string <strong className="font-medium text-zinc-400">не
+                  генерується сам</strong> — або вставте готовий (Pyrogram/Telethon), або після збереження
+                  увійдіть через «Код Telegram» (телефон + код) — session збережеться на сервері автоматично.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block">
@@ -830,7 +834,7 @@ export function AccountsPage(): JSX.Element {
                     value={addMtprotoSession}
                     onChange={(e) => setAddMtprotoSession(e.target.value)}
                     className="mt-2 min-h-[72px] w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-[12px] text-white outline-none focus:border-accent/35"
-                    placeholder="1AAg… — збережеться автоматично разом з акаунтом"
+                    placeholder="1AAg… — лише якщо вже є готовий session; інакше залиште порожнім"
                   />
                 </label>
               </div>
