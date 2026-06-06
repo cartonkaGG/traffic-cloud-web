@@ -131,6 +131,10 @@ export interface TelegramAccountModel {
   createdAt?: string | null
   /** Є збережена MTProto-сесія для розсилки через GramJS */
   hasMtprotoSession?: boolean
+  /** Збережений App api_id (hash лише на сервері) */
+  mtprotoApiId?: number | null
+  /** api_id + api_hash збережені для цього акаунта */
+  hasMtprotoApiCreds?: boolean
 }
 
 export interface ProxyEndpointModel {

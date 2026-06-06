@@ -621,6 +621,8 @@ export async function apiCreateTelegramAccount(
     proxyProtocol?: 'http' | 'socks5'
     proxyUsername?: string | null
     proxyPassword?: string | null
+    mtprotoApiId?: string | number
+    mtprotoApiHash?: string
   }
 ): Promise<{
   account: TelegramAccountModel
@@ -646,7 +648,7 @@ export async function apiDeleteTelegramAccount(
 export async function apiTelegramAccountMtprotoSendCode(
   workspaceId: string,
   accountId: string,
-  body: { phone?: string; forceSMS?: boolean },
+  body: { phone?: string; forceSMS?: boolean; apiId?: string | number; apiHash?: string },
   init?: Pick<RequestInit, 'signal'>
 ): Promise<{ ok: true; isCodeViaApp: boolean; httpProxySkipped: boolean }> {
   return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/mtproto/send-code`, {
@@ -665,7 +667,12 @@ export type MtprotoCompleteResponse =
 export async function apiTelegramAccountMtprotoComplete(
   workspaceId: string,
   accountId: string,
-  body: { phoneCode: string; password?: string | null },
+  body: {
+    phoneCode: string
+    password?: string | null
+    apiId?: string | number
+    apiHash?: string
+  },
   init?: Pick<RequestInit, 'signal'>
 ): Promise<MtprotoCompleteResponse> {
   const base = getApiBaseUrl()
@@ -692,8 +699,40 @@ export async function apiTelegramAccountMtprotoComplete(
   if (res.ok && j.account) {
     return { ok: true, account: j.account }
   }
-  if (j.error === 'two_factor_required') {
+  if (j.error === 'two_factor_required' || j.error === 'password_required') {
     return { ok: false, twoFactorRequired: true }
+  }
+  const message = typeof j.hint === 'string' && j.hint ? j.hint : `${j.error ?? 'error'} (${res.status})`
+  return { ok: false, message }
+}
+
+export async function apiTelegramAccountMtprotoImportSession(
+  workspaceId: string,
+  accountId: string,
+  body: { sessionString: string; apiId?: string | number; apiHash?: string }
+): Promise<{ ok: true; account: TelegramAccountModel } | { ok: false; message: string }> {
+  const base = getApiBaseUrl()
+  const token = getAccessToken()
+  const res = await fetch(
+    `${base}/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/mtproto/import-session`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(body)
+    }
+  )
+  const j = (await res.json()) as {
+    ok?: boolean
+    account?: TelegramAccountModel
+    error?: string
+    hint?: string
+  }
+  if (res.ok && j.account) {
+    return { ok: true, account: j.account }
   }
   const message = typeof j.hint === 'string' && j.hint ? j.hint : `${j.error ?? 'error'} (${res.status})`
   return { ok: false, message }

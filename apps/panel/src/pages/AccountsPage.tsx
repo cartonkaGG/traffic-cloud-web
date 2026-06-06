@@ -9,6 +9,7 @@ import {
   apiCreateTelegramAccount,
   apiDeleteTelegramAccount,
   apiTelegramAccountMtprotoComplete,
+  apiTelegramAccountMtprotoImportSession,
   apiTelegramAccountMtprotoSendCode,
   apiTelegramAccountOutreachStart,
   apiTelegramAccountsBulkAbout
@@ -63,6 +64,8 @@ export function AccountsPage(): JSX.Element {
   const [proxyType, setProxyType] = useState<'http' | 'socks5'>('http')
   const [proxyUser, setProxyUser] = useState('')
   const [proxyPass, setProxyPass] = useState('')
+  const [addMtprotoApiId, setAddMtprotoApiId] = useState('')
+  const [addMtprotoApiHash, setAddMtprotoApiHash] = useState('')
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TelegramAccountStatus | 'all'>('all')
@@ -81,7 +84,33 @@ export function AccountsPage(): JSX.Element {
   const [mtprotoErr, setMtprotoErr] = useState<string | null>(null)
   const [mtprotoAwait2fa, setMtprotoAwait2fa] = useState(false)
   const [mtprotoCodeHint, setMtprotoCodeHint] = useState<string | null>(null)
+  const [mtprotoApiId, setMtprotoApiId] = useState('')
+  const [mtprotoApiHash, setMtprotoApiHash] = useState('')
+  const [mtprotoSessionPaste, setMtprotoSessionPaste] = useState('')
+  const [mtprotoUseSessionPaste, setMtprotoUseSessionPaste] = useState(false)
   const mtprotoRequestAbortRef = useRef<AbortController | null>(null)
+
+  function mtprotoNeedsApiInput(): boolean {
+    return !mtprotoAccount?.hasMtprotoApiCreds
+  }
+
+  function mtprotoApiBody(): { apiId?: string; apiHash?: string } {
+    if (!mtprotoNeedsApiInput()) return {}
+    const apiId = mtprotoApiId.trim()
+    const apiHash = mtprotoApiHash.trim()
+    return {
+      ...(apiId ? { apiId } : {}),
+      ...(apiHash ? { apiHash } : {})
+    }
+  }
+
+  function mtprotoApiInputError(): string | null {
+    if (!mtprotoNeedsApiInput()) return null
+    if (!mtprotoApiId.trim() || !mtprotoApiHash.trim()) {
+      return 'Вкажіть App api_id та App api_hash з my.telegram.org/apps'
+    }
+    return null
+  }
 
   const [spamAccount, setSpamAccount] = useState<TelegramAccountModel | null>(null)
   const [spamSourceId, setSpamSourceId] = useState('')
@@ -103,6 +132,8 @@ export function AccountsPage(): JSX.Element {
     setProxyType('http')
     setProxyUser('')
     setProxyPass('')
+    setAddMtprotoApiId('')
+    setAddMtprotoApiHash('')
     setFormError(null)
   }, [])
 
@@ -170,6 +201,10 @@ export function AccountsPage(): JSX.Element {
         : ''
     setMtprotoPhone(ph)
     setMtprotoForceSms(false)
+    setMtprotoApiId(account.mtprotoApiId ? String(account.mtprotoApiId) : '')
+    setMtprotoApiHash('')
+    setMtprotoSessionPaste('')
+    setMtprotoUseSessionPaste(false)
     setMtprotoAccount(account)
   }, [])
 
@@ -182,11 +217,20 @@ export function AccountsPage(): JSX.Element {
     setMtprotoCodeHint(null)
     setMtprotoCode('')
     setMtprotoPassword('')
+    setMtprotoApiId('')
+    setMtprotoApiHash('')
+    setMtprotoSessionPaste('')
+    setMtprotoUseSessionPaste(false)
   }, [])
 
   const sendMtprotoCode = useCallback(async () => {
     if (!workspaceId || status !== 'online' || !mtprotoAccount) {
       pushToast('Нет подключения к API', 'error')
+      return
+    }
+    const apiErr = mtprotoApiInputError()
+    if (apiErr) {
+      setMtprotoErr(apiErr)
       return
     }
     const ph = mtprotoPhone.trim()
@@ -205,7 +249,8 @@ export function AccountsPage(): JSX.Element {
         mtprotoAccount.id,
         {
           phone: ph,
-          forceSMS: mtprotoForceSms
+          forceSMS: mtprotoForceSms,
+          ...mtprotoApiBody()
         },
         { signal: ac.signal }
       )
@@ -236,12 +281,67 @@ export function AccountsPage(): JSX.Element {
     mtprotoAccount,
     mtprotoPhone,
     mtprotoForceSms,
+    mtprotoApiId,
+    mtprotoApiHash,
     pushToast
+  ])
+
+  const importMtprotoSession = useCallback(async () => {
+    if (!workspaceId || status !== 'online' || !mtprotoAccount) {
+      pushToast('Нет подключения к API', 'error')
+      return
+    }
+    const apiErr = mtprotoApiInputError()
+    if (apiErr) {
+      setMtprotoErr(apiErr)
+      return
+    }
+    if (!mtprotoSessionPaste.trim()) {
+      setMtprotoErr('Вставте session string')
+      return
+    }
+    setMtprotoBusy(true)
+    setMtprotoErr(null)
+    try {
+      const r = await apiTelegramAccountMtprotoImportSession(workspaceId, mtprotoAccount.id, {
+        sessionString: mtprotoSessionPaste.trim(),
+        ...mtprotoApiBody()
+      })
+      if (!r.ok) {
+        setMtprotoErr(r.message)
+        pushToast(r.message, 'error')
+        return
+      }
+      pushToast('Session string збережено', 'ok')
+      closeMtprotoModal()
+      await refetch()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setMtprotoErr(msg)
+      pushToast(msg, 'error')
+    } finally {
+      setMtprotoBusy(false)
+    }
+  }, [
+    workspaceId,
+    status,
+    mtprotoAccount,
+    mtprotoApiId,
+    mtprotoApiHash,
+    mtprotoSessionPaste,
+    refetch,
+    pushToast,
+    closeMtprotoModal
   ])
 
   const completeMtprotoLogin = useCallback(async () => {
     if (!workspaceId || status !== 'online' || !mtprotoAccount) {
       pushToast('Нет подключения к API', 'error')
+      return
+    }
+    const apiErr = mtprotoApiInputError()
+    if (apiErr) {
+      setMtprotoErr(apiErr)
       return
     }
     if (!mtprotoAwait2fa && !mtprotoCode.trim()) {
@@ -263,7 +363,8 @@ export function AccountsPage(): JSX.Element {
         mtprotoAccount.id,
         {
           phoneCode: mtprotoAwait2fa ? '' : mtprotoCode.trim(),
-          password: mtprotoPassword.trim() || null
+          password: mtprotoPassword.trim() || null,
+          ...mtprotoApiBody()
         },
         { signal: ac.signal }
       )
@@ -296,6 +397,8 @@ export function AccountsPage(): JSX.Element {
     mtprotoCode,
     mtprotoPassword,
     mtprotoAwait2fa,
+    mtprotoApiId,
+    mtprotoApiHash,
     refetch,
     pushToast,
     closeMtprotoModal
@@ -424,6 +527,8 @@ export function AccountsPage(): JSX.Element {
     }
     setBusy(true)
     try {
+      const apiId = addMtprotoApiId.trim()
+      const apiHash = addMtprotoApiHash.trim()
       const res = await apiCreateTelegramAccount(workspaceId, {
         telegramUsername: u,
         phone: phone.trim() || null,
@@ -435,13 +540,16 @@ export function AccountsPage(): JSX.Element {
               proxyUsername: proxyUser.trim() || null,
               proxyPassword: proxyPass.trim() || null
             }
-          : {})
+          : {}),
+        ...(apiId && apiHash ? { mtprotoApiId: apiId, mtprotoApiHash: apiHash } : {})
       })
       pushToast('Аккаунт и anti-detect профиль сохранены в MongoDB', 'ok')
       closeAdd()
       await refetch()
 
       setMtprotoAccount(res.account)
+      setMtprotoApiId(apiId)
+      setMtprotoApiHash(apiHash)
       setMtprotoPhone(
         phone.trim() ||
           (res.account.phone && res.account.phone !== '—'
@@ -492,6 +600,8 @@ export function AccountsPage(): JSX.Element {
     proxyType,
     proxyUser,
     proxyPass,
+    addMtprotoApiId,
+    addMtprotoApiHash,
     refetch,
     closeAdd,
     pushToast
@@ -659,6 +769,41 @@ export function AccountsPage(): JSX.Element {
                   autoComplete="tel"
                 />
               </label>
+
+              <div className="rounded-xl border border-cyan-500/15 bg-cyan-500/[0.04] p-4 space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  MTProto API (опционально)
+                </p>
+                <p className="text-[12px] text-zinc-500">
+                  Якщо вкажете тут — після збереження відкриється вхід по коду / session string.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                      App api_id
+                    </span>
+                    <input
+                      value={addMtprotoApiId}
+                      onChange={(e) => setAddMtprotoApiId(e.target.value)}
+                      inputMode="numeric"
+                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                      placeholder="12345678"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                      App api_hash
+                    </span>
+                    <input
+                      value={addMtprotoApiHash}
+                      onChange={(e) => setAddMtprotoApiHash(e.target.value)}
+                      type="password"
+                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                      placeholder="hex з my.telegram.org"
+                    />
+                  </label>
+                </div>
+              </div>
 
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
@@ -897,6 +1042,118 @@ export function AccountsPage(): JSX.Element {
               </div>
 
               {mtprotoErr ? <p className="text-[13px] text-red-300/95">{mtprotoErr}</p> : null}
+
+              {mtprotoAccount.hasMtprotoApiCreds ? (
+                <p className="text-[13px] text-emerald-200/90">
+                  API-ключі вже збережені для цього акаунта (api_id: {mtprotoAccount.mtprotoApiId ?? '—'}).
+                  Можна одразу надсилати код або вставити session string.
+                </p>
+              ) : (
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 space-y-3">
+                  <p className="text-[12px] text-zinc-400">
+                    Ключі з{' '}
+                    <a
+                      href="https://my.telegram.org/apps"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-cyan-300 hover:underline"
+                    >
+                      my.telegram.org/apps
+                    </a>{' '}
+                    — обов&apos;язкові для входу та session string.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block sm:col-span-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                        App api_id
+                      </span>
+                      <input
+                        value={mtprotoApiId}
+                        onChange={(e) => setMtprotoApiId(e.target.value)}
+                        inputMode="numeric"
+                        className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                        placeholder="12345678"
+                      />
+                    </label>
+                    <label className="block sm:col-span-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                        App api_hash
+                      </span>
+                      <input
+                        value={mtprotoApiHash}
+                        onChange={(e) => setMtprotoApiHash(e.target.value)}
+                        type="password"
+                        className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                        placeholder="hex-строка"
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMtprotoUseSessionPaste(false)}
+                  className={[
+                    'flex-1 rounded-xl border px-3 py-2 text-[12px] font-medium',
+                    !mtprotoUseSessionPaste
+                      ? 'border-accent/35 bg-accent/15 text-accent'
+                      : 'border-white/10 text-zinc-500'
+                  ].join(' ')}
+                >
+                  Вхід по коду
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMtprotoUseSessionPaste(true)}
+                  className={[
+                    'flex-1 rounded-xl border px-3 py-2 text-[12px] font-medium',
+                    mtprotoUseSessionPaste
+                      ? 'border-accent/35 bg-accent/15 text-accent'
+                      : 'border-white/10 text-zinc-500'
+                  ].join(' ')}
+                >
+                  Вставити session
+                </button>
+              </div>
+
+              {mtprotoUseSessionPaste ? (
+                <>
+                  <label className="block">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                      Session string
+                    </span>
+                    <textarea
+                      value={mtprotoSessionPaste}
+                      onChange={(e) => setMtprotoSessionPaste(e.target.value)}
+                      className="mt-2 min-h-[88px] w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-[12px] text-white outline-none focus:border-accent/35"
+                      placeholder="1AAg…"
+                    />
+                  </label>
+                  <div className="flex flex-wrap justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={mtprotoBusy}
+                      onClick={() => closeMtprotoModal()}
+                      className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-zinc-300 hover:bg-white/[0.04] disabled:opacity-40"
+                    >
+                      Закрити
+                    </button>
+                    <motion.button
+                      type="button"
+                      disabled={mtprotoBusy || status !== 'online'}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => void importMtprotoSession()}
+                      className="rounded-xl border border-accent/35 bg-accent/15 px-5 py-2.5 text-sm font-semibold text-accent hover:bg-accent/20 disabled:opacity-40"
+                    >
+                      {mtprotoBusy ? 'Зачекайте…' : 'Зберегти session'}
+                    </motion.button>
+                  </div>
+                </>
+              ) : (
+                <>
               {mtprotoCodeHint && !mtprotoAwait2fa ? (
                 <p className="text-[13px] text-sky-200/90">{mtprotoCodeHint}</p>
               ) : null}
@@ -985,6 +1242,8 @@ export function AccountsPage(): JSX.Element {
                   {mtprotoBusy ? 'Зачекайте…' : mtprotoAwait2fa ? 'Підтвердити 2FA' : 'Увійти та зберегти сесію'}
                 </motion.button>
               </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         ) : null}
