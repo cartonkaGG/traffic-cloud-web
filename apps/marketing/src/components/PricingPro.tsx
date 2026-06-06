@@ -6,6 +6,12 @@ import { fetchPublicBillingPlan } from '../lib/api'
 
 const PANEL_SUBSCRIBE_HREF = '/app/subscribe'
 
+function formatUsd(n: number): string {
+  if (Number.isInteger(n)) return String(n)
+  const s = n.toFixed(2)
+  return s.endsWith('0') ? s.slice(0, -1) : s
+}
+
 const features = [
   'DM Outreach консоль на місяць',
   'Telegram акаунти, проксі, anti-detect',
@@ -16,15 +22,19 @@ const features = [
 
 export default function PricingPro() {
   const [price, setPrice] = useState(29)
+  const [compareAtPrice, setCompareAtPrice] = useState<number | null>(null)
   const [currency, setCurrency] = useState('usd')
   const [planTitle, setPlanTitle] = useState('Traffic Cloud Pro')
   const [loading, setLoading] = useState(true)
+
+  const hasDiscount = compareAtPrice != null && compareAtPrice > price
 
   useEffect(() => {
     void (async () => {
       try {
         const plan = await fetchPublicBillingPlan()
         setPrice(plan.monthlyPriceUsd)
+        setCompareAtPrice(plan.compareAtPriceUsd ?? null)
         setCurrency(plan.currency)
         setPlanTitle(plan.planTitle)
       } catch {
@@ -79,15 +89,29 @@ export default function PricingPro() {
                 </div>
               </div>
 
-              <div className="mt-8 flex items-end gap-2">
+              <div className="mt-8">
                 {loading ? (
                   <span className="text-4xl font-extrabold text-white">…</span>
                 ) : (
                   <>
-                    <span className="text-5xl font-extrabold text-white">${price}</span>
-                    <span className="mb-1 text-sm text-gray-500">
-                      / {currency.toUpperCase()} · місяць
-                    </span>
+                    <div className="flex items-end gap-3">
+                      {hasDiscount ? (
+                        <span className="mb-1 text-2xl font-semibold text-gray-600 line-through decoration-gray-600/80">
+                          ${formatUsd(compareAtPrice!)}
+                        </span>
+                      ) : null}
+                      <span className="text-5xl font-extrabold text-white">
+                        ${formatUsd(price)}
+                      </span>
+                      <span className="mb-1 text-sm text-gray-500">
+                        / {currency.toUpperCase()} · місяць
+                      </span>
+                    </div>
+                    {hasDiscount ? (
+                      <p className="mt-2 text-[12px] font-medium uppercase tracking-[0.14em] text-cyan-400/90">
+                        Акційна ціна
+                      </p>
+                    ) : null}
                   </>
                 )}
               </div>

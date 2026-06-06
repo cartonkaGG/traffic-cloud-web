@@ -1,5 +1,6 @@
 export type PublicBillingPlan = {
   monthlyPriceUsd: number
+  compareAtPriceUsd?: number | null
   currency: string
   planTitle: string
 }
