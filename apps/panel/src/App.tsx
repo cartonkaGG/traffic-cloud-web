@@ -13,6 +13,7 @@ import { CampaignsPage } from './pages/CampaignsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { FiltersPage } from './pages/FiltersPage'
 import { LogsPage } from './pages/LogsPage'
+import { InboxPage } from './pages/InboxPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AdminPage } from './pages/AdminPage'
@@ -142,6 +143,7 @@ export default function App(): JSX.Element {
         <Route index element={<DashboardPage />} />
         <Route path="browser" element={<Navigate to="/accounts" replace />} />
         <Route path="accounts" element={<AccountsPage />} />
+        <Route path="inbox" element={<InboxPage />} />
         <Route path="proxy" element={<Navigate to="/accounts" replace />} />
         <Route path="sources" element={<SourcesPage />} />
         <Route path="messages" element={<MessagesPage />} />

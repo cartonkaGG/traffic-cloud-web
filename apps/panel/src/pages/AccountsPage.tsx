@@ -18,6 +18,7 @@ import {
 import { openTelegramForAccount } from '@/lib/openTelegramForAccount'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 type SortKey = 'created_desc' | 'created_asc'
 
@@ -40,6 +41,7 @@ function parsePort(raw: string): number | null {
 export function AccountsPage(): JSX.Element {
   const { bundle, workspaceId, status, refetch } = useWorkspaceData()
   const { pushToast } = useToast()
+  const navigate = useNavigate()
 
   const telegramAccounts = bundle?.telegramAccounts ?? mocks.telegramAccounts
   const proxiesList = bundle?.proxies ?? mocks.proxies
@@ -229,6 +231,13 @@ export function AccountsPage(): JSX.Element {
     mtprotoProxyPass,
     refetch
   ])
+
+  const openInbox = useCallback(
+    (account: TelegramAccountModel) => {
+      navigate(`/inbox?account=${encodeURIComponent(account.id)}`)
+    },
+    [navigate]
+  )
 
   const openTelegramWeb = useCallback(
     async (account: TelegramAccountModel) => {
@@ -1479,6 +1488,7 @@ export function AccountsPage(): JSX.Element {
         spamBusyId={spamBusy && spamAccount ? spamAccount.id : null}
         deletingAccountId={deletingAccountId}
         onOpenMtprotoLogin={openMtprotoModal}
+        onOpenInbox={openInbox}
         onOpenTelegramWeb={(a) => void openTelegramWeb(a)}
         telegramWebAccountId={telegramWebAccountId}
         onOpenSpam={openSpamModal}
@@ -1496,6 +1506,7 @@ function AccountsGrid({
   spamBusyId,
   deletingAccountId,
   onOpenMtprotoLogin,
+  onOpenInbox,
   onOpenTelegramWeb,
   telegramWebAccountId,
   onOpenSpam,
@@ -1509,6 +1520,7 @@ function AccountsGrid({
   spamBusyId: string | null
   deletingAccountId: string | null
   onOpenMtprotoLogin: (account: TelegramAccountModel) => void
+  onOpenInbox: (account: TelegramAccountModel) => void
   onOpenTelegramWeb: (account: TelegramAccountModel) => void
   onOpenSpam: (account: TelegramAccountModel) => void
   onDeleteAccount: (account: TelegramAccountModel) => void
@@ -1545,6 +1557,7 @@ function AccountsGrid({
           index={i}
           proxyLabel={a.proxyId ? proxyLabel[a.proxyId] : null}
           onOpenMtprotoLogin={onOpenMtprotoLogin}
+          onOpenInbox={onOpenInbox}
           onOpenTelegramWeb={onOpenTelegramWeb}
           telegramWebBusy={telegramWebAccountId === a.id}
           onOpenSpam={onOpenSpam}

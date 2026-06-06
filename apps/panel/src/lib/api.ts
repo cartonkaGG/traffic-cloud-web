@@ -915,6 +915,52 @@ export async function apiSetActiveMessageTemplate(
   })
 }
 
+export type InboxDialogRow = {
+  peerKey: string
+  title: string
+  username: string | null
+  unreadCount: number
+  lastMessage: string | null
+  lastMessageAt: string | null
+}
+
+export type InboxMessageRow = {
+  id: number
+  text: string
+  date: string
+  out: boolean
+  senderName: string | null
+}
+
+export async function apiInboxDialogs(
+  workspaceId: string,
+  accountId: string
+): Promise<{ ok: true; dialogs: InboxDialogRow[] }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/inbox/dialogs`)
+}
+
+export async function apiInboxMessages(
+  workspaceId: string,
+  accountId: string,
+  peerKey: string
+): Promise<{ ok: true; messages: InboxMessageRow[] }> {
+  return fetchJson(
+    `/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/inbox/messages?peerKey=${encodeURIComponent(peerKey)}`
+  )
+}
+
+export async function apiInboxSend(
+  workspaceId: string,
+  accountId: string,
+  body: { peerKey: string; text: string }
+): Promise<{ ok: true }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/inbox/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
 export function wsUrlFromHttpBase(base: string): string {
   const u = new URL(base)
   u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'

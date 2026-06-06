@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Link2,
   Megaphone,
+  MessageCircle,
   ScrollText,
   Settings,
   Shield,
@@ -29,7 +30,8 @@ const sections: NavSection[] = [
       { to: '/', label: 'Огляд', icon: LayoutDashboard, end: true },
       { to: '/accounts', label: 'Акаунти', icon: Users, end: false },
       { to: '/sources', label: 'Парсер чатів', icon: Link2, end: false },
-      { to: '/campaigns', label: 'Розсилка', icon: Megaphone, end: false }
+      { to: '/campaigns', label: 'Розсилка', icon: Megaphone, end: false },
+      { to: '/inbox', label: 'Повідомлення', icon: MessageCircle, end: false }
     ]
   },
   {
@@ -121,7 +123,7 @@ export function AppShell(): JSX.Element {
             Швидкий старт
           </div>
           <p className="text-[12px] leading-relaxed text-zinc-500">
-            1. Акаунт + SOCKS5 + session · 2. Парсер · 3. Розсилка · 4. Telegram Web для відповідей.
+            1. Акаунт + SOCKS5 + session · 2. Парсер · 3. Розсилка · 4. Повідомлення для відповідей.
           </p>
         </div>
       </Sidebar>

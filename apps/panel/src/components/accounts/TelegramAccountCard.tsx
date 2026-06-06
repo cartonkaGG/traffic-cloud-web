@@ -26,6 +26,7 @@ export function TelegramAccountCard({
   index,
   proxyLabel,
   onOpenMtprotoLogin,
+  onOpenInbox,
   onOpenTelegramWeb,
   onOpenSpam,
   onDeleteAccount,
@@ -38,6 +39,7 @@ export function TelegramAccountCard({
   index: number
   proxyLabel?: string | null
   onOpenMtprotoLogin?: (account: TelegramAccountModel) => void
+  onOpenInbox?: (account: TelegramAccountModel) => void
   onOpenTelegramWeb?: (account: TelegramAccountModel) => void
   onOpenSpam?: (account: TelegramAccountModel) => void
   onDeleteAccount?: (account: TelegramAccountModel) => void
@@ -98,10 +100,20 @@ export function TelegramAccountCard({
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
+                disabled={!onOpenInbox || account.hasMtprotoSession !== true}
+                onClick={() => onOpenInbox?.(account)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-[12px] font-medium text-accent transition-colors hover:border-accent/45 hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Відповіді в панелі через MTProto (проксі акаунта)"
+              >
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+                Повідомлення
+              </button>
+              <button
+                type="button"
                 disabled={!onOpenTelegramWeb || telegramWebBusy === true}
                 onClick={() => onOpenTelegramWeb?.(account)}
                 className="rounded-lg border border-sky-400/25 bg-sky-500/10 px-3 py-1.5 text-[12px] font-medium text-sky-100 transition-colors hover:border-sky-400/40 hover:bg-sky-500/15 disabled:cursor-not-allowed disabled:opacity-40"
-                title="Відкрити Telegram Web для відповідей (у десктоп-додатку — через проксі акаунта)"
+                title="Повний Telegram Web (у десктоп-додатку — через проксі акаунта)"
               >
                 {telegramWebBusy ? '…' : 'Telegram Web'}
               </button>
