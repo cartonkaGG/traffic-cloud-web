@@ -69,8 +69,13 @@ export function AuthPage(): JSX.Element {
     if (raw.includes('email_taken')) {
       return 'Цей email вже зареєстровано та підтверджено. Увійдіть або скиньте пароль.'
     }
-    if (raw.includes('smtp_not_configured') || raw.includes('mail_not_configured')) {
-      return 'Пошта не налаштована на сервері. Додайте RESEND_API_KEY у Render → Environment (resend.com).'
+    if (
+      raw.includes('resend_required_on_render') ||
+      raw.includes('smtp_not_configured') ||
+      raw.includes('mail_not_configured') ||
+      raw.includes('RESEND_API_KEY missing')
+    ) {
+      return 'На Render Gmail SMTP не працює. Додайте RESEND_API_KEY у Render → Environment (resend.com).'
     }
     if (raw.includes('resend_http_')) {
       return 'Помилка Resend API. Перевірте RESEND_API_KEY і MAIL_FROM на Render.'
