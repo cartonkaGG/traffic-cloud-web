@@ -915,8 +915,11 @@ export async function apiSetActiveMessageTemplate(
   })
 }
 
+export type InboxPeerKind = 'user' | 'chat' | 'channel'
+
 export type InboxDialogRow = {
   peerKey: string
+  peerKind: InboxPeerKind
   title: string
   username: string | null
   unreadCount: number

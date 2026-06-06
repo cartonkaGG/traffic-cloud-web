@@ -22,6 +22,23 @@ type DialogSnap = {
   lastMessageAt: string | null
   unreadCount: number
   lastMessage: string | null
+  peerKind?: InboxDialogRow['peerKind']
+}
+
+function isUserDialog(d: Pick<InboxDialogRow, 'peerKind'>): boolean {
+  return d.peerKind === 'user'
+}
+
+function unreadFromSnap(snap: SnapStore): number {
+  let total = 0
+  for (const [key, s] of Object.entries(snap)) {
+    const peerKey = key.includes('::') ? key.split('::').slice(1).join('::') : key
+    const kind =
+      s.peerKind ??
+      (peerKey.startsWith('user:') ? 'user' : peerKey.startsWith('chat:') || peerKey.startsWith('channel:') ? 'chat' : null)
+    if (kind === 'user') total += s.unreadCount ?? 0
+  }
+  return total
 }
 
 type SnapStore = Record<string, DialogSnap>
@@ -157,10 +174,15 @@ export function InboxNotifyProvider({ children }: { children: ReactNode }): JSX.
           const r = await apiInboxDialogs(workspaceId, account.id)
           for (const d of r.dialogs) {
             const key = snapKey(account.id, d.peerKey)
-            totalUnread += d.unreadCount
+            if (isUserDialog(d)) totalUnread += d.unreadCount
             const prev = snapRef.current[key]
 
-            if (!isSeedPass && isNewIncoming(prev, d) && shouldNotify(account.id, d.peerKey)) {
+            if (
+              isUserDialog(d) &&
+              !isSeedPass &&
+              isNewIncoming(prev, d) &&
+              shouldNotify(account.id, d.peerKey)
+            ) {
               const title = d.title || 'Нове повідомлення'
               const preview = previewText(d.lastMessage)
               const toastMsg = `${title}: ${preview}`
@@ -180,7 +202,8 @@ export function InboxNotifyProvider({ children }: { children: ReactNode }): JSX.
             nextSnap[key] = {
               lastMessageAt: d.lastMessageAt,
               unreadCount: d.unreadCount,
-              lastMessage: d.lastMessage
+              lastMessage: d.lastMessage,
+              peerKind: d.peerKind
             }
           }
         } catch {
@@ -218,8 +241,7 @@ export function InboxNotifyProvider({ children }: { children: ReactNode }): JSX.
     if (stored) {
       snapRef.current = stored
       seededRef.current = true
-      const sum = Object.values(stored).reduce((acc, s) => acc + (s.unreadCount ?? 0), 0)
-      setUnreadTotal(sum)
+      setUnreadTotal(unreadFromSnap(stored))
     } else {
       seededRef.current = false
     }
