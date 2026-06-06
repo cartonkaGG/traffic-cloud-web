@@ -1,4 +1,4 @@
-import { ArrowUpRight, Circle, Trash2 } from 'lucide-react'
+import { Circle, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { TelegramAccountModel } from '@/domain/types'
 import { formatActivityLabel } from '@/lib/formatActivity'
@@ -25,8 +25,6 @@ export function TelegramAccountCard({
   account,
   index,
   proxyLabel,
-  onOpenAntidetect,
-  antidetectLaunching,
   onOpenMtprotoLogin,
   onOpenSpam,
   onDeleteAccount,
@@ -37,8 +35,6 @@ export function TelegramAccountCard({
   account: TelegramAccountModel
   index: number
   proxyLabel?: string | null
-  onOpenAntidetect?: (account: TelegramAccountModel) => void
-  antidetectLaunching?: boolean
   onOpenMtprotoLogin?: (account: TelegramAccountModel) => void
   onOpenSpam?: (account: TelegramAccountModel) => void
   onDeleteAccount?: (account: TelegramAccountModel) => void
@@ -124,29 +120,13 @@ export function TelegramAccountCard({
         <div className="flex shrink-0 flex-col items-end gap-2">
           <motion.button
             type="button"
-            disabled={
-              !account.browserProfileId ||
-              !onOpenAntidetect ||
-              antidetectLaunching === true
-            }
-            whileHover={{ scale: 1.04, y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onOpenAntidetect?.(account)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-400 transition-colors hover:border-accent/35 hover:text-accent disabled:cursor-not-allowed disabled:opacity-35"
-            aria-label="Відкрити anti-detect профіль"
-            title="Відкрити браузерний профіль цього акаунта"
-          >
-            <ArrowUpRight className="h-4 w-4" />
-          </motion.button>
-          <motion.button
-            type="button"
             disabled={!onDeleteAccount || deleteBusy === true}
             whileHover={{ scale: 1.04, y: -1 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onDeleteAccount?.(account)}
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-400/20 bg-red-500/10 text-red-300/95 transition-colors hover:border-red-400/40 hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-35"
             aria-label="Видалити акаунт"
-            title="Видалити акаунт і профіль браузера"
+            title="Видалити акаунт"
           >
             <Trash2 className="h-4 w-4" />
           </motion.button>

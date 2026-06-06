@@ -2,12 +2,10 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
   Filter,
-  Globe,
   LayoutDashboard,
   Link2,
   Megaphone,
   ScrollText,
-  Server,
   Settings,
   Shield,
   Users,
@@ -39,8 +37,6 @@ const sections: NavSection[] = [
     items: [
       { to: '/messages', label: 'Шаблони', icon: Mail, end: false },
       { to: '/filters', label: 'Фільтри', icon: Filter, end: false },
-      { to: '/browser', label: 'Браузер', icon: Globe, end: false },
-      { to: '/proxy', label: 'Проксі', icon: Server, end: false },
       { to: '/analytics', label: 'Статистика', icon: BarChart3, end: false },
       { to: '/logs', label: 'Логи', icon: ScrollText, end: false }
     ]
@@ -125,7 +121,7 @@ export function AppShell(): JSX.Element {
             Швидкий старт
           </div>
           <p className="text-[12px] leading-relaxed text-zinc-500">
-            1. Додайте акаунт і session · 2. Розпарсіть чат · 3. Запустіть розсилку з розділу «Розсилка».
+            1. Акаунт + session · 2. Парсер чатів · 3. Розсилка. Проксі — лише в формі акаунта, якщо потрібен.
           </p>
         </div>
       </Sidebar>

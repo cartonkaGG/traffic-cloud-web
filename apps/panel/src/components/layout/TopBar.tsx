@@ -11,13 +11,11 @@ import { useLogs } from '@/context/LogContext'
 
 const ROUTE_TITLES: Record<string, { title: string; kicker?: string }> = {
   '/': { title: 'Огляд', kicker: 'Головна панель' },
-  '/browser': { title: 'Браузер', kicker: 'Anti-detect профілі' },
-  '/accounts': { title: 'Акаунти Telegram', kicker: 'Session · проксі' },
+  '/accounts': { title: 'Акаунти Telegram', kicker: 'Session · MTProto' },
   '/sources': { title: 'Парсер чатів', kicker: 'Джерела · аудиторія' },
   '/messages': { title: 'Шаблони', kicker: 'Тексти для DM' },
   '/filters': { title: 'Фільтри', kicker: 'Кому писати · безпека' },
   '/campaigns': { title: 'Розсилка', kicker: 'Запуск DM по базі' },
-  '/proxy': { title: 'Проксі', kicker: 'HTTP · SOCKS5' },
   '/analytics': { title: 'Статистика', kicker: 'Надіслані · помилки' },
   '/logs': { title: 'Логи', kicker: 'Події в реальному часі' },
   '/settings': { title: 'Налаштування', kicker: 'MTProto · парсер' }

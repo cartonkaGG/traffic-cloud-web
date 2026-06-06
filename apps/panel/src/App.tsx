@@ -9,13 +9,11 @@ import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
 import { AccountsPage } from './pages/AccountsPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { AuthPage } from './pages/AuthPage'
-import { BrowserProfilesPage } from './pages/BrowserProfilesPage'
 import { CampaignsPage } from './pages/CampaignsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { FiltersPage } from './pages/FiltersPage'
 import { LogsPage } from './pages/LogsPage'
 import { MessagesPage } from './pages/MessagesPage'
-import { ProxyPage } from './pages/ProxyPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AdminPage } from './pages/AdminPage'
 import { BillingPage } from './pages/BillingPage'
@@ -142,9 +140,9 @@ export default function App(): JSX.Element {
         }
       >
         <Route index element={<DashboardPage />} />
-        <Route path="browser" element={<BrowserProfilesPage />} />
+        <Route path="browser" element={<Navigate to="/accounts" replace />} />
         <Route path="accounts" element={<AccountsPage />} />
-        <Route path="proxy" element={<ProxyPage />} />
+        <Route path="proxy" element={<Navigate to="/accounts" replace />} />
         <Route path="sources" element={<SourcesPage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="filters" element={<FiltersPage />} />

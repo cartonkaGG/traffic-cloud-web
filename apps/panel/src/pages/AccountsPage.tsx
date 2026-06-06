@@ -15,10 +15,6 @@ import {
   apiTelegramAccountsBulkAbout
 } from '@/lib/api'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
-import {
-  launchAntidetectBrowserForAccount,
-  launchAntidetectFromPayload
-} from '@/lib/launchAntidetectBrowser'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 type SortKey = 'created_desc' | 'created_asc'
@@ -72,8 +68,6 @@ export function AccountsPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<TelegramAccountStatus | 'all'>('all')
   const [proxyFilter, setProxyFilter] = useState<string>('all')
   const [sortKey, setSortKey] = useState<SortKey>('created_desc')
-  const [launchingAccountId, setLaunchingAccountId] = useState<string | null>(null)
-
   const chatSources = bundle?.chatSources ?? mocks.chatSources
 
   const [mtprotoAccount, setMtprotoAccount] = useState<TelegramAccountModel | null>(null)
@@ -163,33 +157,6 @@ export function AccountsPage(): JSX.Element {
     }
     return list
   }, [telegramAccounts, search, statusFilter, proxyFilter])
-
-  const openAntidetectForAccount = useCallback(
-    async (account: TelegramAccountModel) => {
-      if (!workspaceId || status !== 'online') {
-        pushToast('Нет подключения к API', 'error')
-        return
-      }
-      setLaunchingAccountId(account.id)
-      try {
-        const r = await launchAntidetectBrowserForAccount({
-          workspaceId,
-          account,
-          browserProfiles: bundle?.browserProfiles ?? [],
-          proxies: proxiesList
-        })
-        if (!r.ok) {
-          pushToast(r.error, 'error')
-          return
-        }
-        await refetch()
-        pushToast('Профиль відкрито в anti-detect браузері', 'ok')
-      } finally {
-        setLaunchingAccountId(null)
-      }
-    },
-    [workspaceId, status, bundle?.browserProfiles, proxiesList, refetch, pushToast]
-  )
 
   const openMtprotoModal = useCallback((account: TelegramAccountModel) => {
     setMtprotoErr(null)
@@ -489,7 +456,7 @@ export function AccountsPage(): JSX.Element {
         return
       }
       const ok = window.confirm(
-        `Видалити акаунт «${account.label}» (@${account.username ?? '—'}) і пов’язаний anti-detect профіль у MongoDB? Дію не скасувати.`
+        `Видалити акаунт «${account.label}» (@${account.username ?? '—'})? Дію не скасувати.`
       )
       if (!ok) return
       setDeletingAccountId(account.id)
@@ -556,9 +523,7 @@ export function AccountsPage(): JSX.Element {
       })
       const sessionSaved = res.account.hasMtprotoSession === true
       pushToast(
-        sessionSaved
-          ? 'Акаунт, anti-detect профіль і MTProto session збережені'
-          : 'Аккаунт и anti-detect профиль сохранены в MongoDB',
+        sessionSaved ? 'Акаунт і MTProto session збережені' : 'Акаунт збережено',
         'ok'
       )
       closeAdd()
@@ -583,26 +548,6 @@ export function AccountsPage(): JSX.Element {
         setMtprotoForceSms(false)
       }
 
-      const tc = window.trafficCloud
-      if (tc?.openBrowserProfile && res.launch) {
-        setLaunchingAccountId(res.account.id)
-        try {
-          const lr = await launchAntidetectFromPayload(workspaceId, res.launch)
-          if (lr.ok) {
-            pushToast(
-              'Відкрито Telegram Web у профілі акаунта — увійдіть (телефон / QR), після цього можна надсилати повідомлення з цього сеансу.',
-              'ok'
-            )
-            await refetch()
-          } else {
-            pushToast(lr.error, 'error')
-          }
-        } finally {
-          setLaunchingAccountId(null)
-        }
-      } else if (!tc?.openBrowserProfile) {
-        pushToast('Відкрийте профіль стрілкою на картці — автозапуск браузера лише в Electron.', 'info')
-      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setFormError(msg)
@@ -659,10 +604,8 @@ export function AccountsPage(): JSX.Element {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-            У каждого аккаунта свой browser profile, cookies/session storage и закреплённый прокси. Новые аккаунты
-            сохраняются в MongoDB Atlas; профиль для Electron изолирован по{' '}
-            <span className="font-mono text-zinc-400">profileId</span>. Після створення відкриється вікно входу
-            MTProto (код з Telegram/SMS) — це окрема сесія для розсилки; антидетект-браузер лишається для Web.
+            Додайте Telegram-акаунт з MTProto session — через нього йде парсинг і розсилка DM. Проксі (SOCKS5)
+            опціонально вказується тут же, якщо потрібен окремий IP для акаунта.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -748,8 +691,8 @@ export function AccountsPage(): JSX.Element {
                 <div>
                   <div className="text-sm font-semibold text-white">Новый Telegram-аккаунт</div>
                   <p className="mt-1 text-[13px] text-zinc-500">
-                    Прокси необязателен — можно оставить поля пустыми. После сохранения автоматически создаётся
-                    anti-detect профиль с тем же username и изолированной сессией браузера.
+                    Проксі необов&apos;язковий — можна залишити порожнім. Після збереження налаштуйте MTProto session
+                    (код Telegram або вставка session string).
                   </p>
                 </div>
                 <button
@@ -841,7 +784,11 @@ export function AccountsPage(): JSX.Element {
 
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                  Прокси (опционально)
+                  Проксі (опціонально)
+                </p>
+                <p className="mt-2 text-[12px] text-zinc-500">
+                  Для MTProto-розсилки краще SOCKS5. HTTP-проксі GramJS не використовує — з’єднання піде напряму.
+                  Можна залишити порожнім.
                 </p>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <label className="block sm:col-span-2">
@@ -1396,11 +1343,9 @@ export function AccountsPage(): JSX.Element {
         accounts={filteredAccounts}
         proxyLabel={proxyLabel}
         sortKey={sortKey}
-        launchingAccountId={launchingAccountId}
         mtprotoBusyId={mtprotoBusy && mtprotoAccount ? mtprotoAccount.id : null}
         spamBusyId={spamBusy && spamAccount ? spamAccount.id : null}
         deletingAccountId={deletingAccountId}
-        onOpenAntidetect={openAntidetectForAccount}
         onOpenMtprotoLogin={openMtprotoModal}
         onOpenSpam={openSpamModal}
         onDeleteAccount={deleteTelegramAccount}
@@ -1413,11 +1358,9 @@ function AccountsGrid({
   accounts,
   proxyLabel,
   sortKey,
-  launchingAccountId,
   mtprotoBusyId,
   spamBusyId,
   deletingAccountId,
-  onOpenAntidetect,
   onOpenMtprotoLogin,
   onOpenSpam,
   onDeleteAccount
@@ -1425,11 +1368,9 @@ function AccountsGrid({
   accounts: TelegramAccountModel[]
   proxyLabel: Record<string, string>
   sortKey: SortKey
-  launchingAccountId: string | null
   mtprotoBusyId: string | null
   spamBusyId: string | null
   deletingAccountId: string | null
-  onOpenAntidetect: (account: TelegramAccountModel) => void
   onOpenMtprotoLogin: (account: TelegramAccountModel) => void
   onOpenSpam: (account: TelegramAccountModel) => void
   onDeleteAccount: (account: TelegramAccountModel) => void
@@ -1465,8 +1406,6 @@ function AccountsGrid({
           account={a}
           index={i}
           proxyLabel={a.proxyId ? proxyLabel[a.proxyId] : null}
-          onOpenAntidetect={onOpenAntidetect}
-          antidetectLaunching={launchingAccountId === a.id}
           onOpenMtprotoLogin={onOpenMtprotoLogin}
           onOpenSpam={onOpenSpam}
           onDeleteAccount={onDeleteAccount}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { BarChart3, MousePointerClick, Radio, TrendingUp } from 'lucide-react'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { LiveLogPanel } from '@/components/logs/LiveLogPanel'
@@ -6,9 +6,7 @@ import { TelegramAccountCard } from '@/components/accounts/TelegramAccountCard'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 import { useToast } from '@/context/ToastContext'
 import * as mocks from '@/data/mocks'
-import { launchAntidetectBrowserForAccount } from '@/lib/launchAntidetectBrowser'
 import type { StatItem } from '@/data/mocks'
-import type { TelegramAccountModel } from '@/domain/types'
 import type { DashboardStatRemote } from '@/lib/api'
 
 const ICONS: Record<DashboardStatRemote['iconKey'], StatItem['icon']> = {
@@ -30,8 +28,6 @@ function mapDashboardStats(remote: DashboardStatRemote[]): StatItem[] {
 
 export function DashboardPage(): JSX.Element {
   const { bundle, status, error, apiBaseUrl, workspaceId, refetch } = useWorkspaceData()
-  const { pushToast } = useToast()
-  const [launchingAccountId, setLaunchingAccountId] = useState<string | null>(null)
   /** refetch() ставить status у loading — без цього ref було б нескінченне online → refetch → loading → online. */
   const bundleRefetchForWid = useRef<string | null>(null)
 
@@ -61,33 +57,6 @@ export function DashboardPage(): JSX.Element {
     for (const p of proxiesList) m[p.id] = p.label
     return m
   }, [proxiesList])
-
-  const openAntidetectForAccount = useCallback(
-    async (account: TelegramAccountModel) => {
-      if (!workspaceId || status !== 'online') {
-        pushToast('Нет подключения к API', 'error')
-        return
-      }
-      setLaunchingAccountId(account.id)
-      try {
-        const r = await launchAntidetectBrowserForAccount({
-          workspaceId,
-          account,
-          browserProfiles: bundle?.browserProfiles ?? [],
-          proxies: proxiesList
-        })
-        if (!r.ok) {
-          pushToast(r.error, 'error')
-          return
-        }
-        await refetch()
-        pushToast('Профіль відкрито', 'ok')
-      } finally {
-        setLaunchingAccountId(null)
-      }
-    },
-    [workspaceId, status, bundle?.browserProfiles, proxiesList, refetch, pushToast]
-  )
 
   return (
     <div className="space-y-8">
@@ -142,8 +111,6 @@ export function DashboardPage(): JSX.Element {
                 account={a}
                 index={i}
                 proxyLabel={a.proxyId ? proxyLabel[a.proxyId] : null}
-                onOpenAntidetect={openAntidetectForAccount}
-                antidetectLaunching={launchingAccountId === a.id}
               />
             ))}
           </div>
