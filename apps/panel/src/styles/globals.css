@@ -155,9 +155,95 @@
   }
 }
 
+.billing-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgb(6 182 212 / 0.22);
+  background: linear-gradient(180deg, rgb(17 24 39 / 0.92) 0%, rgb(3 7 18 / 0.96) 100%);
+  box-shadow:
+    0 0 80px -24px rgb(6 182 212 / 0.45),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.billing-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgb(34 211 238 / 0.07) 0%,
+    transparent 42%,
+    rgb(99 102 241 / 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+.billing-price-sale {
+  background: linear-gradient(120deg, #fff 0%, #a5f3fc 45%, #e0f7ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px rgb(34 211 238 / 0.28));
+}
+
+.billing-cta {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #0891b2 0%, #2563eb 55%, #0891b2 100%);
+  background-size: 200% 100%;
+  box-shadow:
+    0 4px 28px rgb(6 182 212 / 0.38),
+    inset 0 1px 0 rgb(255 255 255 / 0.18);
+  transition: background-position 0.45s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.billing-cta:not(:disabled):hover {
+  background-position: 100% 0;
+  box-shadow:
+    0 6px 36px rgb(6 182 212 / 0.48),
+    inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+
+.billing-cta::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.22) 45%,
+    transparent 100%
+  );
+}
+
+.billing-cta:not(:disabled):hover::after {
+  animation: billing-cta-shimmer 0.9s ease-out;
+}
+
+@keyframes billing-cta-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.billing-network-active {
+  box-shadow:
+    0 0 0 1px rgb(34 211 238 / 0.25),
+    0 0 32px -12px rgb(34 211 238 / 0.45);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .billing-aurora,
   .billing-ambient-floater {
+    animation: none;
+  }
+
+  .billing-cta::after {
     animation: none;
   }
 }
