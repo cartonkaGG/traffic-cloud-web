@@ -66,6 +66,7 @@ export function AccountsPage(): JSX.Element {
   const [proxyPass, setProxyPass] = useState('')
   const [addMtprotoApiId, setAddMtprotoApiId] = useState('')
   const [addMtprotoApiHash, setAddMtprotoApiHash] = useState('')
+  const [addMtprotoSession, setAddMtprotoSession] = useState('')
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TelegramAccountStatus | 'all'>('all')
@@ -134,6 +135,7 @@ export function AccountsPage(): JSX.Element {
     setProxyPass('')
     setAddMtprotoApiId('')
     setAddMtprotoApiHash('')
+    setAddMtprotoSession('')
     setFormError(null)
   }, [])
 
@@ -525,10 +527,15 @@ export function AccountsPage(): JSX.Element {
       }
       port = parsed
     }
+    const apiId = addMtprotoApiId.trim()
+    const apiHash = addMtprotoApiHash.trim()
+    const sessionPaste = addMtprotoSession.trim()
+    if (sessionPaste && (!apiId || !apiHash)) {
+      setFormError('Для session string вкажіть App api_id та App api_hash')
+      return
+    }
     setBusy(true)
     try {
-      const apiId = addMtprotoApiId.trim()
-      const apiHash = addMtprotoApiHash.trim()
       const res = await apiCreateTelegramAccount(workspaceId, {
         telegramUsername: u,
         phone: phone.trim() || null,
@@ -541,27 +548,37 @@ export function AccountsPage(): JSX.Element {
               proxyPassword: proxyPass.trim() || null
             }
           : {}),
-        ...(apiId && apiHash ? { mtprotoApiId: apiId, mtprotoApiHash: apiHash } : {})
+        ...(apiId && apiHash ? { mtprotoApiId: apiId, mtprotoApiHash: apiHash } : {}),
+        ...(sessionPaste ? { mtprotoSessionString: sessionPaste } : {})
       })
-      pushToast('Аккаунт и anti-detect профиль сохранены в MongoDB', 'ok')
+      const sessionSaved = res.account.hasMtprotoSession === true
+      pushToast(
+        sessionSaved
+          ? 'Акаунт, anti-detect профіль і MTProto session збережені'
+          : 'Аккаунт и anti-detect профиль сохранены в MongoDB',
+        'ok'
+      )
       closeAdd()
       await refetch()
 
-      setMtprotoAccount(res.account)
-      setMtprotoApiId(apiId)
-      setMtprotoApiHash(apiHash)
-      setMtprotoPhone(
-        phone.trim() ||
-          (res.account.phone && res.account.phone !== '—'
-            ? res.account.phone.replace(/[^\d+]/g, '') || res.account.phone.trim()
-            : '')
-      )
-      setMtprotoCode('')
-      setMtprotoPassword('')
-      setMtprotoAwait2fa(false)
-      setMtprotoErr(null)
-      setMtprotoCodeHint(null)
-      setMtprotoForceSms(false)
+      const needsMtprotoLogin = !sessionSaved && apiId && apiHash
+      if (needsMtprotoLogin) {
+        setMtprotoAccount(res.account)
+        setMtprotoApiId(apiId)
+        setMtprotoApiHash(apiHash)
+        setMtprotoPhone(
+          phone.trim() ||
+            (res.account.phone && res.account.phone !== '—'
+              ? res.account.phone.replace(/[^\d+]/g, '') || res.account.phone.trim()
+              : '')
+        )
+        setMtprotoCode('')
+        setMtprotoPassword('')
+        setMtprotoAwait2fa(false)
+        setMtprotoErr(null)
+        setMtprotoCodeHint(null)
+        setMtprotoForceSms(false)
+      }
 
       const tc = window.trafficCloud
       if (tc?.openBrowserProfile && res.launch) {
@@ -602,6 +619,7 @@ export function AccountsPage(): JSX.Element {
     proxyPass,
     addMtprotoApiId,
     addMtprotoApiHash,
+    addMtprotoSession,
     refetch,
     closeAdd,
     pushToast
@@ -775,7 +793,8 @@ export function AccountsPage(): JSX.Element {
                   MTProto API (опционально)
                 </p>
                 <p className="text-[12px] text-zinc-500">
-                  Якщо вкажете тут — після збереження відкриється вхід по коду / session string.
+                  Вкажіть api_id/api_hash. Якщо вставите session string — збережеться одразу; інакше після
+                  збереження відкриється вхід по коду.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block">
@@ -803,6 +822,17 @@ export function AccountsPage(): JSX.Element {
                     />
                   </label>
                 </div>
+                <label className="block">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Session string (опционально)
+                  </span>
+                  <textarea
+                    value={addMtprotoSession}
+                    onChange={(e) => setAddMtprotoSession(e.target.value)}
+                    className="mt-2 min-h-[72px] w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-[12px] text-white outline-none focus:border-accent/35"
+                    placeholder="1AAg… — збережеться автоматично разом з акаунтом"
+                  />
+                </label>
               </div>
 
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

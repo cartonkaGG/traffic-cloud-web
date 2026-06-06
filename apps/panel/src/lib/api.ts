@@ -623,6 +623,7 @@ export async function apiCreateTelegramAccount(
     proxyPassword?: string | null
     mtprotoApiId?: string | number
     mtprotoApiHash?: string
+    mtprotoSessionString?: string
   }
 ): Promise<{
   account: TelegramAccountModel
