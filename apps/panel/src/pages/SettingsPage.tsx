@@ -6,6 +6,8 @@ import {
   apiDeleteTelegramMtproto,
   apiGetTelegramMtproto,
   apiPutTelegramMtproto,
+  apiTelegramMtprotoComplete,
+  apiTelegramMtprotoSendCode,
   type TelegramMtprotoStatus
 } from '@/lib/api'
 
@@ -33,6 +35,25 @@ export function SettingsPage(): JSX.Element {
   const [tgSession, setTgSession] = useState('')
   const [tgBusy, setTgBusy] = useState(false)
   const [tgMsg, setTgMsg] = useState<string | null>(null)
+  const [loginPhone, setLoginPhone] = useState('')
+  const [loginCode, setLoginCode] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginForceSms, setLoginForceSms] = useState(false)
+  const [loginBusy, setLoginBusy] = useState(false)
+  const [loginAwait2fa, setLoginAwait2fa] = useState(false)
+  const [loginHint, setLoginHint] = useState<string | null>(null)
+
+  const hasApiHashInput = tgApiHash.trim().length > 0 || tgStatus?.workspace.hasApiHash === true
+  const canMtprotoLogin = tgApiId.trim().length > 0 && hasApiHashInput
+
+  function mtprotoCredsBody(): { apiId?: string; apiHash?: string } {
+    const apiId = tgApiId.trim()
+    const apiHash = tgApiHash.trim()
+    return {
+      ...(apiId ? { apiId } : {}),
+      ...(apiHash ? { apiHash } : {})
+    }
+  }
 
   const loadTg = useCallback(async () => {
     if (!workspaceId || status !== 'online') return
@@ -129,14 +150,8 @@ export function SettingsPage(): JSX.Element {
           api_hash.
         </p>
         <p className="text-[13px] leading-relaxed text-zinc-500">
-          <span className="text-zinc-400">Строка сессии:</span> в терминале из папки{' '}
-          <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[12px] text-zinc-300">server</code>{' '}
-          выполните{' '}
-          <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-[12px] text-zinc-300">
-            npm run telegram:login
-          </code>
-          — после входа по SMS скопируйте выведенную строку <code className="text-zinc-400">TELEGRAM_SESSION_STRING=…</code>{' '}
-          сюда (или в .env на сервере).
+          <span className="text-zinc-400">Session string</span> генерується автоматично після входу в Telegram
+          (номер → код → 2FA за потреби). Вставляти вручну не потрібно.
         </p>
         {tgStatus ? (
           <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-zinc-400">
@@ -185,19 +200,171 @@ export function SettingsPage(): JSX.Element {
             placeholder={tgStatus?.workspace.hasApiHash ? '••••••••' : 'hex-строка из my.telegram.org'}
           />
         </label>
+        {canMtprotoLogin ? (
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 space-y-4">
+            <div className="text-[13px] font-medium text-zinc-200">Увійти в Telegram</div>
+            {loginHint ? <p className="text-[12px] text-sky-200/90">{loginHint}</p> : null}
+            {loginAwait2fa ? (
+              <p className="text-[12px] text-amber-200/90">Введіть пароль двофакторної аутентифікації.</p>
+            ) : null}
+
+            {!loginAwait2fa ? (
+              <>
+                <label className="block">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Телефон
+                  </span>
+                  <input
+                    value={loginPhone}
+                    onChange={(e) => setLoginPhone(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                    placeholder="+380…"
+                    autoComplete="tel"
+                  />
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-[12px] text-zinc-500">
+                  <input
+                    type="checkbox"
+                    checked={loginForceSms}
+                    onChange={(e) => setLoginForceSms(e.target.checked)}
+                    className="rounded border-white/20 bg-black/40"
+                  />
+                  Надіслати код SMS
+                </label>
+                <button
+                  type="button"
+                  disabled={loginBusy || status !== 'online' || !workspaceId || !loginPhone.trim()}
+                  onClick={() => {
+                    if (!workspaceId) return
+                    setLoginBusy(true)
+                    setLoginHint(null)
+                    setTgMsg(null)
+                    void (async () => {
+                      try {
+                        const r = await apiTelegramMtprotoSendCode(workspaceId, {
+                          ...mtprotoCredsBody(),
+                          phone: loginPhone.trim(),
+                          forceSMS: loginForceSms
+                        })
+                        setLoginHint(
+                          r.isCodeViaApp
+                            ? 'Код надіслано в додаток Telegram.'
+                            : 'Код надіслано SMS — введіть його нижче.'
+                        )
+                      } catch (e) {
+                        setTgMsg(e instanceof Error ? e.message : String(e))
+                      } finally {
+                        setLoginBusy(false)
+                      }
+                    })()
+                  }}
+                  className="rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-medium text-white hover:bg-white/[0.1] disabled:opacity-40"
+                >
+                  Надіслати код
+                </button>
+                <label className="block">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Код з Telegram / SMS
+                  </span>
+                  <input
+                    value={loginCode}
+                    onChange={(e) => setLoginCode(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                    placeholder="12345"
+                    autoComplete="one-time-code"
+                  />
+                </label>
+              </>
+            ) : null}
+
+            <label className="block">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                Пароль 2FA (якщо увімкнено)
+              </span>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                autoComplete="current-password"
+              />
+            </label>
+
+            <motion.button
+              type="button"
+              disabled={loginBusy || status !== 'online' || !workspaceId}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="rounded-xl border border-accent/35 bg-accent/15 px-4 py-2 text-[13px] font-semibold text-accent hover:bg-accent/20 disabled:opacity-40"
+              onClick={() => {
+                if (!workspaceId) return
+                setLoginBusy(true)
+                setTgMsg(null)
+                void (async () => {
+                  try {
+                    const r = await apiTelegramMtprotoComplete(workspaceId, {
+                      ...mtprotoCredsBody(),
+                      phoneCode: loginCode,
+                      password: loginPassword.trim() || undefined
+                    })
+                    if (!r.ok) {
+                      if (r.twoFactorRequired) {
+                        setLoginAwait2fa(true)
+                        setLoginHint('Потрібен пароль 2FA.')
+                      } else {
+                        setTgMsg(r.message)
+                      }
+                      return
+                    }
+                    setTgSession(r.sessionString)
+                    setLoginAwait2fa(false)
+                    setLoginCode('')
+                    setLoginPassword('')
+                    await apiPutTelegramMtproto(workspaceId, {
+                      apiId: tgApiId.trim() || undefined,
+                      apiHash: tgApiHash.trim() || undefined,
+                      sessionString: r.sessionString
+                    })
+                    setTgMsg(
+                      r.telegramUsername
+                        ? `Session string згенеровано (@${r.telegramUsername}) і збережено.`
+                        : 'Session string згенеровано і збережено.'
+                    )
+                    await loadTg()
+                    await refetch()
+                  } catch (e) {
+                    setTgMsg(e instanceof Error ? e.message : String(e))
+                  } finally {
+                    setLoginBusy(false)
+                  }
+                })()
+              }}
+            >
+              {loginBusy ? 'Вхід…' : 'Отримати session string'}
+            </motion.button>
+          </div>
+        ) : (
+          <p className="text-[12px] text-zinc-600">
+            Заповніть App api_id та App api_hash — з’явиться форма входу для автоматичного session string.
+          </p>
+        )}
+
         <label className="block">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Session string {tgStatus?.workspace.hasSession ? '(оставьте пустым, чтобы не менять)' : ''}
+            Session string{' '}
+            {tgSession.trim() || tgStatus?.workspace.hasSession
+              ? '(згенеровано автоматично)'
+              : ''}
           </div>
           <textarea
             value={tgSession}
-            onChange={(e) => setTgSession(e.target.value)}
+            readOnly
             autoComplete="off"
-            className="mt-2 min-h-[88px] w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-[12px] text-white outline-none focus:border-accent/35"
+            className="mt-2 min-h-[72px] w-full rounded-xl border border-white/[0.10] bg-black/40 px-4 py-3 font-mono text-[12px] text-zinc-400 outline-none"
             placeholder={
               tgStatus?.workspace.hasSession
-                ? '•••• (сохранено в базе)'
-                : 'вставьте строку после telegram:login'
+                ? '•••• (збережено в базі — увійдіть знову, щоб оновити)'
+                : 'З’явиться після входу в Telegram'
             }
           />
         </label>

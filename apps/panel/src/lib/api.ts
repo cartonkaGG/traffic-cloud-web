@@ -535,6 +535,70 @@ export async function apiDeleteTelegramMtproto(workspaceId: string): Promise<{ o
   })
 }
 
+export async function apiTelegramMtprotoSendCode(
+  workspaceId: string,
+  body: { apiId?: string | number; apiHash?: string; phone: string; forceSMS?: boolean }
+): Promise<{ ok: boolean; isCodeViaApp: boolean }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/settings/telegram-mtproto/send-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export type MtprotoWorkspaceCompleteResponse =
+  | {
+      ok: true
+      sessionString: string
+      telegramUsername: string | null
+      phone: string | null
+    }
+  | { ok: false; twoFactorRequired: true }
+  | { ok: false; message: string }
+
+export async function apiTelegramMtprotoComplete(
+  workspaceId: string,
+  body: {
+    apiId?: string | number
+    apiHash?: string
+    phoneCode: string
+    password?: string | null
+  }
+): Promise<MtprotoWorkspaceCompleteResponse> {
+  const base = getApiBaseUrl()
+  const token = getAccessToken()
+  const res = await fetch(`${base}/v1/workspaces/${workspaceId}/settings/telegram-mtproto/complete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(body)
+  })
+  const j = (await res.json()) as {
+    ok?: boolean
+    sessionString?: string
+    telegramUsername?: string | null
+    phone?: string | null
+    error?: string
+    hint?: string
+  }
+  if (res.ok && typeof j.sessionString === 'string') {
+    return {
+      ok: true,
+      sessionString: j.sessionString,
+      telegramUsername: j.telegramUsername ?? null,
+      phone: j.phone ?? null
+    }
+  }
+  if (j.error === 'two_factor_required' || j.error === 'password_required') {
+    return { ok: false, twoFactorRequired: true }
+  }
+  const message = typeof j.hint === 'string' && j.hint ? j.hint : `${j.error ?? 'error'} (${res.status})`
+  return { ok: false, message }
+}
+
 export type AntidetectLaunchPayload = {
   profileId: string
   userAgent: string
