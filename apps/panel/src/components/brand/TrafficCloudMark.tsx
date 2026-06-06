@@ -24,7 +24,7 @@ export default function TrafficCloudMark({
   return (
     <div className={`relative inline-block ${markClass} ${className}`.trim()}>
       <svg
-        viewBox={`0 0 ${CLOUD_VIEWBOX.w} ${CLOUD_VIEWBOX.h}`}
+        viewBox={`${CLOUD_VIEWBOX.x} ${CLOUD_VIEWBOX.y} ${CLOUD_VIEWBOX.w} ${CLOUD_VIEWBOX.h}`}
         width={size}
         height={height}
         className="neon-cloud-svg block overflow-visible"
