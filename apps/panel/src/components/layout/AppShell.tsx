@@ -17,6 +17,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { motion } from 'framer-motion'
 import { PanelBrand } from '@/components/brand/PanelBrand'
+import { useInboxNotify } from '@/context/InboxNotifyContext'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
@@ -51,6 +52,7 @@ const sections: NavSection[] = [
 
 export function AppShell(): JSX.Element {
   const { isAdmin } = useAuth()
+  const { unreadTotal } = useInboxNotify()
 
   const systemItems: NavItem[] = [
     { to: '/settings', label: 'Настройки', icon: Settings, end: false },
@@ -107,7 +109,14 @@ export function AppShell(): JSX.Element {
                             className={`relative z-10 h-[18px] w-[18px] ${isActive ? 'text-accent' : 'text-zinc-500 group-hover:text-zinc-300'}`}
                             aria-hidden
                           />
-                          <span className="relative z-10">{item.label}</span>
+                          <span className="relative z-10 flex flex-1 items-center justify-between gap-2">
+                            {item.label}
+                            {item.to === '/inbox' && unreadTotal > 0 ? (
+                              <span className="rounded-full bg-accent/25 px-2 py-0.5 text-[10px] font-bold text-accent">
+                                {unreadTotal > 99 ? '99+' : unreadTotal}
+                              </span>
+                            ) : null}
+                          </span>
                         </>
                       )}
                     </NavLink>

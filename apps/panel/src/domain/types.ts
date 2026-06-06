@@ -96,6 +96,8 @@ export type LogEventKind =
   | 'system'
   /** Критичні події outreach (бан/ліміт) — показ у дзвіночку зверху */
   | 'outreach_alert'
+  /** Вхідне повідомлення в Telegram inbox */
+  | 'inbox_message'
 
 export interface BrowserFingerprintStub {
   userAgent: string

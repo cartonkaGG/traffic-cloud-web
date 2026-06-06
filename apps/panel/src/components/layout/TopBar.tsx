@@ -36,6 +36,7 @@ function formatBellTime(ts: number): string {
 
 function kindShort(kind: string): string {
   if (kind === 'outreach_alert') return 'Важливо'
+  if (kind === 'inbox_message') return 'Вхідні'
   return kind.replaceAll('_', ' ')
 }
 
@@ -61,7 +62,11 @@ export function TopBar(): JSX.Element {
   const bellFeed = useMemo(() => entries.slice(0, 35), [entries])
 
   const unreadAlertCount = useMemo(
-    () => entries.filter((e) => e.kind === 'outreach_alert' && e.ts > lastReadBellTs).length,
+    () =>
+      entries.filter(
+        (e) =>
+          (e.kind === 'outreach_alert' || e.kind === 'inbox_message') && e.ts > lastReadBellTs
+      ).length,
     [entries, lastReadBellTs]
   )
 
@@ -177,7 +182,7 @@ export function TopBar(): JSX.Element {
                   <div className="border-b border-white/[0.06] px-4 py-2">
                     <div className="text-sm font-semibold text-white">Сповіщення</div>
                     <div className="text-[11px] text-zinc-500">
-                      Критичні події outreach і останні записи з логів
+                      Вхідні повідомлення, критичні події outreach і логи
                     </div>
                   </div>
                   <div className="max-h-[min(70vh,420px)] overflow-y-auto px-2 py-2">
@@ -186,12 +191,30 @@ export function TopBar(): JSX.Element {
                     ) : (
                       bellFeed.map((e) => {
                         const critical = e.kind === 'outreach_alert'
+                        const inbox = e.kind === 'inbox_message'
+                        const accountId =
+                          typeof e.meta?.accountId === 'string' ? e.meta.accountId : null
+                        const peerKey =
+                          typeof e.meta?.peerKey === 'string' ? e.meta.peerKey : null
                         return (
-                          <div
+                          <button
                             key={e.id}
+                            type="button"
+                            onClick={() => {
+                              if (inbox && accountId) {
+                                const q = new URLSearchParams({ account: accountId })
+                                if (peerKey) q.set('peer', peerKey)
+                                navigate(`/inbox?${q.toString()}`)
+                                setBellOpen(false)
+                              }
+                            }}
                             className={[
-                              'mb-1 rounded-xl px-3 py-2.5 text-left transition-colors',
-                              critical ? 'bg-rose-500/10 border border-rose-400/20' : 'hover:bg-white/[0.04]'
+                              'mb-1 w-full rounded-xl px-3 py-2.5 text-left transition-colors',
+                              critical
+                                ? 'bg-rose-500/10 border border-rose-400/20'
+                                : inbox
+                                  ? 'border border-accent/15 bg-accent/5 hover:bg-accent/10'
+                                  : 'hover:bg-white/[0.04]'
                             ].join(' ')}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -200,7 +223,9 @@ export function TopBar(): JSX.Element {
                                   'shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
                                   critical
                                     ? 'border-rose-400/30 bg-rose-500/20 text-rose-100'
-                                    : 'border-white/10 bg-white/[0.06] text-zinc-400'
+                                    : inbox
+                                      ? 'border-accent/25 bg-accent/15 text-accent'
+                                      : 'border-white/10 bg-white/[0.06] text-zinc-400'
                                 ].join(' ')}
                               >
                                 {kindShort(e.kind)}
@@ -210,7 +235,7 @@ export function TopBar(): JSX.Element {
                               </span>
                             </div>
                             <p className="mt-1.5 text-[12px] leading-snug text-zinc-200">{e.message}</p>
-                          </div>
+                          </button>
                         )
                       })
                     )}

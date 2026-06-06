@@ -7,6 +7,7 @@ import { SoftwareProvider } from './context/SoftwareContext'
 import { ToastProvider } from './context/ToastContext'
 import { LogProvider } from './context/LogContext'
 import { WorkspaceDataProvider } from './context/WorkspaceDataContext'
+import { InboxNotifyProvider } from './context/InboxNotifyContext'
 import './styles/globals.css'
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/app'
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
           <ToastProvider>
             <LogProvider>
               <WorkspaceDataProvider>
-                <App />
+                <InboxNotifyProvider>
+                  <App />
+                </InboxNotifyProvider>
               </WorkspaceDataProvider>
             </LogProvider>
           </ToastProvider>

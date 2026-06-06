@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ExternalLink, Loader2, MessageCircle, RefreshCw, Send } from 'lucide-react'
+import { Bell, ExternalLink, Loader2, MessageCircle, RefreshCw, Send } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useInboxNotify } from '@/context/InboxNotifyContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 import { useToast } from '@/context/ToastContext'
 import type { TelegramAccountModel } from '@/domain/types'
@@ -38,8 +39,13 @@ function accountLabel(a: TelegramAccountModel): string {
 export function InboxPage(): JSX.Element {
   const { bundle, workspaceId, status } = useWorkspaceData()
   const { pushToast } = useToast()
+  const { setInboxFocus, suppressPeerBriefly, refreshNow } = useInboxNotify()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
+    return Notification.permission
+  })
 
   const accounts = useMemo(
     () => (bundle?.telegramAccounts ?? []).filter((a) => a.hasMtprotoSession === true),
@@ -68,12 +74,28 @@ export function InboxPage(): JSX.Element {
 
   const activeDialog = dialogs.find((d) => d.peerKey === peerKey) ?? null
 
+  const peerParam = searchParams.get('peer') ?? ''
+
   useEffect(() => {
-    if (!selectedAccountId) return
-    if (accountIdParam !== selectedAccountId) {
-      setSearchParams({ account: selectedAccountId }, { replace: true })
-    }
+    if (!selectedAccountId || accountIdParam === selectedAccountId) return
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('account', selectedAccountId)
+        return next
+      },
+      { replace: true }
+    )
   }, [selectedAccountId, accountIdParam, setSearchParams])
+
+  useEffect(() => {
+    if (peerParam) setPeerKey(peerParam)
+  }, [peerParam])
+
+  useEffect(() => {
+    setInboxFocus(selectedAccountId || null, peerKey)
+    return () => setInboxFocus(null, null)
+  }, [selectedAccountId, peerKey, setInboxFocus])
 
   const loadDialogs = useCallback(async () => {
     if (!workspaceId || status !== 'online' || !selectedAccountId) return
@@ -93,8 +115,9 @@ export function InboxPage(): JSX.Element {
       pushToast(msg, 'error')
     } finally {
       setDialogsBusy(false)
+      refreshNow()
     }
-  }, [workspaceId, status, selectedAccountId, pushToast])
+  }, [workspaceId, status, selectedAccountId, pushToast, refreshNow])
 
   const loadMessages = useCallback(async () => {
     if (!workspaceId || status !== 'online' || !selectedAccountId || !peerKey) {
@@ -131,6 +154,7 @@ export function InboxPage(): JSX.Element {
     setSendBusy(true)
     try {
       await apiInboxSend(workspaceId, selectedAccountId, { peerKey, text })
+      suppressPeerBriefly(selectedAccountId, peerKey)
       setReplyText('')
       pushToast('Повідомлення надіслано', 'ok')
       await loadMessages()
@@ -148,8 +172,23 @@ export function InboxPage(): JSX.Element {
     replyText,
     pushToast,
     loadMessages,
-    loadDialogs
+    loadDialogs,
+    suppressPeerBriefly
   ])
+
+  const enableBrowserNotify = useCallback(async () => {
+    if (!('Notification' in window)) {
+      pushToast('Браузер не підтримує сповіщення', 'error')
+      return
+    }
+    const p = await Notification.requestPermission()
+    setNotifyPermission(p)
+    if (p === 'granted') {
+      pushToast('Сповіщення увімкнено — отримаєте їх, коли вкладка у фоні', 'ok')
+    } else if (p === 'denied') {
+      pushToast('Сповіщення заблоковано в налаштуваннях браузера', 'error')
+    }
+  }, [pushToast])
 
   const openTelegramWeb = useCallback(async () => {
     if (!workspaceId || !selectedAccount) return
@@ -225,6 +264,16 @@ export function InboxPage(): JSX.Element {
             <RefreshCw className={`h-3.5 w-3.5 ${dialogsBusy ? 'animate-spin' : ''}`} aria-hidden />
             Оновити
           </button>
+          {notifyPermission !== 'granted' && notifyPermission !== 'unsupported' ? (
+            <button
+              type="button"
+              onClick={() => void enableBrowserNotify()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-[12px] font-medium text-amber-100 hover:border-amber-400/40"
+            >
+              <Bell className="h-3.5 w-3.5" aria-hidden />
+              Увімкнути сповіщення
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={telegramWebBusy || !selectedAccount}
@@ -259,7 +308,13 @@ export function InboxPage(): JSX.Element {
                   <button
                     key={d.peerKey}
                     type="button"
-                    onClick={() => setPeerKey(d.peerKey)}
+                    onClick={() => {
+                      setPeerKey(d.peerKey)
+                      const next = new URLSearchParams(searchParams)
+                      next.set('account', selectedAccountId)
+                      next.set('peer', d.peerKey)
+                      setSearchParams(next, { replace: true })
+                    }}
                     className={[
                       'w-full border-b border-white/[0.04] px-4 py-3 text-left transition-colors',
                       active ? 'bg-accent/10' : 'hover:bg-white/[0.03]'

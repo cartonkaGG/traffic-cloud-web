@@ -19,6 +19,8 @@ function kindClasses(kind: LogEventKind): string {
       return 'border-orange-400/20 bg-orange-400/10 text-orange-200'
     case 'outreach_alert':
       return 'border-rose-400/30 bg-rose-500/15 text-rose-100'
+    case 'inbox_message':
+      return 'border-accent/25 bg-accent/10 text-accent'
     default:
       return 'border-sky-400/20 bg-sky-400/10 text-sky-200'
   }
