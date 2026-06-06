@@ -121,7 +121,7 @@ export function AppShell(): JSX.Element {
             Швидкий старт
           </div>
           <p className="text-[12px] leading-relaxed text-zinc-500">
-            1. Акаунт + session · 2. Парсер чатів · 3. Розсилка. Проксі — лише в формі акаунта, якщо потрібен.
+            1. Акаунт + SOCKS5 + session · 2. Парсер · 3. Розсилка · 4. Telegram Web для відповідей.
           </p>
         </div>
       </Sidebar>

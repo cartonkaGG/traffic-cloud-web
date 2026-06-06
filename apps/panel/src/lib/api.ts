@@ -646,12 +646,47 @@ export async function apiDeleteTelegramAccount(
   })
 }
 
+export async function apiUpdateTelegramAccountProxy(
+  workspaceId: string,
+  accountId: string,
+  body: {
+    proxyHost?: string | null
+    proxyPort?: number | null
+    proxyProtocol?: 'http' | 'socks5'
+    proxyUsername?: string | null
+    proxyPassword?: string | null
+  }
+): Promise<{ ok: true; account: TelegramAccountModel }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/proxy`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiGetTelegramWebLaunch(
+  workspaceId: string,
+  accountId: string
+): Promise<{
+  ok: true
+  webUrl: string
+  launch: AntidetectLaunchPayload
+  mtprotoProxyMode: 'socks5' | 'direct'
+}> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/telegram-web-launch`)
+}
+
 export async function apiTelegramAccountMtprotoSendCode(
   workspaceId: string,
   accountId: string,
   body: { phone?: string; forceSMS?: boolean; apiId?: string | number; apiHash?: string },
   init?: Pick<RequestInit, 'signal'>
-): Promise<{ ok: true; isCodeViaApp: boolean; httpProxySkipped: boolean }> {
+): Promise<{
+  ok: true
+  isCodeViaApp: boolean
+  httpProxySkipped: boolean
+  mtprotoProxyMode?: 'socks5' | 'http_ignored' | 'direct'
+}> {
   return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/mtproto/send-code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

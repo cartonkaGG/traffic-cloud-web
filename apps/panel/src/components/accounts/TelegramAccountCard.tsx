@@ -1,4 +1,4 @@
-import { Circle, Trash2 } from 'lucide-react'
+import { Circle, MessageCircle, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { TelegramAccountModel } from '@/domain/types'
 import { formatActivityLabel } from '@/lib/formatActivity'
@@ -26,9 +26,11 @@ export function TelegramAccountCard({
   index,
   proxyLabel,
   onOpenMtprotoLogin,
+  onOpenTelegramWeb,
   onOpenSpam,
   onDeleteAccount,
   mtprotoBusy,
+  telegramWebBusy,
   spamBusy,
   deleteBusy
 }: {
@@ -36,9 +38,11 @@ export function TelegramAccountCard({
   index: number
   proxyLabel?: string | null
   onOpenMtprotoLogin?: (account: TelegramAccountModel) => void
+  onOpenTelegramWeb?: (account: TelegramAccountModel) => void
   onOpenSpam?: (account: TelegramAccountModel) => void
   onDeleteAccount?: (account: TelegramAccountModel) => void
   mtprotoBusy?: boolean
+  telegramWebBusy?: boolean
   spamBusy?: boolean
   deleteBusy?: boolean
 }): JSX.Element {
@@ -85,10 +89,22 @@ export function TelegramAccountCard({
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 <span>Отправлено сегодня · {account.sentToday}</span>
                 <span className="text-zinc-600">·</span>
-                <span>Прокси · {proxyLabel ?? '—'}</span>
+                <span>
+                  Проксі · {proxyLabel ?? '—'}
+                  {account.mtprotoUsesProxy ? ' (SOCKS5 MTProto)' : account.hasProxy ? ' (HTTP — не для session)' : ''}
+                </span>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!onOpenTelegramWeb || telegramWebBusy === true}
+                onClick={() => onOpenTelegramWeb?.(account)}
+                className="rounded-lg border border-sky-400/25 bg-sky-500/10 px-3 py-1.5 text-[12px] font-medium text-sky-100 transition-colors hover:border-sky-400/40 hover:bg-sky-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Відкрити Telegram Web для відповідей (у десктоп-додатку — через проксі акаунта)"
+              >
+                {telegramWebBusy ? '…' : 'Telegram Web'}
+              </button>
               <button
                 type="button"
                 disabled={!onOpenMtprotoLogin || mtprotoBusy === true}

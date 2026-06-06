@@ -135,6 +135,12 @@ export interface TelegramAccountModel {
   mtprotoApiId?: number | null
   /** api_id + api_hash збережені для цього акаунта */
   hasMtprotoApiCreds?: boolean
+  hasProxy?: boolean
+  /** SOCKS5 — для MTProto session і розсилки */
+  mtprotoUsesProxy?: boolean
+  proxyHost?: string | null
+  proxyPort?: number | null
+  proxyProtocol?: 'http' | 'socks5' | null
 }
 
 export interface ProxyEndpointModel {

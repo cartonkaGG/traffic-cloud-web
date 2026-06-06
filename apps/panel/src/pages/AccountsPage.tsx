@@ -12,8 +12,10 @@ import {
   apiTelegramAccountMtprotoImportSession,
   apiTelegramAccountMtprotoSendCode,
   apiTelegramAccountOutreachStart,
-  apiTelegramAccountsBulkAbout
+  apiTelegramAccountsBulkAbout,
+  apiUpdateTelegramAccountProxy
 } from '@/lib/api'
+import { openTelegramForAccount } from '@/lib/openTelegramForAccount'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
@@ -57,7 +59,7 @@ export function AccountsPage(): JSX.Element {
   const [phone, setPhone] = useState('')
   const [proxyHost, setProxyHost] = useState('')
   const [proxyPort, setProxyPort] = useState('')
-  const [proxyType, setProxyType] = useState<'http' | 'socks5'>('http')
+  const [proxyType, setProxyType] = useState<'http' | 'socks5'>('socks5')
   const [proxyUser, setProxyUser] = useState('')
   const [proxyPass, setProxyPass] = useState('')
   const [addMtprotoApiId, setAddMtprotoApiId] = useState('')
@@ -83,6 +85,12 @@ export function AccountsPage(): JSX.Element {
   const [mtprotoApiHash, setMtprotoApiHash] = useState('')
   const [mtprotoSessionPaste, setMtprotoSessionPaste] = useState('')
   const [mtprotoUseSessionPaste, setMtprotoUseSessionPaste] = useState(false)
+  const [mtprotoProxyHost, setMtprotoProxyHost] = useState('')
+  const [mtprotoProxyPort, setMtprotoProxyPort] = useState('')
+  const [mtprotoProxyType, setMtprotoProxyType] = useState<'http' | 'socks5'>('socks5')
+  const [mtprotoProxyUser, setMtprotoProxyUser] = useState('')
+  const [mtprotoProxyPass, setMtprotoProxyPass] = useState('')
+  const [telegramWebAccountId, setTelegramWebAccountId] = useState<string | null>(null)
   const mtprotoRequestAbortRef = useRef<AbortController | null>(null)
 
   function mtprotoNeedsApiInput(): boolean {
@@ -124,7 +132,7 @@ export function AccountsPage(): JSX.Element {
     setPhone('')
     setProxyHost('')
     setProxyPort('')
-    setProxyType('http')
+    setProxyType('socks5')
     setProxyUser('')
     setProxyPass('')
     setAddMtprotoApiId('')
@@ -174,8 +182,81 @@ export function AccountsPage(): JSX.Element {
     setMtprotoApiHash('')
     setMtprotoSessionPaste('')
     setMtprotoUseSessionPaste(false)
+    setMtprotoProxyHost(account.proxyHost?.trim() ?? '')
+    setMtprotoProxyPort(account.proxyPort ? String(account.proxyPort) : '')
+    setMtprotoProxyType(account.proxyProtocol === 'http' ? 'http' : 'socks5')
+    setMtprotoProxyUser('')
+    setMtprotoProxyPass('')
     setMtprotoAccount(account)
   }, [])
+
+  const persistMtprotoProxy = useCallback(async (): Promise<boolean> => {
+    if (!workspaceId || status !== 'online' || !mtprotoAccount) return false
+    const host = mtprotoProxyHost.trim()
+    let port: number | null = null
+    if (host) {
+      const parsed = parsePort(mtprotoProxyPort)
+      if (parsed === null) {
+        setMtprotoErr('Порт проксі: число 1–65535')
+        return false
+      }
+      port = parsed
+    }
+    try {
+      const pass = mtprotoProxyPass.trim()
+      const r = await apiUpdateTelegramAccountProxy(workspaceId, mtprotoAccount.id, {
+        proxyHost: host || null,
+        proxyPort: port,
+        proxyProtocol: mtprotoProxyType,
+        proxyUsername: mtprotoProxyUser.trim() || null,
+        ...(pass ? { proxyPassword: pass } : {})
+      })
+      setMtprotoAccount(r.account)
+      await refetch()
+      return true
+    } catch (e) {
+      setMtprotoErr(e instanceof Error ? e.message : String(e))
+      return false
+    }
+  }, [
+    workspaceId,
+    status,
+    mtprotoAccount,
+    mtprotoProxyHost,
+    mtprotoProxyPort,
+    mtprotoProxyType,
+    mtprotoProxyUser,
+    mtprotoProxyPass,
+    refetch
+  ])
+
+  const openTelegramWeb = useCallback(
+    async (account: TelegramAccountModel) => {
+      if (!workspaceId || status !== 'online') {
+        pushToast('Немає підключення до API', 'error')
+        return
+      }
+      setTelegramWebAccountId(account.id)
+      try {
+        const r = await openTelegramForAccount(workspaceId, account)
+        if (!r.ok) {
+          pushToast(r.error, 'error')
+          return
+        }
+        if (r.mode === 'electron') {
+          pushToast('Telegram Web відкрито з проксі цього акаунта', 'ok')
+        } else {
+          pushToast(
+            'Відкрито web.telegram.org. Для проксі в браузері використовуйте десктоп-додаток Traffic Cloud.',
+            'info'
+          )
+        }
+      } finally {
+        setTelegramWebAccountId(null)
+      }
+    },
+    [workspaceId, status, pushToast]
+  )
 
   const closeMtprotoModal = useCallback(() => {
     mtprotoRequestAbortRef.current?.abort()
@@ -190,6 +271,11 @@ export function AccountsPage(): JSX.Element {
     setMtprotoApiHash('')
     setMtprotoSessionPaste('')
     setMtprotoUseSessionPaste(false)
+    setMtprotoProxyHost('')
+    setMtprotoProxyPort('')
+    setMtprotoProxyType('socks5')
+    setMtprotoProxyUser('')
+    setMtprotoProxyPass('')
   }, [])
 
   const sendMtprotoCode = useCallback(async () => {
@@ -207,6 +293,7 @@ export function AccountsPage(): JSX.Element {
       setMtprotoErr('Вкажіть номер телефона')
       return
     }
+    if (!(await persistMtprotoProxy())) return
     mtprotoRequestAbortRef.current?.abort()
     const ac = new AbortController()
     mtprotoRequestAbortRef.current = ac
@@ -228,13 +315,16 @@ export function AccountsPage(): JSX.Element {
           ? 'Код у застосунку Telegram на цьому номері. За потреби увімкніть «Лише SMS» і надішліть код знову.'
           : 'Код надіслано SMS.'
       )
-      if (r.httpProxySkipped) {
+      if (r.mtprotoProxyMode === 'socks5') {
+        pushToast('Код надіслано через SOCKS5 — у Telegram буде IP проксі', 'ok')
+      } else if (r.httpProxySkipped || r.mtprotoProxyMode === 'http_ignored') {
         pushToast(
-          'Для MTProto HTTP-проксі не підтримується GramJS — з’єднання з Telegram без проксі. Для проксі використайте SOCKS5 у картці акаунта.',
-          'info'
+          'HTTP-проксі не працює для MTProto. Оберіть SOCKS5 перед входом — інакше в сесії буде IP сервера API.',
+          'error'
         )
+      } else {
+        pushToast('Код надіслано (без проксі — IP сервера API)', 'info')
       }
-      pushToast('Код надіслано', 'ok')
     } catch (e) {
       if (ac.signal.aborted) return
       const msg = e instanceof Error ? e.message : String(e)
@@ -252,6 +342,7 @@ export function AccountsPage(): JSX.Element {
     mtprotoForceSms,
     mtprotoApiId,
     mtprotoApiHash,
+    persistMtprotoProxy,
     pushToast
   ])
 
@@ -269,6 +360,7 @@ export function AccountsPage(): JSX.Element {
       setMtprotoErr('Вставте session string')
       return
     }
+    if (!(await persistMtprotoProxy())) return
     setMtprotoBusy(true)
     setMtprotoErr(null)
     try {
@@ -300,7 +392,8 @@ export function AccountsPage(): JSX.Element {
     mtprotoSessionPaste,
     refetch,
     pushToast,
-    closeMtprotoModal
+    closeMtprotoModal,
+    persistMtprotoProxy
   ])
 
   const completeMtprotoLogin = useCallback(async () => {
@@ -826,8 +919,8 @@ export function AccountsPage(): JSX.Element {
                     disabled={!proxyHost.trim()}
                     className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   >
+                    <option value="socks5">SOCKS5 (рекомендовано)</option>
                     <option value="http">HTTP</option>
-                    <option value="socks5">SOCKS5</option>
                   </select>
                 </label>
               </div>
@@ -1071,6 +1164,45 @@ export function AccountsPage(): JSX.Element {
                   </div>
                 </div>
               )}
+
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4 space-y-3">
+                <p className="text-[12px] text-amber-100/90">
+                  <strong className="font-medium">SOCKS5 проксі</strong> — щоб у Telegram (активні сесії) був IP
+                  проксі, а не сервера API. Збережіть перед «Надіслати код» або вставкою session.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Host</span>
+                    <input
+                      value={mtprotoProxyHost}
+                      onChange={(e) => setMtprotoProxyHost(e.target.value)}
+                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                      placeholder="proxy.example.com"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Порт</span>
+                    <input
+                      value={mtprotoProxyPort}
+                      onChange={(e) => setMtprotoProxyPort(e.target.value)}
+                      inputMode="numeric"
+                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                      placeholder="1080"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Тип</span>
+                    <select
+                      value={mtprotoProxyType}
+                      onChange={(e) => setMtprotoProxyType(e.target.value === 'http' ? 'http' : 'socks5')}
+                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                    >
+                      <option value="socks5">SOCKS5 (для MTProto)</option>
+                      <option value="http">HTTP (лише браузер)</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
 
               <div className="flex gap-2">
                 <button
@@ -1347,6 +1479,8 @@ export function AccountsPage(): JSX.Element {
         spamBusyId={spamBusy && spamAccount ? spamAccount.id : null}
         deletingAccountId={deletingAccountId}
         onOpenMtprotoLogin={openMtprotoModal}
+        onOpenTelegramWeb={(a) => void openTelegramWeb(a)}
+        telegramWebAccountId={telegramWebAccountId}
         onOpenSpam={openSpamModal}
         onDeleteAccount={deleteTelegramAccount}
       />
@@ -1362,6 +1496,8 @@ function AccountsGrid({
   spamBusyId,
   deletingAccountId,
   onOpenMtprotoLogin,
+  onOpenTelegramWeb,
+  telegramWebAccountId,
   onOpenSpam,
   onDeleteAccount
 }: {
@@ -1369,9 +1505,11 @@ function AccountsGrid({
   proxyLabel: Record<string, string>
   sortKey: SortKey
   mtprotoBusyId: string | null
+  telegramWebAccountId: string | null
   spamBusyId: string | null
   deletingAccountId: string | null
   onOpenMtprotoLogin: (account: TelegramAccountModel) => void
+  onOpenTelegramWeb: (account: TelegramAccountModel) => void
   onOpenSpam: (account: TelegramAccountModel) => void
   onDeleteAccount: (account: TelegramAccountModel) => void
 }): JSX.Element {
@@ -1407,6 +1545,8 @@ function AccountsGrid({
           index={i}
           proxyLabel={a.proxyId ? proxyLabel[a.proxyId] : null}
           onOpenMtprotoLogin={onOpenMtprotoLogin}
+          onOpenTelegramWeb={onOpenTelegramWeb}
+          telegramWebBusy={telegramWebAccountId === a.id}
           onOpenSpam={onOpenSpam}
           onDeleteAccount={onDeleteAccount}
           mtprotoBusy={mtprotoBusyId === a.id}
