@@ -86,4 +86,78 @@
       0 0 0 1px rgba(94, 200, 255, 0.2),
       0 20px 50px -24px var(--hub-glow, rgba(94, 200, 255, 0.45));
   }
+
+  .cyber-grid {
+    background-size: 40px 40px;
+    background-image:
+      linear-gradient(to right, rgba(244, 63, 94, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
+  }
+}
+
+.billing-aurora {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(34, 211, 238, 0.14), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 80% 30%, rgba(99, 102, 241, 0.12), transparent 50%),
+    radial-gradient(ellipse 70% 40% at 50% 90%, rgba(244, 63, 94, 0.06), transparent 55%);
+  animation: billing-aurora-shift 12s ease-in-out infinite;
+}
+
+@keyframes billing-aurora-shift {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.billing-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.billing-ambient-glow--cyan {
+  top: 18%;
+  left: 50%;
+  width: min(720px, 92vw);
+  height: min(380px, 48vh);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, hsl(195 100% 50% / 0.14), transparent 68%);
+}
+
+.billing-ambient-glow--indigo {
+  bottom: 8%;
+  right: -5%;
+  width: min(420px, 55vw);
+  height: min(320px, 40vh);
+  background: radial-gradient(ellipse, hsl(244 63% 55% / 0.06), transparent 70%);
+}
+
+.billing-ambient-floater {
+  position: absolute;
+  opacity: 0.09;
+  animation: billing-ambient-floater 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes billing-ambient-floater {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.07;
+  }
+  50% {
+    transform: translate(0, -16px) rotate(4deg);
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .billing-aurora,
+  .billing-ambient-floater {
+    animation: none;
+  }
 }

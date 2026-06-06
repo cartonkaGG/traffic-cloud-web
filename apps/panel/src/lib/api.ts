@@ -25,6 +25,7 @@ export type SubscriptionInfo = {
 
 export type BillingPlanInfo = {
   monthlyPriceUsd: number
+  compareAtPriceUsd?: number | null
   currency: string
   planTitle: string
 }
@@ -340,6 +341,24 @@ export async function apiAdminUpdatePlan(body: Partial<BillingPlanInfo>): Promis
 
 export async function apiAdminPayments(): Promise<{ items: AdminPaymentRow[] }> {
   return fetchJson<{ items: AdminPaymentRow[] }>('/v1/admin/payments')
+}
+
+export type AdminGrantSubscriptionResponse = {
+  ok: boolean
+  email: string
+  periodDays: number
+  subscription: SubscriptionInfo
+}
+
+export async function apiAdminGrantSubscription(
+  email: string,
+  periodDays?: number
+): Promise<AdminGrantSubscriptionResponse> {
+  return fetchJson<AdminGrantSubscriptionResponse>('/v1/admin/subscriptions/grant', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase(), periodDays })
+  })
 }
 
 export async function apiFetchBundle(workspaceId: string): Promise<WorkspaceBundle> {

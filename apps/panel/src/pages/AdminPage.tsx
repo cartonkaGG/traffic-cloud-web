@@ -7,6 +7,7 @@ import { AccountMenu } from '@/components/account/AccountMenu'
 import { useAuth } from '@/context/AuthContext'
 import {
   apiAdminGetPlan,
+  apiAdminGrantSubscription,
   apiAdminPayments,
   apiAdminUpdatePlan,
   type AdminPaymentRow
@@ -24,6 +25,7 @@ export function AdminPage(): JSX.Element {
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
   const [price, setPrice] = useState('29')
+  const [compareAtPrice, setCompareAtPrice] = useState('')
   const [currency, setCurrency] = useState('usd')
   const [planTitle, setPlanTitle] = useState('DM Outreach — 1 місяць')
   const [payments, setPayments] = useState<AdminPaymentRow[]>([])
@@ -31,6 +33,10 @@ export function AdminPage(): JSX.Element {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [grantEmail, setGrantEmail] = useState('')
+  const [grantDays, setGrantDays] = useState('30')
+  const [granting, setGranting] = useState(false)
+  const [grantOk, setGrantOk] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isAdmin) return
@@ -40,6 +46,11 @@ export function AdminPage(): JSX.Element {
       try {
         const [plan, pay] = await Promise.all([apiAdminGetPlan(), apiAdminPayments()])
         setPrice(String(plan.monthlyPriceUsd))
+        setCompareAtPrice(
+          plan.compareAtPriceUsd != null && plan.compareAtPriceUsd > 0
+            ? String(plan.compareAtPriceUsd)
+            : ''
+        )
         setCurrency(plan.currency)
         setPlanTitle(plan.planTitle)
         setPayments(pay.items)
@@ -70,6 +81,37 @@ export function AdminPage(): JSX.Element {
     )
   }
 
+  async function grantSubscription(e: FormEvent): Promise<void> {
+    e.preventDefault()
+    const email = grantEmail.trim().toLowerCase()
+    if (!email) return
+    setGranting(true)
+    setError(null)
+    setGrantOk(null)
+    try {
+      const days = Number(grantDays)
+      const res = await apiAdminGrantSubscription(
+        email,
+        Number.isFinite(days) && days > 0 ? days : 30
+      )
+      const end = res.subscription.currentPeriodEnd
+        ? new Intl.DateTimeFormat('uk-UA', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }).format(new Date(res.subscription.currentPeriodEnd))
+        : '—'
+      setGrantOk(`Підписку видано ${res.email} до ${end}`)
+      setGrantEmail('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setGranting(false)
+    }
+  }
+
   async function savePlan(e: FormEvent): Promise<void> {
     e.preventDefault()
     setSaving(true)
@@ -78,12 +120,31 @@ export function AdminPage(): JSX.Element {
     try {
       const num = Number(price)
       if (!Number.isFinite(num) || num <= 0) throw new Error('Некоректна ціна')
+      const compareRaw = compareAtPrice.trim()
+      let compareAtPriceUsd: number | null = null
+      if (compareRaw) {
+        const compareNum = Number(compareRaw)
+        if (!Number.isFinite(compareNum) || compareNum <= 0) {
+          throw new Error('Некоректна стара ціна')
+        }
+        if (compareNum <= num) {
+          throw new Error('Стара ціна має бути вищою за поточну (акційну)')
+        }
+        compareAtPriceUsd = compareNum
+      }
+
       const updated = await apiAdminUpdatePlan({
         monthlyPriceUsd: num,
+        compareAtPriceUsd,
         currency: currency.trim().toLowerCase(),
         planTitle: planTitle.trim()
       })
       setPrice(String(updated.monthlyPriceUsd))
+      setCompareAtPrice(
+        updated.compareAtPriceUsd != null && updated.compareAtPriceUsd > 0
+          ? String(updated.compareAtPriceUsd)
+          : ''
+      )
       setCurrency(updated.currency)
       setPlanTitle(updated.planTitle)
       setSaved(true)
@@ -129,6 +190,54 @@ export function AdminPage(): JSX.Element {
           <div className="mt-10 text-sm text-zinc-500">Завантаження…</div>
         ) : (
           <div className="mt-8 grid gap-6 lg:grid-cols-[340px_1fr]">
+            <div className="flex flex-col gap-6">
+            <form onSubmit={(ev) => void grantSubscription(ev)} className="glass-panel-strong h-fit p-6">
+              <h2 className="text-lg font-semibold text-white">Видати підписку</h2>
+              <p className="mt-1 text-[13px] text-zinc-500">
+                Активує Pro за email користувача (має бути зареєстрований). Лист надійде на пошту.
+              </p>
+
+              <label className="mt-5 block">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Email</span>
+                <input
+                  value={grantEmail}
+                  onChange={(ev) => setGrantEmail(ev.target.value)}
+                  type="email"
+                  placeholder="user@example.com"
+                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                />
+              </label>
+
+              <label className="mt-4 block">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Днів</span>
+                <input
+                  value={grantDays}
+                  onChange={(ev) => setGrantDays(ev.target.value)}
+                  type="number"
+                  min="1"
+                  max="365"
+                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                />
+              </label>
+
+              {grantOk ? (
+                <p className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-[13px] text-emerald-200">
+                  {grantOk}
+                </p>
+              ) : null}
+
+              <motion.button
+                type="submit"
+                disabled={granting || !grantEmail.trim()}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/35 bg-amber-500/15 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                <Shield className="h-4 w-4" />
+                Видати підписку
+              </motion.button>
+            </form>
+
             <form onSubmit={(ev) => void savePlan(ev)} className="glass-panel-strong h-fit p-6">
               <h2 className="text-lg font-semibold text-white">Ціна підписки</h2>
               <p className="mt-1 text-[13px] text-zinc-500">Зміни застосовуються до нових інвойсів NOWPayments.</p>
@@ -143,15 +252,35 @@ export function AdminPage(): JSX.Element {
               </label>
 
               <label className="mt-4 block">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Ціна (USD)</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Акційна ціна (USD)
+                </span>
                 <input
                   value={price}
                   onChange={(ev) => setPrice(ev.target.value)}
                   type="number"
-                  min="1"
+                  min="0.01"
                   step="0.01"
                   className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
                 />
+              </label>
+
+              <label className="mt-4 block">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Стара ціна (закреслена)
+                </span>
+                <input
+                  value={compareAtPrice}
+                  onChange={(ev) => setCompareAtPrice(ev.target.value)}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Порожньо — без знижки"
+                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-accent/35"
+                />
+                <p className="mt-1.5 text-[12px] text-zinc-600">
+                  Має бути вищою за акційну. Користувач бачить стару ціну закресленою.
+                </p>
               </label>
 
               <label className="mt-4 block">
@@ -183,6 +312,7 @@ export function AdminPage(): JSX.Element {
                 Зберегти
               </motion.button>
             </form>
+            </div>
 
             <div className="glass-panel overflow-hidden">
               <div className="border-b border-white/[0.06] px-5 py-4">

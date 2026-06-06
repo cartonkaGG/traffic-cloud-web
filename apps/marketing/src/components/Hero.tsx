@@ -1,13 +1,16 @@
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowRight, ChevronDown, Shield } from 'lucide-react';
 import CloudLogo3D from './CloudLogo3D';
 import HeroAmbient from './HeroAmbient';
 import { ScrollReveal } from './ScrollReveal';
+import { usePanelAdmin } from '../lib/usePanelAdmin';
 
 interface HeroProps {
   onContactClick: () => void;
 }
 
 export default function Hero({ onContactClick }: HeroProps) {
+  const { isAdmin } = usePanelAdmin();
+
   return (
     <section
       id="hero"
@@ -35,11 +38,20 @@ export default function Hero({ onContactClick }: HeroProps) {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                {isAdmin ? (
+                  <a
+                    href="/app/admin"
+                    className="hero-cta-secondary min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-amber-100 text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 border border-amber-500/35 bg-amber-950/25 hover:bg-amber-950/40 touch-manipulation"
+                  >
+                    <Shield className="w-4 h-4 text-amber-300" />
+                    <span>Адмін-панель</span>
+                  </a>
+                ) : null}
                 <a
                   href="/app/"
                   className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 group touch-manipulation"
                 >
-                  <span>Увійти в панель</span>
+                  <span>{isAdmin ? 'Панель' : 'Увійти в панель'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
                 <button
