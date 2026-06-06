@@ -116,6 +116,8 @@ export function BillingPage(): JSX.Element {
 
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
+  const [phone, setPhone] = useState('')
+
   const [payNetwork, setPayNetwork] = useState<PayNetworkId>('trc20')
 
 
@@ -145,6 +147,8 @@ export function BillingPage(): JSX.Element {
       setPeriodEnd(data.subscription.currentPeriodEnd)
 
       setIsActive(data.subscription.isActive)
+
+      if (data.phone) setPhone(data.phone)
 
     } catch (e) {
 
@@ -192,7 +196,7 @@ export function BillingPage(): JSX.Element {
 
     try {
 
-      const checkout = await apiBillingCheckout(true, selectedNetwork.currency)
+      const checkout = await apiBillingCheckout(true, selectedNetwork.currency, phone)
 
       window.open(checkout.invoiceUrl, '_blank', 'noopener,noreferrer')
 
@@ -673,6 +677,23 @@ export function BillingPage(): JSX.Element {
                 </div>
 
 
+
+                <label className="mt-6 block">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Телефон для SMS
+                  </div>
+                  <input
+                    value={phone}
+                    onChange={(ev) => setPhone(ev.target.value)}
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="+380501234567"
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-accent/35"
+                  />
+                  <p className="mt-2 text-[12px] leading-relaxed text-zinc-500">
+                    SMS про оформлення, активацію та завершення підписки (Twilio).
+                  </p>
+                </label>
 
                 <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.08] bg-black/20 px-4 py-4 transition-colors hover:border-white/[0.12]">
 

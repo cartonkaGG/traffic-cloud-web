@@ -57,6 +57,7 @@ export type BootstrapResponse = {
 export type BillingStatusResponse = {
   subscription: SubscriptionInfo
   plan: BillingPlanInfo
+  phone?: string | null
 }
 
 export type CheckoutResponse = {
@@ -317,12 +318,17 @@ export async function apiBillingStatus(): Promise<BillingStatusResponse> {
 
 export async function apiBillingCheckout(
   acceptedTerms: boolean,
-  payCurrency: string
+  payCurrency: string,
+  phone?: string
 ): Promise<CheckoutResponse> {
   return fetchJson<CheckoutResponse>('/v1/billing/checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ acceptedTerms, payCurrency })
+    body: JSON.stringify({
+      acceptedTerms,
+      payCurrency,
+      ...(phone?.trim() ? { phone: phone.trim() } : {})
+    })
   })
 }
 
