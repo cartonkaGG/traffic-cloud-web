@@ -413,25 +413,29 @@ export function AccountsPage(): JSX.Element {
       return
     }
     const host = proxyHost.trim()
-    if (!host) {
-      setFormError('Укажите адрес прокси (host)')
-      return
-    }
-    const port = parsePort(proxyPort)
-    if (port === null) {
-      setFormError('Порт прокси: число 1–65535')
-      return
+    let port: number | undefined
+    if (host) {
+      const parsed = parsePort(proxyPort)
+      if (parsed === null) {
+        setFormError('Порт прокси: число 1–65535')
+        return
+      }
+      port = parsed
     }
     setBusy(true)
     try {
       const res = await apiCreateTelegramAccount(workspaceId, {
         telegramUsername: u,
         phone: phone.trim() || null,
-        proxyHost: host,
-        proxyPort: port,
-        proxyProtocol: proxyType,
-        proxyUsername: proxyUser.trim() || null,
-        proxyPassword: proxyPass.trim() || null
+        ...(host && port != null
+          ? {
+              proxyHost: host,
+              proxyPort: port,
+              proxyProtocol: proxyType,
+              proxyUsername: proxyUser.trim() || null,
+              proxyPassword: proxyPass.trim() || null
+            }
+          : {})
       })
       pushToast('Аккаунт и anti-detect профиль сохранены в MongoDB', 'ok')
       closeAdd()
@@ -613,8 +617,8 @@ export function AccountsPage(): JSX.Element {
                 <div>
                   <div className="text-sm font-semibold text-white">Новый Telegram-аккаунт</div>
                   <p className="mt-1 text-[13px] text-zinc-500">
-                    Прокси обязателен. После сохранения автоматически создаётся anti-detect профиль с тем же
-                    username и изолированной сессией браузера.
+                    Прокси необязателен — можно оставить поля пустыми. После сохранения автоматически создаётся
+                    anti-detect профиль с тем же username и изолированной сессией браузера.
                   </p>
                 </div>
                 <button
@@ -656,10 +660,14 @@ export function AccountsPage(): JSX.Element {
                 />
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  Прокси (опционально)
+                </p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <label className="block sm:col-span-2">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                    Прокси · host
+                    Host
                   </span>
                   <input
                     value={proxyHost}
@@ -677,7 +685,8 @@ export function AccountsPage(): JSX.Element {
                     value={proxyPort}
                     onChange={(e) => setProxyPort(e.target.value)}
                     inputMode="numeric"
-                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                    disabled={!proxyHost.trim()}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                     placeholder="1080"
                   />
                 </label>
@@ -688,7 +697,8 @@ export function AccountsPage(): JSX.Element {
                   <select
                     value={proxyType}
                     onChange={(e) => setProxyType(e.target.value === 'socks5' ? 'socks5' : 'http')}
-                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                    disabled={!proxyHost.trim()}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   >
                     <option value="http">HTTP</option>
                     <option value="socks5">SOCKS5</option>
@@ -696,14 +706,15 @@ export function AccountsPage(): JSX.Element {
                 </label>
               </div>
 
-              <label className="block">
+              <label className="mt-4 block">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                   Логин прокси (если есть)
                 </span>
                 <input
                   value={proxyUser}
                   onChange={(e) => setProxyUser(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                  disabled={!proxyHost.trim()}
+                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   autoComplete="off"
                 />
               </label>
@@ -715,10 +726,12 @@ export function AccountsPage(): JSX.Element {
                   type="password"
                   value={proxyPass}
                   onChange={(e) => setProxyPass(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                  disabled={!proxyHost.trim()}
+                  className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   autoComplete="new-password"
                 />
               </label>
+              </div>
 
               <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button

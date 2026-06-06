@@ -608,7 +608,7 @@ export type AntidetectLaunchPayload = {
     port: number
     username?: string | null
     password?: string | null
-  }
+  } | null
 }
 
 export async function apiCreateTelegramAccount(
@@ -616,9 +616,9 @@ export async function apiCreateTelegramAccount(
   body: {
     telegramUsername: string
     phone?: string | null
-    proxyHost: string
-    proxyPort: number
-    proxyProtocol: 'http' | 'socks5'
+    proxyHost?: string
+    proxyPort?: number
+    proxyProtocol?: 'http' | 'socks5'
     proxyUsername?: string | null
     proxyPassword?: string | null
   }
