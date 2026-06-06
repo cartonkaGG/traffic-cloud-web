@@ -68,42 +68,44 @@ export function AnalyticsPage(): JSX.Element {
     return { sent, failedRuns, okRuns, totalRuns: runs.length }
   }, [runs])
 
+  const sentDisplay = Math.max(a.sent, outreachAgg.sent)
+
   const cards = [
     {
-      label: 'Отправлено',
-      value: a.sent.toLocaleString('ru-RU'),
-      hint: 'За выбранный период (Mongo / workspace)',
+      label: 'Всього DM',
+      value: sentDisplay.toLocaleString('uk-UA'),
+      hint: 'Усі надіслані повідомлення (історія розсилок + лічильник)',
       icon: Send
     },
     {
       label: 'Доставлено',
-      value: a.delivered.toLocaleString('ru-RU'),
-      hint: 'Ориентировочно по статусам доставки',
+      value: Math.max(a.delivered, sentDisplay).toLocaleString('uk-UA'),
+      hint: 'Успішні відправки через MTProto',
       icon: MessageSquare
     },
     {
-      label: 'Ответы',
-      value: a.replies.toLocaleString('ru-RU'),
-      hint: 'Первый ответ в тредах DM',
-      icon: Reply
-    },
-    {
-      label: 'Ошибки',
-      value: a.failed.toLocaleString('ru-RU'),
-      hint: 'Не отправлено / отклонено (включая помилки DM outreach)',
+      label: 'Помилки',
+      value: Math.max(a.failed, outreachAgg.failedRuns).toLocaleString('uk-UA'),
+      hint: 'Невдалі DM та запуски без доставки',
       icon: Shield
     },
     {
-      label: 'Конверсия',
-      value: `${a.conversionRate}%`,
-      hint: 'Ответы / доставлено',
+      label: 'Успішні запуски',
+      value: String(outreachAgg.okRuns),
+      hint: `З ${outreachAgg.totalRuns} запусків розсилки`,
       icon: Zap
     },
     {
-      label: 'Активные аккаунты',
+      label: 'Активні акаунти',
       value: String(a.activeAccounts),
-      hint: 'В статусах active / warming',
+      hint: 'Статуси active / warming',
       icon: Activity
+    },
+    {
+      label: 'Відповіді',
+      value: a.replies.toLocaleString('uk-UA'),
+      hint: 'Відстеження відповідей — незабаром',
+      icon: Reply
     }
   ] as const
 
@@ -111,7 +113,7 @@ export function AnalyticsPage(): JSX.Element {
     <div className="space-y-8">
       <div>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-          Загальні метрики workspace та агрегати з локальної історії DM-запусків (розділ «Кампанії» → архів).
+          Реальні цифри з ваших розсилок. Після запуску DM у «Розсилка» дані з’являться тут автоматично.
         </p>
       </div>
 

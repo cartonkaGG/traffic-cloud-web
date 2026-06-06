@@ -49,30 +49,30 @@ export const analyticsSnapshot: AnalyticsSnapshot = {
 
 export const stats: StatItem[] = [
   {
-    label: 'Отправлено (24ч)',
-    value: '12 840',
-    delta: '+6.2%',
+    label: 'Надіслано (24 год)',
+    value: '0',
+    delta: '',
     positive: true,
     icon: Radio
   },
   {
-    label: 'Доставлено',
-    value: '12 102',
-    delta: '+5.1%',
+    label: 'Всього DM',
+    value: '0',
+    delta: '',
     positive: true,
     icon: MousePointerClick
   },
   {
-    label: 'Ответы',
-    value: '612',
-    delta: '+2.4%',
+    label: 'Помилки',
+    value: '0',
+    delta: '',
     positive: true,
     icon: TrendingUp
   },
   {
-    label: 'Конверсия DM',
-    value: '4.8%',
-    delta: '+0.3 п.п.',
+    label: 'Активні акаунти',
+    value: '0',
+    delta: '',
     positive: true,
     icon: BarChart3
   }

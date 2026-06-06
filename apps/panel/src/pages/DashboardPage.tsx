@@ -93,8 +93,8 @@ export function DashboardPage(): JSX.Element {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
         <p className="max-w-3xl text-sm leading-relaxed text-zinc-500">
-          Премиум-консоль для Telegram outreach: изолированные браузер-профили, прокси-слои, DM-кампании и
-          безопасные паузы.
+          Додайте Telegram-акаунт, розпарсіть чат і запустіть розсилку. Цифри нижче оновлюються після кожного
+          надісланого DM.
         </p>
         <span
           className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
@@ -132,7 +132,7 @@ export function DashboardPage(): JSX.Element {
               <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-500">
                 Telegram
               </div>
-              <div className="mt-1 text-lg font-semibold text-white">Аккаунты · быстрый статус</div>
+              <div className="mt-1 text-lg font-semibold text-white">Ваші акаунти</div>
             </div>
           </div>
           <div className="space-y-3">

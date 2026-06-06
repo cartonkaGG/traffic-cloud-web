@@ -23,13 +23,15 @@ export function StatCard({
             {item.label}
           </div>
           <div className="mt-3 text-3xl font-semibold tracking-tight text-white">{item.value}</div>
-          <div
-            className={`mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-              item.positive ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-zinc-400'
-            }`}
-          >
-            {item.delta}
-          </div>
+          {item.delta ? (
+            <div
+              className={`mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                item.positive ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-zinc-400'
+              }`}
+            >
+              {item.delta}
+            </div>
+          ) : null}
         </div>
         <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-accent shadow-inner">
           <Icon className="h-5 w-5" aria-hidden />

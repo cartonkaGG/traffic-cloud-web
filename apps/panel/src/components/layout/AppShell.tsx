@@ -10,7 +10,6 @@ import {
   Server,
   Settings,
   Shield,
-  Timer,
   Users,
   Mail,
   CreditCard
@@ -27,34 +26,28 @@ type NavSection = { title: string; items: NavItem[] }
 
 const sections: NavSection[] = [
   {
-    title: 'Операции',
+    title: 'Початок',
     items: [
-      { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
-      { to: '/browser', label: 'Anti-detect', icon: Globe, end: false },
-      { to: '/accounts', label: 'Аккаунты', icon: Users, end: false },
-      { to: '/proxy', label: 'Прокси', icon: Server, end: false }
+      { to: '/', label: 'Огляд', icon: LayoutDashboard, end: true },
+      { to: '/accounts', label: 'Акаунти', icon: Users, end: false },
+      { to: '/sources', label: 'Парсер чатів', icon: Link2, end: false },
+      { to: '/campaigns', label: 'Розсилка', icon: Megaphone, end: false }
     ]
   },
   {
-    title: 'Outreach',
+    title: 'Додатково',
     items: [
-      { to: '/sources', label: 'Источники / парсер', icon: Link2, end: false },
-      { to: '/messages', label: 'Сообщения', icon: Mail, end: false },
-      { to: '/filters', label: 'Фильтры', icon: Filter, end: false },
-      { to: '/humanization', label: 'Гуманизация', icon: Timer, end: false },
-      { to: '/campaigns', label: 'Кампании', icon: Megaphone, end: false }
-    ]
-  },
-  {
-    title: 'Аналитика',
-    items: [
-      { to: '/analytics', label: 'Аналитика', icon: BarChart3, end: false },
+      { to: '/messages', label: 'Шаблони', icon: Mail, end: false },
+      { to: '/filters', label: 'Фільтри', icon: Filter, end: false },
+      { to: '/browser', label: 'Браузер', icon: Globe, end: false },
+      { to: '/proxy', label: 'Проксі', icon: Server, end: false },
+      { to: '/analytics', label: 'Статистика', icon: BarChart3, end: false },
       { to: '/logs', label: 'Логи', icon: ScrollText, end: false }
     ]
   },
   {
     title: 'Система',
-    items: [{ to: '/settings', label: 'Настройки', icon: Settings, end: false }]
+    items: [{ to: '/settings', label: 'Налаштування', icon: Settings, end: false }]
   }
 ]
 
@@ -129,11 +122,10 @@ export function AppShell(): JSX.Element {
 
         <div className="mt-6 rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-4">
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Архитектура
+            Швидкий старт
           </div>
           <p className="text-[12px] leading-relaxed text-zinc-500">
-            Desktop shell + Node workers + MongoDB Atlas + Redis (опционально). Слой Anti-detect подключается как
-            отдельный сервис автоматизации браузера.
+            1. Додайте акаунт і session · 2. Розпарсіть чат · 3. Запустіть розсилку з розділу «Розсилка».
           </p>
         </div>
       </Sidebar>

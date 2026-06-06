@@ -10,18 +10,17 @@ import { getMarketingHomeUrl } from '@/lib/site'
 import { useLogs } from '@/context/LogContext'
 
 const ROUTE_TITLES: Record<string, { title: string; kicker?: string }> = {
-  '/': { title: 'Обзор', kicker: 'Операционная панель' },
-  '/browser': { title: 'Anti-detect браузер', kicker: 'Профили · изоляция · Telegram Web' },
-  '/accounts': { title: 'Аккаунты Telegram', kicker: 'Сессии · прокси · health' },
-  '/sources': { title: 'Парсер источников', kicker: 'Чаты · каналы · аудитория' },
-  '/messages': { title: 'Сообщения', kicker: 'Шаблоны · переменные · спинтакс' },
-  '/filters': { title: 'Фильтры', kicker: 'Аудитория · безопасность' },
-  '/humanization': { title: 'Гуманизация', kicker: 'Задержки · симуляция поведения' },
-  '/campaigns': { title: 'Кампании', kicker: 'DM outreach · очереди' },
-  '/proxy': { title: 'Прокси', kicker: 'HTTP · SOCKS5 · ротация' },
-  '/analytics': { title: 'Аналитика', kicker: 'Воронка · качество аккаунтов' },
-  '/logs': { title: 'Логи', kicker: 'События в реальном времени' },
-  '/settings': { title: 'Настройки', kicker: 'Трекинг бота · конверсии' }
+  '/': { title: 'Огляд', kicker: 'Головна панель' },
+  '/browser': { title: 'Браузер', kicker: 'Anti-detect профілі' },
+  '/accounts': { title: 'Акаунти Telegram', kicker: 'Session · проксі' },
+  '/sources': { title: 'Парсер чатів', kicker: 'Джерела · аудиторія' },
+  '/messages': { title: 'Шаблони', kicker: 'Тексти для DM' },
+  '/filters': { title: 'Фільтри', kicker: 'Кому писати · безпека' },
+  '/campaigns': { title: 'Розсилка', kicker: 'Запуск DM по базі' },
+  '/proxy': { title: 'Проксі', kicker: 'HTTP · SOCKS5' },
+  '/analytics': { title: 'Статистика', kicker: 'Надіслані · помилки' },
+  '/logs': { title: 'Логи', kicker: 'Події в реальному часі' },
+  '/settings': { title: 'Налаштування', kicker: 'MTProto · парсер' }
 }
 
 const BELL_LAST_READ_TS_KEY = 'trafficcloud-bell-last-read-ts'

@@ -13,7 +13,6 @@ import { BrowserProfilesPage } from './pages/BrowserProfilesPage'
 import { CampaignsPage } from './pages/CampaignsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { FiltersPage } from './pages/FiltersPage'
-import { HumanizationPage } from './pages/HumanizationPage'
 import { LogsPage } from './pages/LogsPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { ProxyPage } from './pages/ProxyPage'
@@ -149,7 +148,7 @@ export default function App(): JSX.Element {
         <Route path="sources" element={<SourcesPage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="filters" element={<FiltersPage />} />
-        <Route path="humanization" element={<HumanizationPage />} />
+        <Route path="humanization" element={<Navigate to="/campaigns" replace />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="logs" element={<LogsPage />} />
