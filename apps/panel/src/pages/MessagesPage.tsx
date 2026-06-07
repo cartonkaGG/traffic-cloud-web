@@ -8,8 +8,7 @@ import type { MessageTemplateModel } from '@/domain/types'
 import {
   apiCreateMessageTemplate,
   apiDeleteMessageTemplate,
-  apiSetActiveMessageTemplate,
-  apiUpdateMessageTemplate
+  apiSetActiveMessageTemplate
 } from '@/lib/api'
 import { renderMessageTemplate } from '@/lib/messageEngine'
 import { CampaignsSubNav } from '@/components/layout/CampaignsSubNav'
@@ -43,6 +42,18 @@ function parseBulkTemplates(raw: string): { title: string; content: string }[] {
   return out
 }
 
+function suggestForkTitle(base: string, templates: MessageTemplateModel[]): string {
+  const root = base.trim() || 'Шаблон'
+  let n = 2
+  let candidate = `${root} · v${n}`
+  const taken = new Set(templates.map((t) => templateTitle(t).trim().toLowerCase()).filter(Boolean))
+  while (taken.has(candidate.toLowerCase())) {
+    n++
+    candidate = `${root} · v${n}`
+  }
+  return candidate
+}
+
 export function MessagesPage(): JSX.Element {
   const { bundle, workspaceId, status, refetch } = useWorkspaceData()
   const { pushToast } = useToast()
@@ -52,10 +63,62 @@ export function MessagesPage(): JSX.Element {
   const [activeId, setActiveId] = useState<string>('')
   const [draftTitle, setDraftTitle] = useState('')
   const [draft, setDraft] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [forkFromId, setForkFromId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [bulkDraft, setBulkDraft] = useState('')
   const [creatingNew, setCreatingNew] = useState(false)
+
+  const active = useMemo(() => {
+    if (creatingNew) return undefined
+    return messageTemplates.find((t) => t.id === activeId) ?? messageTemplates[0]
+  }, [messageTemplates, activeId, creatingNew])
+
+  const enterForkMode = useCallback(
+    (t: MessageTemplateModel) => {
+      setCreatingNew(true)
+      setForkFromId(t.id)
+      setActiveId(t.id)
+      setDraftTitle(suggestForkTitle(templateTitle(t), messageTemplates))
+      setDraft(templateContent(t))
+    },
+    [messageTemplates]
+  )
+
+  const onDraftTitleChange = useCallback(
+    (value: string) => {
+      setDraftTitle(value)
+      if (!creatingNew && active) {
+        const origTitle = templateTitle(active).trim()
+        const origContent = templateContent(active)
+        if (value.trim() !== origTitle || draft.trim() !== origContent) {
+          setCreatingNew(true)
+          setForkFromId(active.id)
+          if (value.trim().toLowerCase() === origTitle.toLowerCase()) {
+            setDraftTitle(suggestForkTitle(origTitle, messageTemplates))
+          }
+        }
+      }
+    },
+    [active, creatingNew, draft, messageTemplates]
+  )
+
+  const onDraftContentChange = useCallback(
+    (value: string) => {
+      setDraft(value)
+      if (!creatingNew && active) {
+        const origTitle = templateTitle(active).trim()
+        const origContent = templateContent(active)
+        if (value.trim() !== origContent) {
+          setCreatingNew(true)
+          setForkFromId(active.id)
+          if (draftTitle.trim().toLowerCase() === origTitle.toLowerCase()) {
+            setDraftTitle(suggestForkTitle(origTitle, messageTemplates))
+          }
+        }
+      }
+    },
+    [active, creatingNew, draftTitle, messageTemplates]
+  )
 
   const activeTemplateSyncToken = useMemo(() => {
     const t = messageTemplates.find((x) => x.id === activeId)
@@ -94,11 +157,6 @@ export function MessagesPage(): JSX.Element {
     setDraftTitle(templateTitle(t))
   }, [activeId, activeTemplateSyncToken, creatingNew])
 
-  const active = useMemo(() => {
-    if (creatingNew) return undefined
-    return messageTemplates.find((t) => t.id === activeId) ?? messageTemplates[0]
-  }, [messageTemplates, activeId, creatingNew])
-
   const preview = useMemo(() => {
     return renderMessageTemplate(draft, {
       username: 'neo_wave',
@@ -112,7 +170,7 @@ export function MessagesPage(): JSX.Element {
     setActiveId(t.id)
     setDraft(templateContent(t))
     setDraftTitle(templateTitle(t))
-    setEditingId(null)
+    setForkFromId(null)
   }, [])
 
   const saveNewTemplate = useCallback(async () => {
@@ -140,9 +198,9 @@ export function MessagesPage(): JSX.Element {
     setBusy(true)
     try {
       const { template } = await apiCreateMessageTemplate(workspaceId, { title, content })
-      pushToast('Шаблон сохранён', 'ok')
+      pushToast(forkFromId ? 'Створено новий шаблон' : 'Шаблон сохранён', 'ok')
       setCreatingNew(false)
-      setEditingId(null)
+      setForkFromId(null)
       setActiveId(template.id)
       await refetch()
     } catch (e) {
@@ -150,41 +208,7 @@ export function MessagesPage(): JSX.Element {
     } finally {
       setBusy(false)
     }
-  }, [workspaceId, status, draftTitle, draft, messageTemplates, refetch, pushToast])
-
-  const updateCurrent = useCallback(async () => {
-    if (!workspaceId || status !== 'online' || !active) {
-      pushToast('Нет подключения к API', 'error')
-      return
-    }
-    const title = draftTitle.trim()
-    const content = draft.trim()
-    if (!title || !content) {
-      pushToast('Заполните название и текст', 'error')
-      return
-    }
-    const titleNorm = title.toLowerCase()
-    if (
-      messageTemplates.some(
-        (t) => t.id !== active.id && templateTitle(t).trim().toLowerCase() === titleNorm
-      )
-    ) {
-      pushToast('Шаблон з такою назвою вже є. Оберіть іншу назву.', 'error')
-      return
-    }
-    setBusy(true)
-    try {
-      await apiUpdateMessageTemplate(workspaceId, active.id, { title, content })
-      pushToast('Шаблон обновлён', 'ok')
-      setCreatingNew(false)
-      setEditingId(null)
-      await refetch()
-    } catch (e) {
-      pushToast(e instanceof Error ? e.message : String(e), 'error')
-    } finally {
-      setBusy(false)
-    }
-  }, [workspaceId, status, active, draftTitle, draft, messageTemplates, refetch, pushToast])
+  }, [workspaceId, status, draftTitle, draft, forkFromId, messageTemplates, refetch, pushToast])
 
   const removeTemplate = useCallback(
     async (t: MessageTemplateModel) => {
@@ -307,6 +331,8 @@ export function MessagesPage(): JSX.Element {
       <CampaignsSubNav />
       <p className="max-w-2xl text-sm text-zinc-500">
         Тексти для DM. Активний шаблон використовується при розсилці; підтримуються змінні та спінтакс.
+        Правки тексту завжди зберігаються як <span className="text-zinc-400">новий шаблон</span> — старий
+        залишається без змін.
       </p>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -365,17 +391,11 @@ export function MessagesPage(): JSX.Element {
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => {
-                        setCreatingNew(false)
-                        setEditingId(t.id)
-                        setActiveId(t.id)
-                        setDraftTitle(templateTitle(t))
-                        setDraft(templateContent(t))
-                      }}
+                      onClick={() => enterForkMode(t)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 hover:border-accent/25 hover:text-white disabled:opacity-40"
                     >
                       <Pencil className="h-3.5 w-3.5" aria-hidden />
-                      Править
+                      Нова версія
                     </button>
                     <button
                       type="button"
@@ -405,7 +425,7 @@ export function MessagesPage(): JSX.Element {
                   className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-[12px] font-medium text-emerald-100 hover:border-emerald-400/40 hover:bg-emerald-500/15"
                   onClick={() => {
                     setCreatingNew(true)
-                    setEditingId(null)
+                    setForkFromId(null)
                     setDraftTitle('')
                     setDraft('')
                   }}
@@ -436,7 +456,7 @@ export function MessagesPage(): JSX.Element {
               </span>
               <input
                 value={draftTitle}
-                onChange={(e) => setDraftTitle(e.target.value)}
+                onChange={(e) => onDraftTitleChange(e.target.value)}
                 className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
                 placeholder="Например Intro · cold DM"
               />
@@ -447,7 +467,7 @@ export function MessagesPage(): JSX.Element {
               </span>
               <textarea
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => onDraftContentChange(e.target.value)}
                 className="mt-2 min-h-[160px] w-full resize-y rounded-2xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-[13px] leading-relaxed text-zinc-100 outline-none focus:border-accent/35 focus:shadow-[0_0_0_4px_rgba(94,200,255,0.12)]"
                 spellCheck={false}
               />
@@ -462,21 +482,20 @@ export function MessagesPage(): JSX.Element {
                 className="inline-flex items-center gap-2 rounded-xl border border-accent/35 bg-accent/15 px-4 py-2.5 text-sm font-semibold text-accent hover:bg-accent/20 disabled:opacity-40"
               >
                 <Save className="h-4 w-4" aria-hidden />
-                {busy ? 'Сохранение…' : 'Сохранить шаблон'}
+                {busy
+                  ? 'Сохранение…'
+                  : creatingNew
+                    ? forkFromId
+                      ? 'Зберегти як новий шаблон'
+                      : 'Сохранить шаблон'
+                    : 'Сохранить шаблон'}
               </motion.button>
-              {active && editingId === active.id && !creatingNew ? (
-                <motion.button
-                  type="button"
-                  disabled={busy || status !== 'online'}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => void updateCurrent()}
-                  className="rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-sm font-medium text-zinc-200 hover:border-accent/30 hover:text-white disabled:opacity-40"
-                >
-                  Обновить текущий
-                </motion.button>
-              ) : null}
             </div>
+            {creatingNew && forkFromId ? (
+              <p className="mt-2 text-[12px] text-zinc-500">
+                Редагується копія — оригінальний шаблон не зміниться після збереження.
+              </p>
+            ) : null}
 
             <div className="mt-6 border-t border-white/[0.06] pt-5">
               <div className="flex flex-wrap items-center gap-2">
@@ -517,7 +536,16 @@ export function MessagesPage(): JSX.Element {
             </div>
             <div className="mt-3 text-[11px] text-zinc-600">
               Выбран в редакторе:{' '}
-              {creatingNew ? 'Новий шаблон' : active ? templateTitle(active) : '—'}
+              {creatingNew
+                ? forkFromId
+                  ? (() => {
+                      const src = messageTemplates.find((t) => t.id === forkFromId)
+                      return src ? `Нова версія (${templateTitle(src)})` : 'Нова версія'
+                    })()
+                  : 'Новий шаблон'
+                : active
+                  ? templateTitle(active)
+                  : '—'}
             </div>
           </div>
         </div>
