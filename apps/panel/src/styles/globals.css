@@ -145,6 +145,109 @@
   .vu-range {
     accent-color: hsl(195, 100%, 55%);
   }
+
+  .vu-loader-orbit {
+    position: relative;
+    width: 140px;
+    height: 140px;
+  }
+
+  .vu-loader-cloud {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: vu-cloud-float 3.2s ease-in-out infinite;
+  }
+
+  .vu-loader-ring {
+    position: absolute;
+    inset: 4px;
+    border-radius: 9999px;
+    border: 1px solid rgba(94, 200, 255, 0.18);
+    animation: vu-ring-spin 8s linear infinite;
+  }
+
+  .vu-loader-ring--delay {
+    inset: 0;
+    border-color: rgba(99, 102, 241, 0.12);
+    animation-duration: 12s;
+    animation-direction: reverse;
+  }
+
+  .vu-loader-ring::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 9999px;
+    background: hsl(195, 100%, 55%);
+    box-shadow: 0 0 12px 2px rgba(94, 200, 255, 0.7);
+  }
+
+  .vu-loader-progress {
+    position: absolute;
+    inset: -6px;
+    width: calc(100% + 12px);
+    height: calc(100% + 12px);
+    transform: rotate(-90deg);
+  }
+
+  .vu-loader-progress-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 3;
+  }
+
+  .vu-loader-progress-fill {
+    fill: none;
+    stroke: url(#vu-progress-gradient);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 328;
+    transition: stroke-dashoffset 0.35s ease-out;
+  }
+
+  .vu-loader-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: rgba(94, 200, 255, 0.85);
+    animation: vu-dot-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes vu-cloud-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.03);
+  }
+}
+
+@keyframes vu-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vu-dot-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
 }
 
 .billing-aurora {

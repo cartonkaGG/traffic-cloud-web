@@ -6,10 +6,29 @@ const CORE_BASE = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dis
 
 let ffmpeg: FFmpeg | null = null
 let loadPromise: Promise<FFmpeg> | null = null
+let preloadScheduled = false
 
 export type FfmpegLoadProgress = {
   phase: 'download' | 'ready'
   message: string
+}
+
+/** Дати браузеру намалювати UI перед важким завантаженням WASM. */
+export function yieldToPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
+export function preloadFfmpeg(): void {
+  if (ffmpeg?.loaded || loadPromise || preloadScheduled) return
+  preloadScheduled = true
+  const start = () => void loadFfmpeg().catch(() => {})
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => start(), { timeout: 4000 })
+  } else {
+    setTimeout(start, 1200)
+  }
 }
 
 export async function loadFfmpeg(
@@ -19,14 +38,15 @@ export async function loadFfmpeg(
   if (loadPromise) return loadPromise
 
   loadPromise = (async () => {
-    onStatus?.({ phase: 'download', message: 'Завантаження FFmpeg…' })
+    onStatus?.({ phase: 'download', message: 'Підготовка обробника…' })
+    await yieldToPaint()
     const instance = new FFmpeg()
     await instance.load({
       coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
       wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm')
     })
     ffmpeg = instance
-    onStatus?.({ phase: 'ready', message: 'FFmpeg готовий' })
+    onStatus?.({ phase: 'ready', message: 'Готово' })
     return instance
   })()
 
