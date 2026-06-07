@@ -122,8 +122,9 @@ export function SoftwareHubPage(): JSX.Element {
   function launch(product: SoftwareProduct): void {
     if (product.status !== 'active') return
     selectSoftware(product.id)
+    const target = product.id === 'video-uniquify' ? '/uniquify' : '/'
     if (canEnterPanel) {
-      navigate('/')
+      navigate(target)
       return
     }
     navigate('/billing?gate=1&from=hub')
@@ -190,7 +191,7 @@ export function SoftwareHubPage(): JSX.Element {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {SOFTWARE_PRODUCTS.map((product, index) => (
             <motion.div
               key={product.id}
@@ -208,7 +209,7 @@ export function SoftwareHubPage(): JSX.Element {
         </div>
 
         <div className="mt-auto pt-12 text-center text-[12px] text-zinc-600">
-          Traffic Cloud Hub · локальні дані workspace зберігаються на цьому ПК
+          Traffic Cloud Hub · DM Outreach локально · Video Uniquify у браузері
         </div>
       </main>
     </div>

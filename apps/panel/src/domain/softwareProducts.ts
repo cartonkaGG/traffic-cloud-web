@@ -56,9 +56,9 @@ export const SOFTWARE_PRODUCTS: SoftwareProduct[] = [
     name: 'Video Uniquify',
     shortName: 'Uniquify',
     description:
-      'Пакетна унікалізація відео для TikTok та Reels: кроп, шум, швидкість, метадані — кожна копія унікальна.',
-    version: '—',
-    status: 'coming_soon',
+      'Унікалізація відео для TikTok та Reels у браузері: кроп, колір, швидкість — кожна копія унікальна.',
+    version: '0.1.0',
+    status: 'active',
     icon: Clapperboard,
     accent: 'from-rose-500/20 via-orange-400/10 to-transparent',
     glow: 'rgba(251,113,133,0.38)'

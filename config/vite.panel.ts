@@ -17,6 +17,9 @@ export default defineConfig({
     }
   },
   plugins: [react()],
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
+  },
   build: {
     outDir: resolve(repoRoot, 'apps/marketing/dist/app'),
     emptyOutDir: true,

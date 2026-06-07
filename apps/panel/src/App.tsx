@@ -21,7 +21,9 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SoftwareHubPage } from './pages/SoftwareHubPage'
 import { SourcesPage } from './pages/SourcesPage'
+import { VideoUniquifyPage } from './pages/VideoUniquifyPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
+import { VideoUniquifyShell } from './components/layout/VideoUniquifyShell'
 import {
   BILLING_SUBSCRIBE_PATH,
   resolvePostAuthPath,
@@ -66,6 +68,14 @@ function Protected({
 function RequireSoftware({ children }: { children: ReactNode }): JSX.Element {
   const { selectedSoftwareId } = useSoftware()
   if (!selectedSoftwareId) return <Navigate to="/hub" replace />
+  if (selectedSoftwareId === 'video-uniquify') return <Navigate to="/uniquify" replace />
+  return <>{children}</>
+}
+
+function RequireVideoUniquify({ children }: { children: ReactNode }): JSX.Element {
+  const { selectedSoftwareId } = useSoftware()
+  if (!selectedSoftwareId) return <Navigate to="/hub" replace />
+  if (selectedSoftwareId !== 'video-uniquify') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -132,6 +142,20 @@ export default function App(): JSX.Element {
           </Protected>
         }
       />
+      <Route
+        path="/uniquify"
+        element={
+          <Protected>
+            <RequireVideoUniquify>
+              <RequireSubscription>
+                <VideoUniquifyShell />
+              </RequireSubscription>
+            </RequireVideoUniquify>
+          </Protected>
+        }
+      >
+        <Route index element={<VideoUniquifyPage />} />
+      </Route>
       <Route
         path="/"
         element={
