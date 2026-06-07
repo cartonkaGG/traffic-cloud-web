@@ -1,3 +1,5 @@
+export const SESSION_REVOKED_EVENT = 'traffic-cloud:session-revoked'
+
 const TOKEN_KEY = 'traffic-cloud-access-token'
 const EMAIL_KEY = 'traffic-cloud-user-email'
 const ROLE_KEY = 'traffic-cloud-user-role'
@@ -25,6 +27,15 @@ export function clearAccessSession(): void {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(EMAIL_KEY)
     localStorage.removeItem(ROLE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function emitSessionRevoked(): void {
+  clearAccessSession()
+  try {
+    window.dispatchEvent(new CustomEvent(SESSION_REVOKED_EVENT))
   } catch {
     /* ignore */
   }

@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext'
 import { useWorkspaceData } from './context/WorkspaceDataContext'
 import { useSoftware } from './context/SoftwareContext'
 import { hasPanelAccess } from './lib/subscriptionAccess'
+import { SessionRevokedListener } from './components/auth/SessionRevokedListener'
 import { AppShell } from './components/layout/AppShell'
 import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
 import { AccountsPage } from './pages/AccountsPage'
@@ -88,7 +89,9 @@ function RequireSubscription({ children }: { children: ReactNode }): JSX.Element
 
 export default function App(): JSX.Element {
   return (
-    <Routes>
+    <>
+      <SessionRevokedListener />
+      <Routes>
       <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
       <Route
         path="/auth"
@@ -157,5 +160,6 @@ export default function App(): JSX.Element {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }

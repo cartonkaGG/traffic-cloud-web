@@ -12,7 +12,7 @@ import type {
   TelegramAccountModel,
   UserFiltersConfig
 } from '@/domain/types'
-import { getAccessToken } from './authSession'
+import { emitSessionRevoked, getAccessToken } from './authSession'
 import { getApiBaseUrl } from './settings'
 
 export type UserRole = 'user' | 'admin'
@@ -142,6 +142,12 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
       if (typeof j.error === 'string') errKey = j.error
     } catch {
       /* not JSON */
+    }
+    if (res.status === 401 && errKey === 'session_revoked') {
+      emitSessionRevoked()
+      throw new Error(
+        hint ?? 'Вхід виконано з іншого пристрою. Увійдіть знову.'
+      )
     }
     const message =
       hint ??

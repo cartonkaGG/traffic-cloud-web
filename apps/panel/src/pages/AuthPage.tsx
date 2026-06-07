@@ -20,6 +20,7 @@ export function AuthPage(): JSX.Element {
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || BILLING_SUBSCRIBE_PATH
   const subscribeFlow = redirectTo.includes('/billing')
+  const sessionRevoked = searchParams.get('reason') === 'session_revoked'
 
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -255,7 +256,11 @@ export function AuthPage(): JSX.Element {
             <div className="mt-6 text-xl font-semibold tracking-tight text-white">
               {subscribeFlow ? 'Увійдіть для підписки' : title}
             </div>
-            {subscribeFlow ? (
+            {sessionRevoked ? (
+              <p className="mt-2 text-sm leading-relaxed text-amber-200/90">
+                Вхід виконано з іншого пристрою. Увійдіть знову, щоб продовжити тут.
+              </p>
+            ) : subscribeFlow ? (
               <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                 Спочатку увійдіть або зареєструйтесь — потім відкриється сторінка оплати.
               </p>
