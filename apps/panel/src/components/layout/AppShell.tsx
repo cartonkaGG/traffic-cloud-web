@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  BarChart3,
   Filter,
   LayoutDashboard,
   Link2,
@@ -40,7 +39,6 @@ const sections: NavSection[] = [
     items: [
       { to: '/messages', label: 'Шаблони', icon: Mail, end: false },
       { to: '/filters', label: 'Фільтри', icon: Filter, end: false },
-      { to: '/analytics', label: 'Статистика', icon: BarChart3, end: false },
       { to: '/logs', label: 'Логи', icon: ScrollText, end: false }
     ]
   },

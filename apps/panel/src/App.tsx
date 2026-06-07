@@ -7,7 +7,6 @@ import { hasPanelAccess } from './lib/subscriptionAccess'
 import { AppShell } from './components/layout/AppShell'
 import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
 import { AccountsPage } from './pages/AccountsPage'
-import { AnalyticsPage } from './pages/AnalyticsPage'
 import { AuthPage } from './pages/AuthPage'
 import { CampaignsPage } from './pages/CampaignsPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -150,7 +149,7 @@ export default function App(): JSX.Element {
         <Route path="filters" element={<FiltersPage />} />
         <Route path="humanization" element={<Navigate to="/campaigns" replace />} />
         <Route path="campaigns" element={<CampaignsPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="analytics" element={<Navigate to="/" replace />} />
         <Route path="logs" element={<LogsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

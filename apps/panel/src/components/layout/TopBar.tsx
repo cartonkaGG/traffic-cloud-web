@@ -17,7 +17,6 @@ const ROUTE_TITLES: Record<string, { title: string; kicker?: string }> = {
   '/filters': { title: 'Фільтри', kicker: 'Кому писати · безпека' },
   '/campaigns': { title: 'Розсилка', kicker: 'Запуск DM по базі' },
   '/inbox': { title: 'Повідомлення', kicker: 'Відповіді через MTProto' },
-  '/analytics': { title: 'Статистика', kicker: 'Надіслані · помилки' },
   '/logs': { title: 'Логи', kicker: 'Події в реальному часі' },
   '/settings': { title: 'Налаштування', kicker: 'MTProto · парсер' }
 }
