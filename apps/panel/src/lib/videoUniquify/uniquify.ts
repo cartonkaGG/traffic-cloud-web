@@ -1,12 +1,12 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg'
 
-export type UniquifyPreset = 'tiktok' | 'reels'
 export type UniquifyStrength = 'light' | 'medium' | 'hard'
 
-const PRESET_SIZE: Record<UniquifyPreset, { w: number; h: number }> = {
-  tiktok: { w: 1080, h: 1920 },
-  reels: { w: 1080, h: 1920 }
-}
+/** Єдиний вертикальний формат виходу — 9:16. */
+export const UNIQUIFY_OUTPUT = { w: 1080, h: 1920 } as const
+
+/** За замовчуванням — максимальна унікалізація. */
+export const UNIQUIFY_STRENGTH: UniquifyStrength = 'hard'
 
 function rand(min: number, max: number): number {
   return min + Math.random() * (max - min)
@@ -18,9 +18,9 @@ function strengthMul(strength: UniquifyStrength): number {
   return 2
 }
 
-function buildVideoFilter(preset: UniquifyPreset, strength: UniquifyStrength): string {
+function buildVideoFilter(strength: UniquifyStrength): string {
   const m = strengthMul(strength)
-  const { w, h } = PRESET_SIZE[preset]
+  const { w, h } = UNIQUIFY_OUTPUT
   const cropPct = 1 - rand(0.004 * m, 0.018 * m)
   const br = rand(-0.025 * m, 0.025 * m)
   const ct = 1 + rand(-0.035 * m, 0.035 * m)
@@ -47,11 +47,11 @@ export async function renderUniquifiedCopy(params: {
   ffmpeg: FFmpeg
   inputName: string
   outputName: string
-  preset: UniquifyPreset
-  strength: UniquifyStrength
+  strength?: UniquifyStrength
   onProgress?: (ratio: number) => void
 }): Promise<void> {
-  const { ffmpeg, inputName, outputName, preset, strength, onProgress } = params
+  const { ffmpeg, inputName, outputName, onProgress } = params
+  const strength = params.strength ?? UNIQUIFY_STRENGTH
   const progressHandler = ({ progress }: { progress: number }) => {
     onProgress?.(Math.min(1, Math.max(0, progress)))
   }
@@ -61,7 +61,7 @@ export async function renderUniquifiedCopy(params: {
       '-i',
       inputName,
       '-vf',
-      buildVideoFilter(preset, strength),
+      buildVideoFilter(strength),
       '-af',
       buildAudioFilter(strength),
       '-c:v',
