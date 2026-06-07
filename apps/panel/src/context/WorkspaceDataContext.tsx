@@ -9,6 +9,7 @@ import {
   type ReactNode
 } from 'react'
 import type { ChatSourceModel, LiveLogEntry } from '@/domain/types'
+import type { WorkspaceBundle } from '@/lib/api'
 import {
   apiBootstrap,
   apiFetchBundle,
@@ -16,7 +17,6 @@ import {
   type BillingPlanInfo,
   type SubscriptionInfo,
   type UserRole,
-  type WorkspaceBundle
 } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { getApiBaseUrl } from '@/lib/settings'
@@ -44,6 +44,19 @@ type WorkspaceDataValue = {
 
 const WorkspaceDataContext = createContext<WorkspaceDataValue | null>(null)
 
+/** Не даємо старому refetch затерти новіші джерела після create. */
+function mergeWorkspaceBundle(
+  prev: WorkspaceBundle | null,
+  next: WorkspaceBundle
+): WorkspaceBundle {
+  if (!prev?.chatSources?.length) return next
+  const byId = new Map(next.chatSources.map((s) => [s.id, s]))
+  for (const s of prev.chatSources) {
+    if (!byId.has(s.id)) byId.set(s.id, s)
+  }
+  return { ...next, chatSources: Array.from(byId.values()) }
+}
+
 export function WorkspaceDataProvider({ children }: { children: ReactNode }): JSX.Element {
   const { replaceEntries, ingest } = useLogs()
   const { isAuthenticated, setRole } = useAuth()
@@ -61,6 +74,7 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
   const [apiBaseUrl, setApiBaseUrl] = useState(() => getApiBaseUrl())
   const wsRef = useRef<WebSocket | null>(null)
   const widRef = useRef<string | null>(null)
+  const loadGenerationRef = useRef(0)
 
   const connectWs = useCallback(
     (wid: string, base: string) => {
@@ -114,12 +128,14 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
     const base = getApiBaseUrl()
     setApiBaseUrl(base)
     const background = options?.background ?? false
+    const generation = ++loadGenerationRef.current
     if (!background) {
       setStatus('loading')
       setError(null)
     }
     try {
       const boot = await apiBootstrap()
+      if (generation !== loadGenerationRef.current) return
       setWorkspaceId(boot.workspaceId)
       setWorkspaceName(boot.workspaceName)
       if (boot.role) {
@@ -129,11 +145,13 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
       setSubscription(boot.subscription ?? null)
       setBillingPlan(boot.billingPlan ?? null)
       const b = await apiFetchBundle(boot.workspaceId)
-      setBundle(b)
+      if (generation !== loadGenerationRef.current) return
+      setBundle((prev) => mergeWorkspaceBundle(prev, b))
       replaceEntries(b.logs)
       setStatus('online')
       connectWs(boot.workspaceId, base)
     } catch (e) {
+      if (generation !== loadGenerationRef.current) return
       if (!background) {
         setStatus('offline')
         setWorkspaceId(null)

@@ -12,6 +12,7 @@ import {
   apiUpdateMessageTemplate
 } from '@/lib/api'
 import { renderMessageTemplate } from '@/lib/messageEngine'
+import { CampaignsSubNav } from '@/components/layout/CampaignsSubNav'
 import { templateContent, templateTitle } from '@/lib/templateText'
 
 /** Кілька шаблонів: блоки розділені рядком «---». У кожному блоці перший непустий рядок — назва, решта — текст. */
@@ -303,12 +304,10 @@ export function MessagesPage(): JSX.Element {
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-          Несколько шаблонов хранятся в MongoDB Atlas. Активный шаблон подсвечивается; переменные и спинтакс
-          обрабатываются перед постановкой в очередь.
-        </p>
-      </div>
+      <CampaignsSubNav />
+      <p className="max-w-2xl text-sm text-zinc-500">
+        Тексти для DM. Активний шаблон використовується при розсилці; підтримуються змінні та спінтакс.
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2 space-y-3">

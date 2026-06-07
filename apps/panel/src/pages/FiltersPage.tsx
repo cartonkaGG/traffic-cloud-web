@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 import type { SafetyFiltersConfig, UserFiltersConfig } from '@/domain/types'
+import { CampaignsSubNav } from '@/components/layout/CampaignsSubNav'
 import { OUTREACH_FILTERS_STORAGE_KEY } from '@/lib/outreachFiltersStorage'
 
 const defaultUser: UserFiltersConfig = {
@@ -96,14 +97,10 @@ export function FiltersPage(): JSX.Element {
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-          Ці налаштування застосовуються до MTProto DM-розсилки (кампанії та «Запустити спам»): аудиторія перед
-          чергою, blacklist, глобальний дедуп, зупинка після FloodWait. Ручний blacklist зберігається локально в
-          браузері; контакти, які під час розсилки виявилися як «немає доставки» (заблокували акаунт), додаються на
-          сервер і більше не потрапляють у чергу DM автоматично.
-        </p>
-      </div>
+      <CampaignsSubNav />
+      <p className="max-w-2xl text-sm text-zinc-500">
+        Кому писати і що пропускати при розсилці. Зберігається в браузері.
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="glass-panel p-6">

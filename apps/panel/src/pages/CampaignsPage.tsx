@@ -32,6 +32,7 @@ import {
   apiTelegramAccountOutreachStart
 } from '@/lib/api'
 import { loadCampaignsUi, saveCampaignsUi } from '@/lib/campaignsUiStorage'
+import { CampaignsSubNav } from '@/components/layout/CampaignsSubNav'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
 
 function statusUi(s: CampaignRunStatus): { label: string; className: string } {
@@ -504,13 +505,8 @@ export function CampaignsPage(): JSX.Element {
   }, [runHistory])
 
   return (
-    <div className="space-y-10">
-      <div>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-          Кампании хранятся в MongoDB Atlas; связи аккаунтов и источников — в коллекциях связей. DM-розсилка:
-          випадковий шаблон з «Повідомлення», фільтри з «Фільтри». Активні процеси та архів запусків — нижче.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <CampaignsSubNav />
 
       <section className="glass-panel space-y-5 p-6">
         <div className="flex flex-wrap items-start gap-3">

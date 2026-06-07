@@ -81,13 +81,12 @@ export function SourcesPage(): JSX.Element {
       upsertChatSources([source])
       setValue('')
       setTitle('')
-      await refetch()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setBusyId(null)
     }
-  }, [workspaceId, status, value, title, refetch, upsertChatSources])
+  }, [workspaceId, status, value, title, upsertChatSources])
 
   const addSourcesBulk = useCallback(async () => {
     if (!workspaceId || status !== 'online') {
@@ -123,14 +122,15 @@ export function SourcesPage(): JSX.Element {
       if (res.created > 0) {
         upsertChatSources(res.sources)
         setBulkLines('')
+      } else if (res.sources.length > 0) {
+        upsertChatSources(res.sources)
       }
-      await refetch()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setBusyId(null)
     }
-  }, [workspaceId, status, bulkLines, refetch, upsertChatSources])
+  }, [workspaceId, status, bulkLines, upsertChatSources])
 
   const runParse = useCallback(
     async (sid: string) => {
@@ -272,19 +272,12 @@ export function SourcesPage(): JSX.Element {
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-            Додайте один або кілька каналів/груп (@username, t.me/… або інвайт), потім «Парсинг» — учасники
-            зберігаються локально (до 10 000 за запуск). Для MTProto вкажіть{' '}
-            <span className="text-zinc-300">api_id</span>, <span className="text-zinc-300">api_hash</span> і
-            рядок сесії в «Налаштування» або в <code className="text-accent">server/.env</code>. Рядок сесії
-            отримайте командою <code className="text-accent">npm run telegram:login</code> у папці server.
-          </p>
-          <p className="mt-2 max-w-3xl text-[12px] leading-relaxed text-zinc-600">
-            Після кожного парсингу всі акаунти з MTProto-сесією автоматично підписуються на цей канал. Кнопка
-            праворуч — підписати всі такі акаунти на всі джерела зі списку (спільні групи для розсилки).
+          <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
+            Додайте канали або групи, натисніть «Парсинг» — аудиторія збережеться для розсилки. Потрібна
+            MTProto-сесія на акаунті (див. «Акаунти»).
           </p>
           {error ? (
             <p className="mt-2 max-w-3xl text-sm text-red-300/90">{error}</p>

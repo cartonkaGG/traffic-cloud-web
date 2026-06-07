@@ -9,16 +9,16 @@ import { useSoftware } from '@/context/SoftwareContext'
 import { getMarketingHomeUrl } from '@/lib/site'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { useLogs } from '@/context/LogContext'
+import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 
 const ROUTE_TITLES: Record<string, { title: string; kicker?: string }> = {
   '/': { title: 'Огляд', kicker: 'Головна панель' },
   '/accounts': { title: 'Акаунти Telegram', kicker: 'Session · MTProto' },
-  '/sources': { title: 'Парсер чатів', kicker: 'Джерела · аудиторія' },
-  '/messages': { title: 'Шаблони', kicker: 'Тексти для DM' },
-  '/filters': { title: 'Фільтри', kicker: 'Кому писати · безпека' },
-  '/campaigns': { title: 'Розсилка', kicker: 'Запуск DM по базі' },
-  '/inbox': { title: 'Повідомлення', kicker: 'Відповіді через MTProto' },
-  '/logs': { title: 'Логи', kicker: 'Події в реальному часі' },
+  '/sources': { title: 'Парсер', kicker: 'Канали та аудиторія' },
+  '/messages': { title: 'Шаблони', kicker: 'Розсилка · тексти DM' },
+  '/filters': { title: 'Фільтри', kicker: 'Розсилка · аудиторія' },
+  '/campaigns': { title: 'Розсилка', kicker: 'Запуск DM' },
+  '/inbox': { title: 'Вхідні', kicker: 'Відповіді в панелі' },
   '/settings': { title: 'Налаштування', kicker: 'MTProto · парсер' }
 }
 
@@ -45,6 +45,15 @@ export function TopBar(): JSX.Element {
   const navigate = useNavigate()
   const { selectedSoftware } = useSoftware()
   const { entries } = useLogs()
+  const { bundle } = useWorkspaceData()
+  const accountNameById = useMemo(() => {
+    const m: Record<string, string> = {}
+    for (const a of bundle?.telegramAccounts ?? []) {
+      const u = a.username?.trim()
+      m[a.id] = u ? `${a.label} (@${u.replace(/^@/, '')})` : a.label
+    }
+    return m
+  }, [bundle?.telegramAccounts])
   const meta = ROUTE_TITLES[pathname] ?? {
     title: 'Traffic Cloud',
     kicker: 'Рабочее пространство'
@@ -199,6 +208,12 @@ export function TopBar(): JSX.Element {
                           typeof e.meta?.accountId === 'string' ? e.meta.accountId : null
                         const peerKey =
                           typeof e.meta?.peerKey === 'string' ? e.meta.peerKey : null
+                        const inboxAccountLabel =
+                          inbox && accountId
+                            ? (typeof e.meta?.accountLabel === 'string'
+                                ? e.meta.accountLabel
+                                : accountNameById[accountId]) || null
+                            : null
                         return (
                           <button
                             key={e.id}
@@ -237,7 +252,16 @@ export function TopBar(): JSX.Element {
                                 {formatBellTime(e.ts)}
                               </span>
                             </div>
-                            <p className="mt-1.5 text-[12px] leading-snug text-zinc-200">{e.message}</p>
+                            {inboxAccountLabel ? (
+                              <p className="mt-1.5 text-[10px] font-medium uppercase tracking-wide text-accent/80">
+                                Акаунт · {inboxAccountLabel}
+                              </p>
+                            ) : null}
+                            <p className="mt-1 text-[12px] leading-snug text-zinc-200">
+                              {inboxAccountLabel && e.message.startsWith(`${inboxAccountLabel} · `)
+                                ? e.message.slice(inboxAccountLabel.length + 3)
+                                : e.message}
+                            </p>
                           </button>
                         )
                       })

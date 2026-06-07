@@ -81,6 +81,11 @@ function previewText(text: string | null): string {
   return t.length > 120 ? `${t.slice(0, 117)}…` : t
 }
 
+function accountDisplayName(account: { label: string; username?: string | null }): string {
+  const u = account.username?.trim()
+  return u ? `${account.label} (@${u.replace(/^@/, '')})` : account.label
+}
+
 type InboxNotifyApi = {
   unreadTotal: number
   setInboxFocus: (accountId: string | null, peerKey: string | null) => void
@@ -185,15 +190,17 @@ export function InboxNotifyProvider({ children }: { children: ReactNode }): JSX.
             ) {
               const title = d.title || 'Нове повідомлення'
               const preview = previewText(d.lastMessage)
-              const toastMsg = `${title}: ${preview}`
+              const accName = accountDisplayName(account)
+              const toastMsg = `${accName} · ${title}: ${preview}`
               pushToast(toastMsg, 'info')
               pushLog('inbox_message', toastMsg, {
                 accountId: account.id,
+                accountLabel: accName,
                 peerKey: d.peerKey
               })
               showBrowserNotification(
-                `📩 ${title}`,
-                preview,
+                `📩 ${accName}`,
+                `${title}: ${preview}`,
                 account.id,
                 d.peerKey
               )

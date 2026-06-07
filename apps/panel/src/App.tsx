@@ -11,7 +11,6 @@ import { AuthPage } from './pages/AuthPage'
 import { CampaignsPage } from './pages/CampaignsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { FiltersPage } from './pages/FiltersPage'
-import { LogsPage } from './pages/LogsPage'
 import { InboxPage } from './pages/InboxPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -150,7 +149,7 @@ export default function App(): JSX.Element {
         <Route path="humanization" element={<Navigate to="/campaigns" replace />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="analytics" element={<Navigate to="/" replace />} />
-        <Route path="logs" element={<LogsPage />} />
+        <Route path="logs" element={<Navigate to="/" replace />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
