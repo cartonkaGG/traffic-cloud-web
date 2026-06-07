@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import TrafficCloudMark from '@/components/brand/TrafficCloudMark'
 import { useSoftware } from '@/context/SoftwareContext'
 import { getMarketingHomeUrl } from '@/lib/site'
+import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { useLogs } from '@/context/LogContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 
@@ -122,6 +123,9 @@ export function TopBar(): JSX.Element {
               {meta.kicker}
             </div>
             <h1 className="mt-1 truncate text-lg font-semibold tracking-tight text-white">{meta.title}</h1>
+            <div className="mt-1 hidden sm:block">
+              <SubscriptionTerm variant="inline" />
+            </div>
           </div>
         </div>
 

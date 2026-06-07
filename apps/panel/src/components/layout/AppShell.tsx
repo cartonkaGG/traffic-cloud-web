@@ -25,6 +25,7 @@ import { useAuth } from '@/context/AuthContext'
 import { motion } from 'framer-motion'
 
 import { PanelBrand } from '@/components/brand/PanelBrand'
+import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 
 import { useInboxNotify } from '@/context/InboxNotifyContext'
 
@@ -275,6 +276,10 @@ export function AppShell(): JSX.Element {
           </div>
 
         </nav>
+
+        <div className="mt-4">
+          <SubscriptionTerm variant="card" />
+        </div>
 
       </Sidebar>
 
