@@ -163,6 +163,17 @@ export function AccountsPage(): JSX.Element {
 
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null)
 
+  const [proxyEditAccount, setProxyEditAccount] = useState<TelegramAccountModel | null>(null)
+  const [proxyEditHost, setProxyEditHost] = useState('')
+  const [proxyEditPort, setProxyEditPort] = useState('')
+  const [proxyEditType, setProxyEditType] = useState<'http' | 'socks5'>('socks5')
+  const [proxyEditUser, setProxyEditUser] = useState('')
+  const [proxyEditPass, setProxyEditPass] = useState('')
+  const [proxyEditBusy, setProxyEditBusy] = useState(false)
+  const [proxyEditErr, setProxyEditErr] = useState<string | null>(null)
+  const [proxyEditProbeBusy, setProxyEditProbeBusy] = useState(false)
+  const [proxyEditProbeMsg, setProxyEditProbeMsg] = useState<string | null>(null)
+
   const [bulkAbout, setBulkAbout] = useState('')
   const [bulkAboutBusy, setBulkAboutBusy] = useState(false)
 
@@ -289,6 +300,81 @@ export function AccountsPage(): JSX.Element {
     }
     return list
   }, [telegramAccounts, search, statusFilter, proxyFilter])
+
+  const openProxyEditModal = useCallback((account: TelegramAccountModel) => {
+    setProxyEditErr(null)
+    setProxyEditProbeMsg(null)
+    setProxyEditUser('')
+    setProxyEditPass('')
+    setProxyEditHost(account.proxyHost?.trim() ?? '')
+    setProxyEditPort(account.proxyPort ? String(account.proxyPort) : '')
+    setProxyEditType(account.proxyProtocol === 'http' ? 'http' : 'socks5')
+    setProxyEditAccount(account)
+  }, [])
+
+  const closeProxyEditModal = useCallback(() => {
+    if (proxyEditBusy) return
+    setProxyEditAccount(null)
+    setProxyEditErr(null)
+    setProxyEditProbeMsg(null)
+    setProxyEditHost('')
+    setProxyEditPort('')
+    setProxyEditType('socks5')
+    setProxyEditUser('')
+    setProxyEditPass('')
+  }, [proxyEditBusy])
+
+  const saveProxyEdit = useCallback(async () => {
+    if (!workspaceId || status !== 'online' || !proxyEditAccount) {
+      pushToast('Немає підключення до API', 'error')
+      return
+    }
+    const host = proxyEditHost.trim()
+    let port: number | null = null
+    if (host) {
+      const parsed = parsePort(proxyEditPort)
+      if (parsed === null) {
+        setProxyEditErr('Порт проксі: число 1–65535')
+        return
+      }
+      port = parsed
+    }
+    setProxyEditBusy(true)
+    setProxyEditErr(null)
+    try {
+      const pass = proxyEditPass.trim()
+      const r = await apiUpdateTelegramAccountProxy(workspaceId, proxyEditAccount.id, {
+        proxyHost: host || null,
+        proxyPort: port,
+        proxyProtocol: proxyEditType,
+        proxyUsername: proxyEditUser.trim() || null,
+        ...(pass ? { proxyPassword: pass } : {})
+      })
+      setProxyEditAccount(r.account)
+      setMtprotoAccount((a) => (a?.id === r.account.id ? r.account : a))
+      await refetch()
+      pushToast(host ? 'Проксі збережено' : 'Проксі прибрано', 'ok')
+      closeProxyEditModal()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setProxyEditErr(msg)
+      pushToast(msg, 'error')
+    } finally {
+      setProxyEditBusy(false)
+    }
+  }, [
+    workspaceId,
+    status,
+    proxyEditAccount,
+    proxyEditHost,
+    proxyEditPort,
+    proxyEditType,
+    proxyEditUser,
+    proxyEditPass,
+    refetch,
+    pushToast,
+    closeProxyEditModal
+  ])
 
   const openMtprotoModal = useCallback((account: TelegramAccountModel) => {
     setMtprotoErr(null)
@@ -1826,6 +1912,198 @@ export function AccountsPage(): JSX.Element {
         ) : null}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {proxyEditAccount ? (
+          <motion.div
+            className="fixed inset-0 z-[58] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => closeProxyEditModal()}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.2 }}
+              className="glass-panel relative w-full max-w-lg space-y-4 p-6 shadow-glow"
+              onClick={(ev) => ev.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-white">Проксі акаунта</div>
+                  <p className="mt-1 font-mono text-[13px] text-zinc-500">{proxyEditAccount.label}</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={proxyEditBusy}
+                  className="rounded-lg border border-white/10 p-2 text-zinc-400 hover:bg-white/[0.05] hover:text-white disabled:opacity-40"
+                  aria-label="Закрити"
+                  onClick={() => closeProxyEditModal()}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="text-[12px] text-zinc-500">
+                Для MTProto (код Telegram, розсилка, inbox) потрібен <strong className="text-zinc-300">SOCKS5</strong>.
+                Після зміни проксі для нової сесії увійдіть через «Код Telegram».
+              </p>
+
+              {proxyEditErr ? <p className="text-[13px] text-red-300/95">{proxyEditErr}</p> : null}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block sm:col-span-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Host</span>
+                  <input
+                    value={proxyEditHost}
+                    onChange={(e) => {
+                      setProxyEditHost(e.target.value)
+                      setProxyEditProbeMsg(null)
+                    }}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                    placeholder="138.249.154.109"
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Порт</span>
+                  <input
+                    value={proxyEditPort}
+                    onChange={(e) => {
+                      setProxyEditPort(e.target.value)
+                      setProxyEditProbeMsg(null)
+                    }}
+                    inputMode="numeric"
+                    disabled={!proxyEditHost.trim()}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
+                    placeholder="1080"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Тип</span>
+                  <select
+                    value={proxyEditType}
+                    onChange={(e) => {
+                      setProxyEditType(e.target.value === 'http' ? 'http' : 'socks5')
+                      setProxyEditProbeMsg(null)
+                    }}
+                    disabled={!proxyEditHost.trim()}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
+                  >
+                    <option value="socks5">SOCKS5 (для MTProto)</option>
+                    <option value="http">HTTP (лише браузер)</option>
+                  </select>
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Логін (якщо є)
+                  </span>
+                  <input
+                    value={proxyEditUser}
+                    onChange={(e) => {
+                      setProxyEditUser(e.target.value)
+                      setProxyEditProbeMsg(null)
+                    }}
+                    disabled={!proxyEditHost.trim()}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    Пароль (якщо змінюєте)
+                  </span>
+                  <input
+                    type="password"
+                    value={proxyEditPass}
+                    onChange={(e) => {
+                      setProxyEditPass(e.target.value)
+                      setProxyEditProbeMsg(null)
+                    }}
+                    disabled={!proxyEditHost.trim()}
+                    className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
+                    autoComplete="new-password"
+                    placeholder="Залиште порожнім, щоб не змінювати"
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={proxyEditProbeBusy || !proxyEditHost.trim() || status !== 'online'}
+                  onClick={() =>
+                    void probeProxyFields({
+                      host: proxyEditHost,
+                      portRaw: proxyEditPort,
+                      protocol: proxyEditType,
+                      username: proxyEditUser,
+                      password: proxyEditPass,
+                      setBusy: setProxyEditProbeBusy,
+                      setMsg: setProxyEditProbeMsg
+                    })
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-[13px] font-medium text-zinc-200 hover:border-accent/30 hover:text-white disabled:opacity-40"
+                >
+                  {proxyEditProbeBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
+                  ) : null}
+                  {proxyEditProbeBusy ? 'Перевірка…' : 'Перевірити проксі'}
+                </button>
+                {proxyEditProbeMsg ? (
+                  <span
+                    className={[
+                      'text-[12px]',
+                      proxyEditProbeMsg.startsWith('OK') ? 'text-emerald-300/90' : 'text-rose-300/90'
+                    ].join(' ')}
+                  >
+                    {proxyEditProbeMsg}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={proxyEditBusy}
+                  onClick={() => {
+                    setProxyEditHost('')
+                    setProxyEditPort('')
+                    setProxyEditUser('')
+                    setProxyEditPass('')
+                    setProxyEditProbeMsg(null)
+                  }}
+                  className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-zinc-500 hover:text-zinc-300 disabled:opacity-40"
+                >
+                  Очистити поля
+                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={proxyEditBusy}
+                    onClick={() => closeProxyEditModal()}
+                    className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-zinc-300 hover:bg-white/[0.04] disabled:opacity-40"
+                  >
+                    Скасувати
+                  </button>
+                  <motion.button
+                    type="button"
+                    disabled={proxyEditBusy || status !== 'online'}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => void saveProxyEdit()}
+                    className="rounded-xl border border-accent/35 bg-accent/15 px-5 py-2.5 text-sm font-semibold text-accent hover:bg-accent/20 disabled:opacity-40"
+                  >
+                    {proxyEditBusy ? 'Збереження…' : 'Зберегти'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
       <AccountsGrid
         accounts={filteredAccounts}
         proxyLabel={proxyLabel}
@@ -1834,6 +2112,7 @@ export function AccountsPage(): JSX.Element {
         spamBusyId={spamBusy && spamAccount ? spamAccount.id : null}
         deletingAccountId={deletingAccountId}
         onOpenMtprotoLogin={openMtprotoModal}
+        onEditProxy={openProxyEditModal}
         onOpenInbox={openInbox}
         onOpenTelegramWeb={(a) => void openTelegramWeb(a)}
         telegramWebAccountId={telegramWebAccountId}
@@ -1852,6 +2131,7 @@ function AccountsGrid({
   spamBusyId,
   deletingAccountId,
   onOpenMtprotoLogin,
+  onEditProxy,
   onOpenInbox,
   onOpenTelegramWeb,
   telegramWebAccountId,
@@ -1866,6 +2146,7 @@ function AccountsGrid({
   spamBusyId: string | null
   deletingAccountId: string | null
   onOpenMtprotoLogin: (account: TelegramAccountModel) => void
+  onEditProxy: (account: TelegramAccountModel) => void
   onOpenInbox: (account: TelegramAccountModel) => void
   onOpenTelegramWeb: (account: TelegramAccountModel) => void
   onOpenSpam: (account: TelegramAccountModel) => void
@@ -1903,6 +2184,7 @@ function AccountsGrid({
           index={i}
           proxyLabel={a.proxyId ? proxyLabel[a.proxyId] : null}
           onOpenMtprotoLogin={onOpenMtprotoLogin}
+          onEditProxy={onEditProxy}
           onOpenInbox={onOpenInbox}
           onOpenTelegramWeb={onOpenTelegramWeb}
           telegramWebBusy={telegramWebAccountId === a.id}

@@ -1,4 +1,4 @@
-import { Circle, MessageCircle, Trash2 } from 'lucide-react'
+import { Circle, Globe, MessageCircle, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { TelegramAccountModel } from '@/domain/types'
 import { formatActivityLabel } from '@/lib/formatActivity'
@@ -26,6 +26,7 @@ export function TelegramAccountCard({
   index,
   proxyLabel,
   onOpenMtprotoLogin,
+  onEditProxy,
   onOpenInbox,
   onOpenTelegramWeb,
   onOpenSpam,
@@ -39,6 +40,7 @@ export function TelegramAccountCard({
   index: number
   proxyLabel?: string | null
   onOpenMtprotoLogin?: (account: TelegramAccountModel) => void
+  onEditProxy?: (account: TelegramAccountModel) => void
   onOpenInbox?: (account: TelegramAccountModel) => void
   onOpenTelegramWeb?: (account: TelegramAccountModel) => void
   onOpenSpam?: (account: TelegramAccountModel) => void
@@ -49,6 +51,10 @@ export function TelegramAccountCard({
   deleteBusy?: boolean
 }): JSX.Element {
   const uname = account.username ? `@${account.username}` : 'без username'
+  const proxyEndpoint =
+    account.proxyHost?.trim() && account.proxyPort
+      ? `${account.proxyHost.trim()}:${account.proxyPort}`
+      : null
 
   return (
     <motion.div
@@ -92,8 +98,12 @@ export function TelegramAccountCard({
                 <span>Отправлено сегодня · {account.sentToday}</span>
                 <span className="text-zinc-600">·</span>
                 <span>
-                  Проксі · {proxyLabel ?? '—'}
-                  {account.mtprotoUsesProxy ? ' (SOCKS5 MTProto)' : account.hasProxy ? ' (HTTP — не для session)' : ''}
+                  Проксі · {proxyEndpoint ?? proxyLabel ?? '—'}
+                  {account.mtprotoUsesProxy
+                    ? ' (SOCKS5 MTProto)'
+                    : account.hasProxy
+                      ? ' (HTTP — не для session)'
+                      : ''}
                 </span>
               </div>
             </div>
@@ -116,6 +126,16 @@ export function TelegramAccountCard({
                 title="Повний Telegram Web (у десктоп-додатку — через проксі акаунта)"
               >
                 {telegramWebBusy ? '…' : 'Telegram Web'}
+              </button>
+              <button
+                type="button"
+                disabled={!onEditProxy}
+                onClick={() => onEditProxy?.(account)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-zinc-200 transition-colors hover:border-accent/35 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                title="Змінити SOCKS5/HTTP проксі акаунта"
+              >
+                <Globe className="h-3.5 w-3.5" aria-hidden />
+                Проксі
               </button>
               <button
                 type="button"
