@@ -91,6 +91,12 @@ export function BillingPage(): JSX.Element {
     void load()
   }, [])
 
+  useEffect(() => {
+    if (statusParam !== 'success' || isActive) return
+    const id = window.setInterval(() => void load(), 15_000)
+    return () => window.clearInterval(id)
+  }, [statusParam, isActive])
+
   async function subscribe(): Promise<void> {
     if (!isAuthenticated) {
       navigate(SUBSCRIBE_ENTRY_PATH)
