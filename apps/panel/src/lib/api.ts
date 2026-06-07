@@ -94,8 +94,6 @@ export type DashboardStatRemote = {
 
 export type WorkspaceBundle = {
   workspace: { id: string; name: string }
-  /** App api_id/api_hash з .env сервера — користувачу вводити не потрібно */
-  providerMtprotoApiConfigured?: boolean
   telegramAccounts: TelegramAccountModel[]
   proxies: ProxyEndpointModel[]
   browserProfiles: BrowserProfile[]
@@ -526,10 +524,8 @@ export async function apiDownloadChatSourceCsv(workspaceId: string, sourceId: st
 
 export type TelegramMtprotoStatus = {
   parseReady: boolean
-  activeSource: 'workspace' | 'env' | 'account' | 'none'
+  activeSource: 'workspace' | 'env' | 'none'
   apiId: number | null
-  providerApiConfigured: boolean
-  apiCredentialsSource: 'workspace' | 'env' | 'none'
   workspace: {
     apiId: number | null
     hasApiHash: boolean
