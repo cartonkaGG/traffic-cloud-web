@@ -84,6 +84,11 @@ export function BillingPage(): JSX.Element {
   }, [])
 
   useEffect(() => {
+    if (!gateParam || !isActive) return
+    navigate('/hub', { replace: true })
+  }, [gateParam, isActive, navigate])
+
+  useEffect(() => {
     if (statusParam !== 'success' || isActive) return
     const id = window.setInterval(() => void load(), 15_000)
     return () => window.clearInterval(id)

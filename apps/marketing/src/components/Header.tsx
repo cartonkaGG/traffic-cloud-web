@@ -4,7 +4,7 @@ import { Menu, X, ArrowUpRight, MessageSquareCode, LayoutDashboard, Shield } fro
 import TrafficCloudMark from './brand/TrafficCloudMark';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
 
-const PANEL_HREF = '/app/';
+const PANEL_HREF = '/app/hub';
 const ADMIN_HREF = '/app/admin';
 
 interface HeaderProps {

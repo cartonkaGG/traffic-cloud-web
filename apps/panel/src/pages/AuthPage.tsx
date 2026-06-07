@@ -6,7 +6,7 @@ import { PanelBrand } from '@/components/brand/PanelBrand'
 import { AuthPageBackdrop } from '@/components/layout/AuthPageBackdrop'
 import { useAuth } from '@/context/AuthContext'
 import { apiResendVerification, apiVerificationStatus } from '@/lib/api'
-import { BILLING_SUBSCRIBE_PATH } from '@/lib/panelRoutes'
+import { BILLING_SUBSCRIBE_PATH, HUB_PATH } from '@/lib/panelRoutes'
 import {
   getResendCooldownLeft,
   RESEND_COOLDOWN_SEC,
@@ -102,10 +102,12 @@ export function AuthPage(): JSX.Element {
       if (mode === 'login') {
         await login(email, password)
         const safe =
-          redirectTo.startsWith('/') && !redirectTo.startsWith('//')
-            ? redirectTo
-            : BILLING_SUBSCRIBE_PATH
-        navigate(safe)
+          redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
+        if (safe && !safe.includes('/billing')) {
+          navigate(safe, { replace: true })
+        } else {
+          navigate(HUB_PATH, { replace: true })
+        }
       } else {
         const result = await register(email, password)
         if (result.needsEmailVerification) {
@@ -120,10 +122,12 @@ export function AuthPage(): JSX.Element {
           return
         }
         const safe =
-          redirectTo.startsWith('/') && !redirectTo.startsWith('//')
-            ? redirectTo
-            : BILLING_SUBSCRIBE_PATH
-        navigate(safe)
+          redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
+        if (safe && !safe.includes('/billing')) {
+          navigate(safe, { replace: true })
+        } else {
+          navigate(HUB_PATH, { replace: true })
+        }
       }
     } catch (err) {
       setFormError(mapAuthError(err))

@@ -21,7 +21,11 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SoftwareHubPage } from './pages/SoftwareHubPage'
 import { SourcesPage } from './pages/SourcesPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
-import { BILLING_SUBSCRIBE_PATH, SUBSCRIBE_ENTRY_PATH } from './lib/panelRoutes'
+import {
+  BILLING_SUBSCRIBE_PATH,
+  resolvePostAuthPath,
+  SUBSCRIBE_ENTRY_PATH
+} from './lib/panelRoutes'
 
 function PostAuthRedirect(): JSX.Element {
   const { isAdmin } = useAuth()
@@ -33,13 +37,12 @@ function PostAuthRedirect(): JSX.Element {
     return <PanelLoadingScreen label="Завантаження…" />
   }
 
-  const safe =
-    redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
-      ? redirectTo
-      : null
-  if (safe) return <Navigate to={safe} replace />
-  if (hasPanelAccess(subscription, isAdmin)) return <Navigate to="/hub" replace />
-  return <Navigate to={BILLING_SUBSCRIBE_PATH} replace />
+  return (
+    <Navigate
+      to={resolvePostAuthPath(redirectTo, subscription, isAdmin)}
+      replace
+    />
+  )
 }
 
 function Protected({

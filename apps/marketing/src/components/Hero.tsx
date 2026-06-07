@@ -48,7 +48,7 @@ export default function Hero({ onContactClick }: HeroProps) {
                   </a>
                 ) : null}
                 <a
-                  href="/app/"
+                  href="/app/hub"
                   className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 group touch-manipulation"
                 >
                   <span>{isAdmin ? 'Панель' : 'Увійти в панель'}</span>

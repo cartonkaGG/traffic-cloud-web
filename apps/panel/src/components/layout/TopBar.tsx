@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, Grid3x3, Home } from 'lucide-react'
+import { Bell, Home } from 'lucide-react'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PanelBrand } from '@/components/brand/PanelBrand'
 import TrafficCloudMark from '@/components/brand/TrafficCloudMark'
-import { useSoftware } from '@/context/SoftwareContext'
 import { getMarketingHomeUrl } from '@/lib/site'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { useLogs } from '@/context/LogContext'
@@ -43,7 +43,6 @@ function kindShort(kind: string): string {
 export function TopBar(): JSX.Element {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { selectedSoftware } = useSoftware()
   const { entries } = useLogs()
   const { bundle } = useWorkspaceData()
   const accountNameById = useMemo(() => {
@@ -115,9 +114,14 @@ export function TopBar(): JSX.Element {
     <header className="sticky top-0 z-20 border-b border-gray-800/60 bg-gray-950/80 px-8 py-4 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
-          <div className="mt-0.5 hidden shrink-0 items-center justify-center overflow-visible sm:flex">
+          <button
+            type="button"
+            onClick={() => navigate('/hub')}
+            className="mt-0.5 hidden shrink-0 items-center justify-center overflow-visible rounded-lg transition-opacity hover:opacity-90 sm:flex"
+            title="Traffic Cloud Hub"
+          >
             <TrafficCloudMark size={30} variant="logo" />
-          </div>
+          </button>
           <div className="min-w-0">
             <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-500">
               {meta.kicker}
@@ -130,6 +134,9 @@ export function TopBar(): JSX.Element {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="hidden lg:flex">
+            <PanelBrand layout="compact" homeTo="/hub" />
+          </div>
           <a
             href={getMarketingHomeUrl()}
             className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:border-accent/25 hover:text-zinc-300 md:flex"
@@ -138,18 +145,6 @@ export function TopBar(): JSX.Element {
             <Home className="h-3.5 w-3.5 text-accent/70" />
             Головна
           </a>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/hub')}
-            className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:border-accent/25 hover:text-zinc-300 lg:flex"
-            title="Повернутися до Traffic Cloud Hub"
-          >
-            <Grid3x3 className="h-3.5 w-3.5 text-accent/70" />
-            {selectedSoftware?.name ?? 'Traffic Cloud Hub'}
-          </motion.button>
-
           <div className="relative" ref={bellWrapRef}>
             <motion.button
               type="button"
