@@ -14,6 +14,7 @@ const defaultUser: UserFiltersConfig = {
 
 const defaultSafety: SafetyFiltersConfig = {
   dedupeAcrossCampaigns: true,
+  skipExistingDialogs: true,
   blacklistUsernames: [],
   stopOnFloodWarning: true,
   skipInactive: true

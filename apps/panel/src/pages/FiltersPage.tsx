@@ -16,6 +16,7 @@ const defaultUser: UserFiltersConfig = {
 
 const defaultSafety: SafetyFiltersConfig = {
   dedupeAcrossCampaigns: true,
+  skipExistingDialogs: true,
   blacklistUsernames: [],
   stopOnFloodWarning: true,
   skipInactive: true
@@ -144,8 +145,13 @@ export function FiltersPage(): JSX.Element {
           <div className="mt-4 space-y-3">
             <Toggle
               checked={safety.dedupeAcrossCampaigns}
-              label="Не писать повторно тем же пользователям (глобально)"
+              label="Не писати повторно тим самим @ (глобально)"
               onChange={(v) => setSafety({ ...safety, dedupeAcrossCampaigns: v })}
+            />
+            <Toggle
+              checked={safety.skipExistingDialogs}
+              label="Не писати, якщо вже є переписка в цьому акаунті"
+              onChange={(v) => setSafety({ ...safety, skipExistingDialogs: v })}
             />
             <Toggle
               checked={safety.stopOnFloodWarning}

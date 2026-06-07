@@ -208,6 +208,8 @@ export interface UserFiltersConfig {
 
 export interface SafetyFiltersConfig {
   dedupeAcrossCampaigns: boolean
+  /** Не писати тим, з ким уже є переписка в цьому акаунті. */
+  skipExistingDialogs: boolean
   blacklistUsernames: string[]
   stopOnFloodWarning: boolean
   skipInactive: boolean

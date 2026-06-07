@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
-import { Layers, Link2, Megaphone } from 'lucide-react'
+import { Clapperboard, Layers, Link2, Megaphone } from 'lucide-react'
 
-export type SoftwareId = 'dm-outreach' | 'auto-parser' | 'multi-channel'
+export type SoftwareId = 'dm-outreach' | 'auto-parser' | 'multi-channel' | 'video-uniquify'
 
 export type SoftwareStatus = 'active' | 'coming_soon'
 
@@ -50,6 +50,18 @@ export const SOFTWARE_PRODUCTS: SoftwareProduct[] = [
     icon: Layers,
     accent: 'from-emerald-500/18 via-teal-400/8 to-transparent',
     glow: 'rgba(52,211,153,0.3)'
+  },
+  {
+    id: 'video-uniquify',
+    name: 'Video Uniquify',
+    shortName: 'Uniquify',
+    description:
+      'Пакетна унікалізація відео для TikTok та Reels: кроп, шум, швидкість, метадані — кожна копія унікальна.',
+    version: '—',
+    status: 'coming_soon',
+    icon: Clapperboard,
+    accent: 'from-rose-500/20 via-orange-400/10 to-transparent',
+    glow: 'rgba(251,113,133,0.38)'
   }
 ]
 
