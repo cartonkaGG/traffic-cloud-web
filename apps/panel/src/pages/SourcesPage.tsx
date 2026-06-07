@@ -53,7 +53,8 @@ function parsePhaseLabelUk(phase?: string): string {
 }
 
 export function SourcesPage(): JSX.Element {
-  const { bundle, workspaceId, status, refetch, parseProgressBySourceId } = useWorkspaceData()
+  const { bundle, workspaceId, status, refetch, upsertChatSources, parseProgressBySourceId } =
+    useWorkspaceData()
   const chatSources = bundle?.chatSources ?? []
 
   const [value, setValue] = useState('')
@@ -73,7 +74,11 @@ export function SourcesPage(): JSX.Element {
     setError(null)
     setBusyId('new')
     try {
-      await apiCreateChatSource(workspaceId, { value: v, title: title.trim() || null })
+      const { source } = await apiCreateChatSource(workspaceId, {
+        value: v,
+        title: title.trim() || null
+      })
+      upsertChatSources([source])
       setValue('')
       setTitle('')
       await refetch()
@@ -82,7 +87,7 @@ export function SourcesPage(): JSX.Element {
     } finally {
       setBusyId(null)
     }
-  }, [workspaceId, status, value, title, refetch])
+  }, [workspaceId, status, value, title, refetch, upsertChatSources])
 
   const addSourcesBulk = useCallback(async () => {
     if (!workspaceId || status !== 'online') {
@@ -116,6 +121,7 @@ export function SourcesPage(): JSX.Element {
       }
       if (parts.length > 0) setParseInfo(parts.join('. '))
       if (res.created > 0) {
+        upsertChatSources(res.sources)
         setBulkLines('')
       }
       await refetch()
@@ -124,7 +130,7 @@ export function SourcesPage(): JSX.Element {
     } finally {
       setBusyId(null)
     }
-  }, [workspaceId, status, bulkLines, refetch])
+  }, [workspaceId, status, bulkLines, refetch, upsertChatSources])
 
   const runParse = useCallback(
     async (sid: string) => {

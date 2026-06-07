@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode
 } from 'react'
-import type { LiveLogEntry } from '@/domain/types'
+import type { ChatSourceModel, LiveLogEntry } from '@/domain/types'
 import {
   apiBootstrap,
   apiFetchBundle,
@@ -35,6 +35,8 @@ type WorkspaceDataValue = {
   subscription: SubscriptionInfo | null
   billingPlan: BillingPlanInfo | null
   refetch: () => Promise<void>
+  /** Додати/оновити джерела в bundle одразу після create (до refetch). */
+  upsertChatSources: (sources: ChatSourceModel[]) => void
   apiBaseUrl: string
   /** Прогрес парсингу джерела за id (оновлюється по WebSocket). */
   parseProgressBySourceId: Record<string, ParseProgressEntry>
@@ -153,6 +155,16 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
     await load({ background: true })
   }, [load])
 
+  const upsertChatSources = useCallback((sources: ChatSourceModel[]) => {
+    if (!sources.length) return
+    setBundle((prev) => {
+      if (!prev) return prev
+      const byId = new Map(prev.chatSources.map((s) => [s.id, s]))
+      for (const s of sources) byId.set(s.id, s)
+      return { ...prev, chatSources: Array.from(byId.values()) }
+    })
+  }, [])
+
   useEffect(() => {
     if (!isAuthenticated) {
       setStatus('idle')
@@ -189,6 +201,7 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
       subscription,
       billingPlan,
       refetch,
+      upsertChatSources,
       apiBaseUrl,
       parseProgressBySourceId
     }),
@@ -202,6 +215,7 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
       subscription,
       billingPlan,
       refetch,
+      upsertChatSources,
       apiBaseUrl,
       parseProgressBySourceId
     ]
