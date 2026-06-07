@@ -191,7 +191,7 @@ export function SoftwareHubPage(): JSX.Element {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
           {SOFTWARE_PRODUCTS.map((product, index) => (
             <motion.div
               key={product.id}

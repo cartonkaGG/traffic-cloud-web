@@ -5,12 +5,7 @@ const SELECTED_SOFTWARE_KEY = 'traffic-cloud-selected-software'
 export function getSelectedSoftware(): SoftwareId | null {
   if (typeof window === 'undefined') return null
   const raw = window.sessionStorage.getItem(SELECTED_SOFTWARE_KEY)
-  if (
-    raw === 'dm-outreach' ||
-    raw === 'auto-parser' ||
-    raw === 'multi-channel' ||
-    raw === 'video-uniquify'
-  ) {
+  if (raw === 'dm-outreach' || raw === 'video-uniquify') {
     return raw
   }
   return null
