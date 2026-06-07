@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext'
 import { apiBillingCheckout, apiBillingStatus } from '@/lib/api'
 import { networkById, PAY_NETWORKS, type PayNetworkId } from '@/lib/billingNetworks'
 import { BILLING_SUBSCRIBE_PATH, SUBSCRIBE_ENTRY_PATH } from '@/lib/panelRoutes'
+import { formatSubscriptionEnd } from '@/lib/formatSubscription'
 import { getMarketingHomeUrl } from '@/lib/site'
 
 const PLAN_HIGHLIGHTS = [
@@ -26,15 +27,6 @@ const PLAN_HIGHLIGHTS = [
   'Telegram, проксі та anti-detect',
   'Кампанії та аналітика в реальному часі'
 ]
-
-function formatDate(iso: string | null): string {
-  if (!iso) return '—'
-  return new Intl.DateTimeFormat('uk-UA', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  }).format(new Date(iso))
-}
 
 function formatUsd(n: number): string {
   if (Number.isInteger(n)) return String(n)
@@ -252,7 +244,7 @@ export function BillingPage(): JSX.Element {
               {isActive ? (
                 <p className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-[13px] text-zinc-500">
                   Діє до{' '}
-                  <span className="font-medium text-zinc-200">{formatDate(periodEnd)}</span>
+                  <span className="font-medium text-zinc-200">{formatSubscriptionEnd(periodEnd)}</span>
                 </p>
               ) : (
                 <>

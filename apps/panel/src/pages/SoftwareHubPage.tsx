@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { CreditCard, Home, Lock, Play, Shield, Sparkles } from 'lucide-react'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { Link, useNavigate } from 'react-router-dom'
+import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { useAuth } from '@/context/AuthContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
@@ -184,6 +185,9 @@ export function SoftwareHubPage(): JSX.Element {
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Оберіть застосунок
           </h1>
+          <div className="mt-3">
+            <SubscriptionTerm variant="inline" />
+          </div>
         </div>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

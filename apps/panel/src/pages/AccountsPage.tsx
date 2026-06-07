@@ -1,4 +1,4 @@
-import { Plus, SlidersHorizontal, UserCircle, X } from 'lucide-react'
+import { Loader2, Plus, SlidersHorizontal, UserCircle, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { TelegramAccountCard } from '@/components/accounts/TelegramAccountCard'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
@@ -8,6 +8,8 @@ import type { ChatSourceModel, TelegramAccountModel, TelegramAccountStatus } fro
 import {
   apiCreateTelegramAccount,
   apiDeleteTelegramAccount,
+  apiProbeProxy,
+  apiTestTelegramAccountProxy,
   apiTelegramAccountMtprotoComplete,
   apiTelegramAccountMtprotoImportSession,
   apiTelegramAccountMtprotoSendCode,
@@ -16,6 +18,7 @@ import {
   apiUpdateTelegramAccountProxy
 } from '@/lib/api'
 import { openTelegramForAccount } from '@/lib/openTelegramForAccount'
+import { formatProxyProbeError } from '@/lib/proxyProbeErrors'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -36,6 +39,35 @@ function parsePort(raw: string): number | null {
   const n = Number(raw.trim())
   if (!Number.isFinite(n) || n < 1 || n > 65535) return null
   return Math.floor(n)
+}
+
+function socks5ProxyConfigured(
+  host: string,
+  port: number | string | null | undefined,
+  protocol: 'http' | 'socks5'
+): boolean {
+  const h = host.trim()
+  if (!h || protocol !== 'socks5') return false
+  const p = typeof port === 'number' ? port : parsePort(String(port ?? ''))
+  return p != null
+}
+
+function applyMtprotoProxyFromAccount(
+  account: TelegramAccountModel,
+  setters: {
+    setHost: (v: string) => void
+    setPort: (v: string) => void
+    setType: (v: 'http' | 'socks5') => void
+    setEditing: (v: boolean) => void
+  }
+): void {
+  const host = account.proxyHost?.trim() ?? ''
+  const port = account.proxyPort ? String(account.proxyPort) : ''
+  const type = account.proxyProtocol === 'http' ? 'http' : 'socks5'
+  setters.setHost(host)
+  setters.setPort(port)
+  setters.setType(type)
+  setters.setEditing(!socks5ProxyConfigured(host, account.proxyPort, type))
 }
 
 export function AccountsPage(): JSX.Element {
@@ -64,6 +96,8 @@ export function AccountsPage(): JSX.Element {
   const [proxyType, setProxyType] = useState<'http' | 'socks5'>('socks5')
   const [proxyUser, setProxyUser] = useState('')
   const [proxyPass, setProxyPass] = useState('')
+  const [addProxyProbeBusy, setAddProxyProbeBusy] = useState(false)
+  const [addProxyProbeMsg, setAddProxyProbeMsg] = useState<string | null>(null)
   const [addMtprotoApiId, setAddMtprotoApiId] = useState('')
   const [addMtprotoApiHash, setAddMtprotoApiHash] = useState('')
   const [addMtprotoSession, setAddMtprotoSession] = useState('')
@@ -92,6 +126,9 @@ export function AccountsPage(): JSX.Element {
   const [mtprotoProxyType, setMtprotoProxyType] = useState<'http' | 'socks5'>('socks5')
   const [mtprotoProxyUser, setMtprotoProxyUser] = useState('')
   const [mtprotoProxyPass, setMtprotoProxyPass] = useState('')
+  const [mtprotoProxyEditing, setMtprotoProxyEditing] = useState(false)
+  const [mtprotoProxyProbeBusy, setMtprotoProxyProbeBusy] = useState(false)
+  const [mtprotoProxyProbeMsg, setMtprotoProxyProbeMsg] = useState<string | null>(null)
   const [telegramWebAccountId, setTelegramWebAccountId] = useState<string | null>(null)
   const mtprotoRequestAbortRef = useRef<AbortController | null>(null)
 
@@ -129,6 +166,90 @@ export function AccountsPage(): JSX.Element {
   const [bulkAbout, setBulkAbout] = useState('')
   const [bulkAboutBusy, setBulkAboutBusy] = useState(false)
 
+  const probeProxyFields = useCallback(
+    async (fields: {
+      host: string
+      portRaw: string
+      protocol: 'http' | 'socks5'
+      username: string
+      password: string
+      setBusy: (v: boolean) => void
+      setMsg: (v: string | null) => void
+    }): Promise<void> => {
+      if (!workspaceId || status !== 'online') {
+        pushToast('Немає підключення до API', 'error')
+        return
+      }
+      const host = fields.host.trim()
+      if (!host) {
+        fields.setMsg('Вкажіть host проксі')
+        return
+      }
+      const port = parsePort(fields.portRaw)
+      if (port === null) {
+        fields.setMsg(formatProxyProbeError('invalid_port'))
+        return
+      }
+      fields.setBusy(true)
+      fields.setMsg(null)
+      try {
+        const r = await apiProbeProxy(workspaceId, {
+          host,
+          port,
+          protocol: fields.protocol,
+          username: fields.username.trim() || null,
+          password: fields.password.trim() || null
+        })
+        if (r.ok) {
+          const note =
+            fields.protocol === 'socks5'
+              ? `OK · ${r.latencyMs} ms до Telegram (з сервера API, SOCKS5)`
+              : `OK · ${r.latencyMs} ms до Telegram (HTTP; для MTProto потрібен SOCKS5)`
+          fields.setMsg(note)
+          pushToast(`Проксі працює · ${r.latencyMs} ms`, 'ok')
+          return
+        }
+        const err = formatProxyProbeError(r.error)
+        fields.setMsg(err)
+        pushToast(err, 'error')
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        fields.setMsg(msg)
+        pushToast(msg, 'error')
+      } finally {
+        fields.setBusy(false)
+      }
+    },
+    [workspaceId, status, pushToast]
+  )
+
+  const probeSavedAccountProxy = useCallback(async (): Promise<void> => {
+    if (!workspaceId || status !== 'online' || !mtprotoAccount) {
+      pushToast('Немає підключення до API', 'error')
+      return
+    }
+    setMtprotoProxyProbeBusy(true)
+    setMtprotoProxyProbeMsg(null)
+    try {
+      const r = await apiTestTelegramAccountProxy(workspaceId, mtprotoAccount.id)
+      if (r.ok) {
+        const note = `OK · ${r.latencyMs} ms до Telegram (з сервера API)`
+        setMtprotoProxyProbeMsg(note)
+        pushToast(`Проксі працює · ${r.latencyMs} ms`, 'ok')
+        return
+      }
+      const err = formatProxyProbeError(r.error)
+      setMtprotoProxyProbeMsg(err)
+      pushToast(err, 'error')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setMtprotoProxyProbeMsg(msg)
+      pushToast(msg, 'error')
+    } finally {
+      setMtprotoProxyProbeBusy(false)
+    }
+  }, [workspaceId, status, mtprotoAccount, pushToast])
+
   const resetForm = useCallback(() => {
     setUsername('')
     setPhone('')
@@ -137,6 +258,7 @@ export function AccountsPage(): JSX.Element {
     setProxyType('socks5')
     setProxyUser('')
     setProxyPass('')
+    setAddProxyProbeMsg(null)
     setAddMtprotoApiId('')
     setAddMtprotoApiHash('')
     setAddMtprotoSession('')
@@ -184,11 +306,14 @@ export function AccountsPage(): JSX.Element {
     setMtprotoApiHash('')
     setMtprotoSessionPaste('')
     setMtprotoUseSessionPaste(false)
-    setMtprotoProxyHost(account.proxyHost?.trim() ?? '')
-    setMtprotoProxyPort(account.proxyPort ? String(account.proxyPort) : '')
-    setMtprotoProxyType(account.proxyProtocol === 'http' ? 'http' : 'socks5')
     setMtprotoProxyUser('')
     setMtprotoProxyPass('')
+    applyMtprotoProxyFromAccount(account, {
+      setHost: setMtprotoProxyHost,
+      setPort: setMtprotoProxyPort,
+      setType: setMtprotoProxyType,
+      setEditing: setMtprotoProxyEditing
+    })
     setMtprotoAccount(account)
   }, [])
 
@@ -204,6 +329,15 @@ export function AccountsPage(): JSX.Element {
       }
       port = parsed
     }
+    const acc = mtprotoAccount
+    const accType = acc.proxyProtocol === 'http' ? 'http' : 'socks5'
+    const proxyUnchanged =
+      !mtprotoProxyPass.trim() &&
+      !mtprotoProxyUser.trim() &&
+      (acc.proxyHost?.trim() ?? '') === host &&
+      (host ? acc.proxyPort === port : !acc.proxyHost?.trim()) &&
+      accType === mtprotoProxyType
+    if (proxyUnchanged) return true
     try {
       const pass = mtprotoProxyPass.trim()
       const r = await apiUpdateTelegramAccountProxy(workspaceId, mtprotoAccount.id, {
@@ -285,6 +419,8 @@ export function AccountsPage(): JSX.Element {
     setMtprotoProxyType('socks5')
     setMtprotoProxyUser('')
     setMtprotoProxyPass('')
+    setMtprotoProxyEditing(false)
+    setMtprotoProxyProbeMsg(null)
   }, [])
 
   const sendMtprotoCode = useCallback(async () => {
@@ -642,6 +778,20 @@ export function AccountsPage(): JSX.Element {
               ? res.account.phone.replace(/[^\d+]/g, '') || res.account.phone.trim()
               : '')
         )
+        setMtprotoProxyUser(proxyUser)
+        setMtprotoProxyPass(proxyPass)
+        const savedHost = res.account.proxyHost?.trim() || host
+        const savedPort = res.account.proxyPort ?? port
+        const savedType =
+          res.account.proxyProtocol === 'http'
+            ? 'http'
+            : res.account.proxyProtocol === 'socks5'
+              ? 'socks5'
+              : proxyType
+        setMtprotoProxyHost(savedHost)
+        setMtprotoProxyPort(savedPort != null ? String(savedPort) : '')
+        setMtprotoProxyType(savedType)
+        setMtprotoProxyEditing(!socks5ProxyConfigured(savedHost, savedPort, savedType))
         setMtprotoCode('')
         setMtprotoPassword('')
         setMtprotoAwait2fa(false)
@@ -899,7 +1049,10 @@ export function AccountsPage(): JSX.Element {
                   </span>
                   <input
                     value={proxyHost}
-                    onChange={(e) => setProxyHost(e.target.value)}
+                    onChange={(e) => {
+                      setProxyHost(e.target.value)
+                      setAddProxyProbeMsg(null)
+                    }}
                     className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
                     placeholder="proxy.example.com"
                     autoComplete="off"
@@ -911,7 +1064,10 @@ export function AccountsPage(): JSX.Element {
                   </span>
                   <input
                     value={proxyPort}
-                    onChange={(e) => setProxyPort(e.target.value)}
+                    onChange={(e) => {
+                      setProxyPort(e.target.value)
+                      setAddProxyProbeMsg(null)
+                    }}
                     inputMode="numeric"
                     disabled={!proxyHost.trim()}
                     className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
@@ -924,7 +1080,10 @@ export function AccountsPage(): JSX.Element {
                   </span>
                   <select
                     value={proxyType}
-                    onChange={(e) => setProxyType(e.target.value === 'socks5' ? 'socks5' : 'http')}
+                    onChange={(e) => {
+                      setProxyType(e.target.value === 'socks5' ? 'socks5' : 'http')
+                      setAddProxyProbeMsg(null)
+                    }}
                     disabled={!proxyHost.trim()}
                     className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   >
@@ -940,7 +1099,10 @@ export function AccountsPage(): JSX.Element {
                 </span>
                 <input
                   value={proxyUser}
-                  onChange={(e) => setProxyUser(e.target.value)}
+                  onChange={(e) => {
+                    setProxyUser(e.target.value)
+                    setAddProxyProbeMsg(null)
+                  }}
                   disabled={!proxyHost.trim()}
                   className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   autoComplete="off"
@@ -953,12 +1115,50 @@ export function AccountsPage(): JSX.Element {
                 <input
                   type="password"
                   value={proxyPass}
-                  onChange={(e) => setProxyPass(e.target.value)}
+                  onChange={(e) => {
+                    setProxyPass(e.target.value)
+                    setAddProxyProbeMsg(null)
+                  }}
                   disabled={!proxyHost.trim()}
                   className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35 disabled:opacity-40"
                   autoComplete="new-password"
                 />
               </label>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={addProxyProbeBusy || !proxyHost.trim() || status !== 'online'}
+                  onClick={() =>
+                    void probeProxyFields({
+                      host: proxyHost,
+                      portRaw: proxyPort,
+                      protocol: proxyType,
+                      username: proxyUser,
+                      password: proxyPass,
+                      setBusy: setAddProxyProbeBusy,
+                      setMsg: setAddProxyProbeMsg
+                    })
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-[13px] font-medium text-zinc-200 hover:border-accent/30 hover:text-white disabled:opacity-40"
+                >
+                  {addProxyProbeBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
+                  ) : null}
+                  {addProxyProbeBusy ? 'Перевірка…' : 'Перевірити проксі'}
+                </button>
+                {addProxyProbeMsg ? (
+                  <span
+                    className={[
+                      'text-[12px]',
+                      addProxyProbeMsg.startsWith('OK')
+                        ? 'text-emerald-300/90'
+                        : 'text-rose-300/90'
+                    ].join(' ')}
+                  >
+                    {addProxyProbeMsg}
+                  </span>
+                ) : null}
+              </div>
               </div>
 
               <div className="flex flex-wrap justify-end gap-3 pt-2">
@@ -1175,42 +1375,188 @@ export function AccountsPage(): JSX.Element {
               )}
 
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4 space-y-3">
-                <p className="text-[12px] text-amber-100/90">
-                  <strong className="font-medium">SOCKS5 проксі</strong> — щоб у Telegram (активні сесії) був IP
-                  проксі, а не сервера API. Збережіть перед «Надіслати код» або вставкою session.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block sm:col-span-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Host</span>
-                    <input
-                      value={mtprotoProxyHost}
-                      onChange={(e) => setMtprotoProxyHost(e.target.value)}
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
-                      placeholder="proxy.example.com"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Порт</span>
-                    <input
-                      value={mtprotoProxyPort}
-                      onChange={(e) => setMtprotoProxyPort(e.target.value)}
-                      inputMode="numeric"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
-                      placeholder="1080"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Тип</span>
-                    <select
-                      value={mtprotoProxyType}
-                      onChange={(e) => setMtprotoProxyType(e.target.value === 'http' ? 'http' : 'socks5')}
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
-                    >
-                      <option value="socks5">SOCKS5 (для MTProto)</option>
-                      <option value="http">HTTP (лише браузер)</option>
-                    </select>
-                  </label>
-                </div>
+                {socks5ProxyConfigured(mtprotoProxyHost, mtprotoProxyPort, mtprotoProxyType) &&
+                !mtprotoProxyEditing ? (
+                  <>
+                    <p className="text-[12px] text-emerald-100/90">
+                      <strong className="font-medium">Проксі вже збережено</strong> — MTProto піде через{' '}
+                      <span className="font-mono text-emerald-50">
+                        {mtprotoProxyHost}:{mtprotoProxyPort}
+                      </span>{' '}
+                      (SOCKS5). Повторно вводити не потрібно.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={mtprotoProxyProbeBusy || status !== 'online'}
+                        onClick={() => void probeSavedAccountProxy()}
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-accent/30 hover:text-white disabled:opacity-40"
+                      >
+                        {mtprotoProxyProbeBusy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" aria-hidden />
+                        ) : null}
+                        {mtprotoProxyProbeBusy ? 'Перевірка…' : 'Перевірити проксі'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMtprotoProxyEditing(true)}
+                        className="text-[12px] font-medium text-amber-200/90 hover:text-amber-100"
+                      >
+                        Змінити проксі
+                      </button>
+                    </div>
+                    {mtprotoProxyProbeMsg ? (
+                      <p
+                        className={[
+                          'text-[12px]',
+                          mtprotoProxyProbeMsg.startsWith('OK')
+                            ? 'text-emerald-300/90'
+                            : 'text-rose-300/90'
+                        ].join(' ')}
+                      >
+                        {mtprotoProxyProbeMsg}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[12px] text-amber-100/90">
+                      <strong className="font-medium">SOCKS5 проксі</strong> — щоб у Telegram був IP проксі, а не
+                      сервера API. Якщо вже вказали при додаванні акаунта — просто надішліть код.
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block sm:col-span-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          Host
+                        </span>
+                        <input
+                          value={mtprotoProxyHost}
+                          onChange={(e) => {
+                            setMtprotoProxyHost(e.target.value)
+                            setMtprotoProxyProbeMsg(null)
+                          }}
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                          placeholder="proxy.example.com"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          Порт
+                        </span>
+                        <input
+                          value={mtprotoProxyPort}
+                          onChange={(e) => {
+                            setMtprotoProxyPort(e.target.value)
+                            setMtprotoProxyProbeMsg(null)
+                          }}
+                          inputMode="numeric"
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                          placeholder="1080"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          Тип
+                        </span>
+                        <select
+                          value={mtprotoProxyType}
+                          onChange={(e) => {
+                            setMtprotoProxyType(e.target.value === 'http' ? 'http' : 'socks5')
+                            setMtprotoProxyProbeMsg(null)
+                          }}
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                        >
+                          <option value="socks5">SOCKS5 (для MTProto)</option>
+                          <option value="http">HTTP (лише браузер)</option>
+                        </select>
+                      </label>
+                      <label className="block sm:col-span-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          Логін (якщо є)
+                        </span>
+                        <input
+                          value={mtprotoProxyUser}
+                          onChange={(e) => {
+                            setMtprotoProxyUser(e.target.value)
+                            setMtprotoProxyProbeMsg(null)
+                          }}
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                          autoComplete="off"
+                        />
+                      </label>
+                      <label className="block sm:col-span-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          Пароль (якщо є)
+                        </span>
+                        <input
+                          type="password"
+                          value={mtprotoProxyPass}
+                          onChange={(e) => {
+                            setMtprotoProxyPass(e.target.value)
+                            setMtprotoProxyProbeMsg(null)
+                          }}
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-accent/35"
+                          autoComplete="new-password"
+                          placeholder="Залиште порожнім, якщо не змінюєте"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={
+                          mtprotoProxyProbeBusy || !mtprotoProxyHost.trim() || status !== 'online'
+                        }
+                        onClick={() =>
+                          void probeProxyFields({
+                            host: mtprotoProxyHost,
+                            portRaw: mtprotoProxyPort,
+                            protocol: mtprotoProxyType,
+                            username: mtprotoProxyUser,
+                            password: mtprotoProxyPass,
+                            setBusy: setMtprotoProxyProbeBusy,
+                            setMsg: setMtprotoProxyProbeMsg
+                          })
+                        }
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-accent/30 hover:text-white disabled:opacity-40"
+                      >
+                        {mtprotoProxyProbeBusy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" aria-hidden />
+                        ) : null}
+                        {mtprotoProxyProbeBusy ? 'Перевірка…' : 'Перевірити проксі'}
+                      </button>
+                      {mtprotoAccount?.mtprotoUsesProxy ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            applyMtprotoProxyFromAccount(mtprotoAccount, {
+                              setHost: setMtprotoProxyHost,
+                              setPort: setMtprotoProxyPort,
+                              setType: setMtprotoProxyType,
+                              setEditing: setMtprotoProxyEditing
+                            })
+                            setMtprotoProxyProbeMsg(null)
+                          }}
+                          className="text-[12px] text-zinc-500 hover:text-zinc-300"
+                        >
+                          Скасувати зміни
+                        </button>
+                      ) : null}
+                    </div>
+                    {mtprotoProxyProbeMsg ? (
+                      <p
+                        className={[
+                          'text-[12px]',
+                          mtprotoProxyProbeMsg.startsWith('OK')
+                            ? 'text-emerald-300/90'
+                            : 'text-rose-300/90'
+                        ].join(' ')}
+                      >
+                        {mtprotoProxyProbeMsg}
+                      </p>
+                    ) : null}
+                  </>
+                )}
               </div>
 
               <div className="flex gap-2">

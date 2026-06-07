@@ -16,6 +16,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { motion } from 'framer-motion'
 import { PanelBrand } from '@/components/brand/PanelBrand'
+import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { useInboxNotify } from '@/context/InboxNotifyContext'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -125,13 +126,16 @@ export function AppShell(): JSX.Element {
           ))}
         </nav>
 
-        <div className="mt-6 rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-4">
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Швидкий старт
+        <div className="mt-6 space-y-3">
+          <SubscriptionTerm variant="card" />
+          <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-transparent p-4">
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+              Швидкий старт
+            </div>
+            <p className="text-[12px] leading-relaxed text-zinc-500">
+              1. Акаунт + SOCKS5 + session · 2. Парсер · 3. Розсилка · 4. Повідомлення для відповідей.
+            </p>
           </div>
-          <p className="text-[12px] leading-relaxed text-zinc-500">
-            1. Акаунт + SOCKS5 + session · 2. Парсер · 3. Розсилка · 4. Повідомлення для відповідей.
-          </p>
         </div>
       </Sidebar>
 

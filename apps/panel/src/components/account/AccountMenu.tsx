@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, LogOut, UserRound } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { useAuth } from '@/context/AuthContext'
 
 type AccountMenuProps = {
@@ -98,6 +99,7 @@ export function AccountMenu({
             <div className="border-b border-white/[0.06] px-4 py-3">
               <div className="text-[11px] uppercase tracking-wide text-zinc-500">Акаунт</div>
               <div className="mt-1 truncate text-sm text-white">{email ?? '—'}</div>
+              <SubscriptionTerm variant="menu" />
             </div>
             <button
               type="button"

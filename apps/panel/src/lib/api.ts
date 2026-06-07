@@ -269,6 +269,23 @@ export async function apiCreateProxy(
   })
 }
 
+export async function apiProbeProxy(
+  workspaceId: string,
+  body: {
+    host: string
+    port: number
+    protocol: ProxyEndpointModel['protocol']
+    username?: string | null
+    password?: string | null
+  }
+): Promise<{ ok: true; latencyMs: number } | { ok: false; error: string }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/proxies/probe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
 export async function apiTestProxy(
   workspaceId: string,
   proxyId: string
@@ -643,6 +660,15 @@ export async function apiDeleteTelegramAccount(
 ): Promise<{ ok: boolean; profileId: string }> {
   return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}`, {
     method: 'DELETE'
+  })
+}
+
+export async function apiTestTelegramAccountProxy(
+  workspaceId: string,
+  accountId: string
+): Promise<{ ok: true; latencyMs: number } | { ok: false; error: string }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/telegram-accounts/${accountId}/proxy/test`, {
+    method: 'POST'
   })
 }
 
