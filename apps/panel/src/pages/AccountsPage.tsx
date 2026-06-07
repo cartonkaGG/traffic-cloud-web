@@ -76,6 +76,7 @@ export function AccountsPage(): JSX.Element {
   const navigate = useNavigate()
 
   const telegramAccounts = bundle?.telegramAccounts ?? mocks.telegramAccounts
+  const providerMtprotoApiConfigured = bundle?.providerMtprotoApiConfigured === true
   const proxiesList = bundle?.proxies ?? mocks.proxies
 
   const proxyLabel = useMemo(() => {
@@ -133,7 +134,7 @@ export function AccountsPage(): JSX.Element {
   const mtprotoRequestAbortRef = useRef<AbortController | null>(null)
 
   function mtprotoNeedsApiInput(): boolean {
-    return !mtprotoAccount?.hasMtprotoApiCreds
+    return !mtprotoAccount?.hasMtprotoApiCreds && !providerMtprotoApiConfigured
   }
 
   function mtprotoApiBody(): { apiId?: string; apiHash?: string } {
@@ -149,7 +150,7 @@ export function AccountsPage(): JSX.Element {
   function mtprotoApiInputError(): string | null {
     if (!mtprotoNeedsApiInput()) return null
     if (!mtprotoApiId.trim() || !mtprotoApiHash.trim()) {
-      return 'Вкажіть App api_id та App api_hash з my.telegram.org/apps'
+      return 'Вкажіть App api_id та App api_hash (або налаштуйте їх на сервері Traffic Cloud)'
     }
     return null
   }
@@ -824,8 +825,8 @@ export function AccountsPage(): JSX.Element {
     const apiId = addMtprotoApiId.trim()
     const apiHash = addMtprotoApiHash.trim()
     const sessionPaste = addMtprotoSession.trim()
-    if (sessionPaste && (!apiId || !apiHash)) {
-      setFormError('Для session string вкажіть App api_id та App api_hash')
+    if (sessionPaste && !apiId && !apiHash && !providerMtprotoApiConfigured) {
+      setFormError('Для session string потрібні API-ключі (на сервері або вручну)')
       return
     }
     setBusy(true)
@@ -853,7 +854,7 @@ export function AccountsPage(): JSX.Element {
       closeAdd()
       await refetch()
 
-      const needsMtprotoLogin = !sessionSaved && apiId && apiHash
+      const needsMtprotoLogin = !sessionSaved && (providerMtprotoApiConfigured || (apiId && apiHash))
       if (needsMtprotoLogin) {
         setMtprotoAccount(res.account)
         setMtprotoApiId(apiId)
@@ -906,6 +907,7 @@ export function AccountsPage(): JSX.Element {
     addMtprotoApiId,
     addMtprotoApiHash,
     addMtprotoSession,
+    providerMtprotoApiConfigured,
     refetch,
     closeAdd,
     pushToast
@@ -1074,39 +1076,47 @@ export function AccountsPage(): JSX.Element {
 
               <div className="rounded-xl border border-cyan-500/15 bg-cyan-500/[0.04] p-4 space-y-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                  MTProto API (опционально)
+                  MTProto (опционально)
                 </p>
-                <p className="text-[12px] text-zinc-500">
-                  Вкажіть api_id та api_hash. Session string <strong className="font-medium text-zinc-400">не
-                  генерується сам</strong> — або вставте готовий (Pyrogram/Telethon), або після збереження
-                  увійдіть через «Код Telegram» (телефон + код) — session збережеться на сервері автоматично.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                      App api_id
-                    </span>
-                    <input
-                      value={addMtprotoApiId}
-                      onChange={(e) => setAddMtprotoApiId(e.target.value)}
-                      inputMode="numeric"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
-                      placeholder="12345678"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                      App api_hash
-                    </span>
-                    <input
-                      value={addMtprotoApiHash}
-                      onChange={(e) => setAddMtprotoApiHash(e.target.value)}
-                      type="password"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
-                      placeholder="hex з my.telegram.org"
-                    />
-                  </label>
-                </div>
+                {providerMtprotoApiConfigured ? (
+                  <p className="text-[12px] text-emerald-200/90">
+                    API-ключі Telegram підставляються автоматично. Після збереження акаунта увійдіть через «Код
+                    Telegram» — session string згенерується сам.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[12px] text-zinc-500">
+                      Вкажіть api_id та api_hash, або зверніться до підтримки Traffic Cloud для автоматичного
+                      підключення.
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          App api_id
+                        </span>
+                        <input
+                          value={addMtprotoApiId}
+                          onChange={(e) => setAddMtprotoApiId(e.target.value)}
+                          inputMode="numeric"
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                          placeholder="12345678"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          App api_hash
+                        </span>
+                        <input
+                          value={addMtprotoApiHash}
+                          onChange={(e) => setAddMtprotoApiHash(e.target.value)}
+                          type="password"
+                          className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none focus:border-accent/35"
+                          placeholder="hex-строка"
+                        />
+                      </label>
+                    </div>
+                  </>
+                )}
                 <label className="block">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                     Session string (опционально)
@@ -1417,19 +1427,14 @@ export function AccountsPage(): JSX.Element {
                   API-ключі вже збережені для цього акаунта (api_id: {mtprotoAccount.mtprotoApiId ?? '—'}).
                   Можна одразу надсилати код або вставити session string.
                 </p>
+              ) : providerMtprotoApiConfigured ? (
+                <p className="text-[13px] text-emerald-200/90">
+                  API-ключі Traffic Cloud підключені автоматично — введіть номер і код Telegram.
+                </p>
               ) : (
                 <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 space-y-3">
                   <p className="text-[12px] text-zinc-400">
-                    Ключі з{' '}
-                    <a
-                      href="https://my.telegram.org/apps"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-cyan-300 hover:underline"
-                    >
-                      my.telegram.org/apps
-                    </a>{' '}
-                    — обов&apos;язкові для входу та session string.
+                    Вкажіть App api_id та App api_hash для входу, або зверніться до підтримки Traffic Cloud.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="block sm:col-span-1">
