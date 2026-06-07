@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, CreditCard, Grid3x3, Home } from 'lucide-react'
+import { Bell, Grid3x3, Home } from 'lucide-react'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import TrafficCloudMark from '@/components/brand/TrafficCloudMark'
 import { useSoftware } from '@/context/SoftwareContext'
 import { getMarketingHomeUrl } from '@/lib/site'
-import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { useLogs } from '@/context/LogContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 
@@ -123,9 +122,6 @@ export function TopBar(): JSX.Element {
               {meta.kicker}
             </div>
             <h1 className="mt-1 truncate text-lg font-semibold tracking-tight text-white">{meta.title}</h1>
-            <div className="mt-1 hidden sm:block">
-              <SubscriptionTerm variant="inline" />
-            </div>
           </div>
         </div>
 
@@ -138,16 +134,6 @@ export function TopBar(): JSX.Element {
             <Home className="h-3.5 w-3.5 text-accent/70" />
             Головна
           </a>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/billing')}
-            className="hidden items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:border-accent/25 hover:text-zinc-300 lg:flex"
-          >
-            <CreditCard className="h-3.5 w-3.5 text-accent/70" />
-            Підписка
-          </motion.button>
           <motion.button
             type="button"
             whileHover={{ scale: 1.02 }}
