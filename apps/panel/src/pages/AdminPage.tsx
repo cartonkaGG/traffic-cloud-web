@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   CheckCircle2,
   Clock,
   CreditCard,
+  Download,
   Gift,
   Home,
   Loader2,
+  Percent,
   Receipt,
+  RefreshCw,
   Save,
   Search,
   Shield,
@@ -17,6 +20,8 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AdminAmbient } from '@/components/admin/AdminAmbient'
+import { AdminPlanPreview } from '@/components/admin/AdminPlanPreview'
+import { AdminWeeklyActivity } from '@/components/admin/AdminWeeklyActivity'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { useAuth } from '@/context/AuthContext'
@@ -30,6 +35,37 @@ import {
 import { getMarketingHomeUrl } from '@/lib/site'
 
 type PaymentFilter = 'all' | 'success' | 'pending' | 'failed'
+type AdminSection = 'manage' | 'payments'
+
+function escapeCsvCell(value: string | number): string {
+  const s = String(value)
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+  return s
+}
+
+function downloadPaymentsCsv(rows: AdminPaymentRow[]): void {
+  const header = ['email', 'amount_usd', 'currency', 'status', 'created_at', 'order_id']
+  const lines = [
+    header.join(','),
+    ...rows.map((p) =>
+      [
+        escapeCsvCell(p.userEmail),
+        escapeCsvCell(p.amountUsd),
+        escapeCsvCell(p.currency),
+        escapeCsvCell(p.status),
+        escapeCsvCell(p.createdAt),
+        escapeCsvCell(p.orderId)
+      ].join(',')
+    )
+  ]
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `traffic-cloud-payments-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 function statusBadge(status: string): string {
   const s = status.toLowerCase()
@@ -92,11 +128,14 @@ export function AdminPage(): JSX.Element {
   const [grantOk, setGrantOk] = useState<string | null>(null)
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
   const [paymentSearch, setPaymentSearch] = useState('')
+  const [mobileSection, setMobileSection] = useState<AdminSection>('manage')
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    if (!isAdmin) return
-    void (async () => {
-      setLoading(true)
+  const loadAdminData = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!isAdmin) return
+      if (!opts?.silent) setLoading(true)
+      else setRefreshing(true)
       setError(null)
       try {
         const [plan, pay] = await Promise.all([apiAdminGetPlan(), apiAdminPayments()])
@@ -112,10 +151,16 @@ export function AdminPage(): JSX.Element {
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e))
       } finally {
-        setLoading(false)
+        if (!opts?.silent) setLoading(false)
+        else setRefreshing(false)
       }
-    })()
-  }, [isAdmin])
+    },
+    [isAdmin]
+  )
+
+  useEffect(() => {
+    void loadAdminData()
+  }, [loadAdminData])
 
   const stats = useMemo(() => {
     let success = 0
@@ -132,7 +177,9 @@ export function AdminPage(): JSX.Element {
         pending++
       }
     }
-    return { total: payments.length, success, pending, failed, revenue }
+    const conversionPct =
+      payments.length > 0 ? Math.round((success / payments.length) * 100) : 0
+    return { total: payments.length, success, pending, failed, revenue, conversionPct }
   }, [payments])
 
   const filteredPayments = useMemo(() => {
@@ -264,9 +311,19 @@ export function AdminPage(): JSX.Element {
       <header className="relative z-10 flex items-center justify-between gap-4 border-b border-white/[0.06] bg-[#030712]/60 px-6 py-4 backdrop-blur-xl sm:px-8">
         <PanelBrand layout="sidebar" />
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadAdminData({ silent: true })}
+            disabled={loading || refreshing}
+            title="Оновити дані"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-400 transition-colors duration-200 hover:border-white/[0.14] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Оновити</span>
+          </button>
           <a
             href={getMarketingHomeUrl()}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-400 transition-colors hover:border-white/[0.14] hover:text-zinc-200"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-400 transition-colors duration-200 hover:border-white/[0.14] hover:text-zinc-200"
           >
             <Home className="h-4 w-4" />
             <span className="hidden sm:inline">Головна</span>
@@ -274,7 +331,7 @@ export function AdminPage(): JSX.Element {
           <button
             type="button"
             onClick={() => navigate('/hub')}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-400 transition-colors hover:border-white/[0.14] hover:text-zinc-200"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-400 transition-colors duration-200 hover:border-white/[0.14] hover:text-zinc-200"
           >
             <ArrowLeft className="h-4 w-4" />
             Hub
@@ -312,11 +369,17 @@ export function AdminPage(): JSX.Element {
           <AdminSkeleton />
         ) : (
           <>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {[
                 { label: 'Усього заявок', value: stats.total, icon: Receipt, tone: 'text-zinc-200' },
                 { label: 'Оплачено', value: stats.success, icon: CheckCircle2, tone: 'text-emerald-300' },
                 { label: 'Очікують', value: stats.pending, icon: Clock, tone: 'text-amber-200' },
+                {
+                  label: 'Конверсія',
+                  value: `${stats.conversionPct}%`,
+                  icon: Percent,
+                  tone: 'text-violet-300'
+                },
                 {
                   label: 'Сума (USD)',
                   value: `$${stats.revenue.toFixed(0)}`,
@@ -342,8 +405,32 @@ export function AdminPage(): JSX.Element {
               ))}
             </div>
 
+            <div className="mt-3">
+              <AdminWeeklyActivity payments={payments} />
+            </div>
+
+            <div className="mt-6 flex gap-2 lg:hidden">
+              {(
+                [
+                  { id: 'manage' as const, label: 'Керування' },
+                  { id: 'payments' as const, label: 'Платежі' }
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setMobileSection(tab.id)}
+                  className={`admin-tab flex-1 ${mobileSection === tab.id ? 'admin-tab--active' : 'admin-tab--idle'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
-              <div className="flex flex-col gap-6">
+              <div
+                className={`flex flex-col gap-6 ${mobileSection === 'payments' ? 'hidden lg:flex' : ''}`}
+              >
                 <form
                   onSubmit={(ev) => void grantSubscription(ev)}
                   className="glass-panel-strong p-6"
@@ -369,7 +456,7 @@ export function AdminPage(): JSX.Element {
                       onChange={(ev) => setGrantEmail(ev.target.value)}
                       type="email"
                       placeholder="user@example.com"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-amber-400/35"
+                      className="admin-input admin-input--amber"
                     />
                   </label>
 
@@ -383,7 +470,7 @@ export function AdminPage(): JSX.Element {
                       type="number"
                       min="1"
                       max="365"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-amber-400/35"
+                      className="admin-input admin-input--amber"
                     />
                   </label>
 
@@ -425,7 +512,7 @@ export function AdminPage(): JSX.Element {
                     <input
                       value={planTitle}
                       onChange={(ev) => setPlanTitle(ev.target.value)}
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-accent/35"
+                      className="admin-input"
                     />
                   </label>
 
@@ -439,7 +526,7 @@ export function AdminPage(): JSX.Element {
                       type="number"
                       min="0.01"
                       step="0.01"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none transition-colors focus:border-accent/35"
+                      className="admin-input font-mono"
                     />
                   </label>
 
@@ -454,7 +541,7 @@ export function AdminPage(): JSX.Element {
                       min="0.01"
                       step="0.01"
                       placeholder="Порожньо — без знижки"
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 font-mono text-sm text-white outline-none placeholder:text-zinc-600 transition-colors focus:border-accent/35"
+                      className="admin-input font-mono placeholder:text-zinc-600"
                     />
                   </label>
 
@@ -465,9 +552,16 @@ export function AdminPage(): JSX.Element {
                     <input
                       value={currency}
                       onChange={(ev) => setCurrency(ev.target.value)}
-                      className="mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white uppercase outline-none transition-colors focus:border-accent/35"
+                      className="admin-input uppercase"
                     />
                   </label>
+
+                  <AdminPlanPreview
+                    planTitle={planTitle}
+                    price={price}
+                    compareAtPrice={compareAtPrice}
+                    currency={currency}
+                  />
 
                   {error ? (
                     <p className="mt-4 flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2.5 text-[13px] text-red-200">
@@ -495,7 +589,9 @@ export function AdminPage(): JSX.Element {
                 </form>
               </div>
 
-              <div className="glass-panel-strong overflow-hidden">
+              <div
+                className={`glass-panel-strong overflow-hidden ${mobileSection === 'manage' ? 'hidden lg:block' : ''}`}
+              >
                 <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
@@ -509,14 +605,25 @@ export function AdminPage(): JSX.Element {
                         </p>
                       </div>
                     </div>
-                    <div className="relative w-full min-w-[200px] max-w-xs">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-                      <input
-                        value={paymentSearch}
-                        onChange={(ev) => setPaymentSearch(ev.target.value)}
-                        placeholder="Пошук email або order…"
-                        className="w-full rounded-xl border border-white/[0.10] bg-black/30 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-colors focus:border-accent/35"
-                      />
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                      <button
+                        type="button"
+                        onClick={() => downloadPaymentsCsv(filteredPayments)}
+                        disabled={filteredPayments.length === 0}
+                        className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[12px] font-medium text-zinc-400 transition-colors duration-200 hover:border-white/[0.14] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        CSV
+                      </button>
+                      <div className="relative min-w-[200px] flex-1 sm:max-w-xs sm:flex-none">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                        <input
+                          value={paymentSearch}
+                          onChange={(ev) => setPaymentSearch(ev.target.value)}
+                          placeholder="Пошук email або order…"
+                          className="admin-input !mt-0 py-2.5 pl-10"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -526,12 +633,7 @@ export function AdminPage(): JSX.Element {
                         key={tab.id}
                         type="button"
                         onClick={() => setPaymentFilter(tab.id)}
-                        className={[
-                          'cursor-pointer rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors',
-                          paymentFilter === tab.id
-                            ? 'border-accent/35 bg-accent/15 text-accent'
-                            : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.14] hover:text-zinc-200'
-                        ].join(' ')}
+                        className={`admin-tab !px-3 !py-1.5 text-[12px] ${paymentFilter === tab.id ? 'admin-tab--active' : 'admin-tab--idle'}`}
                       >
                         {tab.label}
                       </button>

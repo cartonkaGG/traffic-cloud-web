@@ -177,6 +177,40 @@
     box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.35), 0 16px 40px -12px rgba(34, 211, 238, 0.4);
   }
 
+  .admin-input {
+    @apply mt-2 w-full rounded-xl border border-white/[0.10] bg-black/30 px-4 py-3 text-sm text-white outline-none transition-[border-color,box-shadow] duration-200;
+  }
+
+  .admin-input:focus-visible {
+    border-color: rgba(94, 200, 255, 0.4);
+    box-shadow: 0 0 0 3px rgba(94, 200, 255, 0.12);
+  }
+
+  .admin-input--amber:focus-visible {
+    border-color: rgba(251, 191, 36, 0.4);
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+  }
+
+  .admin-tab {
+    @apply cursor-pointer rounded-xl border px-4 py-2.5 text-[13px] font-medium transition-[border-color,background-color,color] duration-200;
+  }
+
+  .admin-tab--active {
+    @apply border-accent/35 bg-accent/15 text-accent;
+  }
+
+  .admin-tab--idle {
+    @apply border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.14] hover:text-zinc-200;
+  }
+
+  .admin-plan-preview {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .admin-activity-bar {
+    min-height: 8px;
+  }
+
   .vu-loader-orbit {
     position: relative;
     width: 140px;
@@ -258,6 +292,14 @@
   }
   50% {
     transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-ambient-mark,
+  .admin-activity-bar {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
