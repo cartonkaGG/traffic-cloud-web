@@ -146,6 +146,37 @@
     accent-color: hsl(195, 100%, 55%);
   }
 
+  .admin-ambient-mark {
+    animation: admin-mark-float 16s ease-in-out infinite;
+    opacity: 0.35;
+  }
+
+  .admin-stat-card {
+    @apply rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm transition-colors hover:border-white/[0.12] hover:bg-white/[0.05];
+  }
+
+  .admin-section-icon {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04];
+  }
+
+  .admin-grant-cta {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.18) 100%);
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.22), 0 12px 32px -16px rgba(251, 191, 36, 0.35);
+  }
+
+  .admin-grant-cta:not(:disabled):hover {
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35), 0 16px 40px -12px rgba(251, 191, 36, 0.45);
+  }
+
+  .admin-save-cta {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(59, 130, 246, 0.18) 100%);
+    box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.2), 0 12px 32px -16px rgba(34, 211, 238, 0.3);
+  }
+
+  .admin-save-cta:not(:disabled):hover {
+    box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.35), 0 16px 40px -12px rgba(34, 211, 238, 0.4);
+  }
+
   .vu-loader-orbit {
     position: relative;
     width: 140px;
@@ -218,6 +249,15 @@
     border-radius: 9999px;
     background: rgba(94, 200, 255, 0.85);
     animation: vu-dot-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes admin-mark-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }
 
