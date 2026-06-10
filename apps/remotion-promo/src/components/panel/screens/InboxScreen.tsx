@@ -10,7 +10,7 @@ const DIALOGS = [
 
 export function InboxScreen() {
   return (
-    <OutreachChrome active="inbox" path="/inbox" kicker="Відповіді в панелі" title="Вхідні" inboxBadge={2}>
+    <OutreachChrome active="inbox" kicker="Відповіді в панелі" title="Вхідні" inboxBadge={2}>
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 10, height: 270 }}>
         <GlassPanel style={{ padding: 0, overflow: 'hidden' }}>
           {DIALOGS.map((d, i) => (

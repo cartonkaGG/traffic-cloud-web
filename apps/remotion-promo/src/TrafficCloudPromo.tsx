@@ -237,7 +237,7 @@ export const TrafficCloudPromo = () => {
           durationInFrames={DUR.accounts}
           eyebrow="Крок 2"
           title="Акаунти Telegram"
-          desc="Підключення через MTProto, SOCKS5-проксі, статуси health і кнопка Open Telegram."
+          desc="Картки акаунтів як у панелі: MTProto, проксі, Telegram Web, Код Telegram і «Запустити спам»."
           camera={[
             { frame: 0, scale: 1.08, x: 0, y: -15 },
             { frame: 32, scale: 1.42, x: 95, y: -55 },
@@ -300,8 +300,8 @@ export const TrafficCloudPromo = () => {
         <DynamicPanelScene
           durationInFrames={DUR.dashboard}
           eyebrow="Крок 6"
-          title="Дашборд і аналітика"
-          desc="Метрики workspace, статус акаунтів і live-лог подій через WebSocket."
+          title="Огляд workspace"
+          desc="Реальний дашборд: API online, 4 метрики, живі логи та акаунт з кнопками дій."
           camera={[
             { frame: 0, scale: 1, x: 0, y: 0 },
             { frame: 28, scale: 1.32, x: -25, y: -35 },

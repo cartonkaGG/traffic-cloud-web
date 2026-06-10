@@ -18,7 +18,7 @@ export function SourcesScreen() {
   });
 
   return (
-    <OutreachChrome active="sources" path="/sources" kicker="Парсер · аудиторія" title="Джерела (Парсер)">
+    <OutreachChrome active="sources" kicker="Канали та аудиторія" title="Парсер">
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {['Парсити всі', 'CSV', 'Mute notifications', 'Sync membership'].map((btn, i) => (
           <div

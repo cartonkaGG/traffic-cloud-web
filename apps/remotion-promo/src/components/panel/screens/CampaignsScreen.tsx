@@ -13,7 +13,7 @@ export function CampaignsScreen() {
   const sent = Math.round(progress * 4.2);
 
   return (
-    <OutreachChrome active="campaigns" path="/campaigns" kicker="Розсилка · DM jobs" title="Кампанії">
+    <OutreachChrome active="campaigns" kicker="Запуск DM" title="Розсилка">
       <FocusCard label="Запущена кампанія" delay={10}>
         <GlassPanel style={{ padding: '12px 14px', marginBottom: 8 }}>
           <CampaignRow

@@ -9,7 +9,7 @@ const TEMPLATES = [
 
 export function MessagesScreen() {
   return (
-    <OutreachChrome active="campaigns" path="/messages" kicker="Розсилка · тексти DM" title="Шаблони повідомлень">
+    <OutreachChrome active="campaigns" kicker="Розсилка · тексти DM" title="Шаблони">
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
         {['Шаблони', 'Кампанії', 'Фільтри'].map((tab, i) => (
           <div

@@ -1,65 +1,49 @@
-import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
-import { FocusCard, GlassPanel } from '../../motion/FocusCard';
 import { OutreachChrome } from '../OutreachChrome';
-import { PANEL } from '../../../lib/panelTokens';
-
-const STATS = [
-  { label: 'Надіслано DM', value: '1 284', delta: '+12%', color: '#34d399' },
-  { label: 'Відповіді', value: '96', delta: '+8%', color: '#5ec8ff' },
-  { label: 'Акаунтів online', value: '4 / 5', delta: '', color: '#a78bfa' },
-  { label: 'Конверсія', value: '7.4%', delta: '+0.6%', color: '#fbbf24' }
-];
-
-const LOGS = [
-  { t: '12:04:11', msg: 'DM sent → @user_2841', color: '#34d399' },
-  { t: '12:04:09', msg: 'Parsed 42 leads · @crypto_chat_ua', color: '#5ec8ff' },
-  { t: '12:03:58', msg: 'Campaign Crypto UA · running', color: '#94a3b8' }
-];
-
+import { PromoAccountCard, PromoLiveLog, PromoStatCard } from '../PromoUi';
+import { PROMO_ACCOUNT, PROMO_STATS } from '../../../lib/promoMocks';
 export function DashboardScreen() {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const logOpacity = interpolate(frame, [0.5 * fps, 1.2 * fps], [0.4, 1], { extrapolateRight: 'clamp' });
-
   return (
-    <OutreachChrome active="overview" path="/" kicker="Огляд workspace" title="Дашборд">
-      <p style={{ margin: '0 0 12px', fontSize: 11, color: PANEL.dim, lineHeight: 1.5 }}>
-        Додайте Telegram-акаунт, розпарсіть чат і запустіть розсилку.
-      </p>
-      <FocusCard label="Метрики workspace" delay={8} style={{ marginBottom: 10 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          {STATS.map((s) => (
-            <GlassPanel key={s.label} style={{ padding: '9px 11px' }}>
-              <div style={{ fontSize: 8, color: PANEL.dim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {s.label}
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: s.color, marginTop: 3, fontFamily: 'ui-monospace' }}>
-                {s.value}
-              </div>
-              {s.delta ? <div style={{ fontSize: 9, color: '#34d399', marginTop: 2 }}>{s.delta}</div> : null}
-            </GlassPanel>
-          ))}
-        </div>
-      </FocusCard>
-      <FocusCard label="WebSocket live log" delay={20}>
-        <GlassPanel
+    <OutreachChrome active="overview" kicker="Головна панель" title="Огляд">
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <p style={{ margin: 0, maxWidth: 520, fontSize: 11, lineHeight: 1.55, color: '#71717a' }}>
+          Додайте Telegram-акаунт, розпарсіть чат і запустіть розсилку. Цифри нижче оновлюються після кожного
+          надісланого DM.
+        </p>
+        <span
           style={{
-            padding: 11,
-            fontFamily: 'ui-monospace',
-            fontSize: 10,
-            opacity: logOpacity
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: '#a7f3d0',
+            border: '1px solid rgba(52,211,153,0.3)',
+            background: 'rgba(52,211,153,0.1)',
+            borderRadius: 999,
+            padding: '4px 10px'
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#e2e8f0', marginBottom: 6, fontFamily: 'system-ui' }}>
-            Live log · WebSocket
-          </div>
-          {LOGS.map((l) => (
-            <div key={l.t} style={{ color: l.color, marginTop: 3 }}>
-              [{l.t}] {l.msg}
+          API · online
+        </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+        {PROMO_STATS.map((s) => (
+          <PromoStatCard key={s.label} {...s} />
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 10, minHeight: 250 }}>
+        <PromoLiveLog />
+        <div>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#71717a' }}>
+              Telegram
             </div>
-          ))}
-        </GlassPanel>
-      </FocusCard>
+            <div style={{ marginTop: 2, fontSize: 14, fontWeight: 600, color: '#fff' }}>Ваші акаунти</div>
+          </div>
+          <PromoAccountCard {...PROMO_ACCOUNT} compact />
+        </div>
+      </div>
     </OutreachChrome>
   );
 }
