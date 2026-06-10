@@ -3,7 +3,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import Loader from './components/Loader';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import HeroPromoVideo from './components/HeroPromoVideo';
 import About from './components/About';
+import { FEATURES } from './config/features';
 import PricingPro from './components/PricingPro';
 import ContactForm from './components/ContactForm';
 import ScrollProgressBar from './components/ScrollProgressBar';
@@ -171,6 +173,7 @@ export default function App() {
 
           <main className="flex-grow relative z-10">
             <Hero onContactClick={scrollToContact} />
+            {FEATURES.heroPromoVideo ? <HeroPromoVideo /> : null}
             <About />
             <PricingPro />
             <ContactForm />
