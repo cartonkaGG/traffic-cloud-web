@@ -1,6 +1,7 @@
 import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
-import { HighlightRing } from '../../motion/HighlightRing';
+import { FocusCard, GlassPanel } from '../../motion/FocusCard';
 import { OutreachChrome } from '../OutreachChrome';
+import { PANEL } from '../../../lib/panelTokens';
 
 export function CampaignsScreen() {
   const frame = useCurrentFrame();
@@ -13,18 +14,21 @@ export function CampaignsScreen() {
 
   return (
     <OutreachChrome active="campaigns" path="/campaigns" kicker="Розсилка · DM jobs" title="Кампанії">
-      <div style={{ position: 'relative' }}>
-        <HighlightRing x={0} y={0} width={780} height={118} label="Запуск · пауза · ліміти" />
-        <CampaignRow
-          name="Crypto UA · Wave 3"
-          status="Запущена"
-          statusColor="#34d399"
-          sent={sent}
-          total={420}
-          progress={progress}
-          account="@lead_bot_01"
-          template="Привіт {name}! Бачив твій інтерес…"
-        />
+      <FocusCard label="Запущена кампанія" delay={10}>
+        <GlassPanel style={{ padding: '12px 14px', marginBottom: 8 }}>
+          <CampaignRow
+            name="Crypto UA · Wave 3"
+            status="Запущена"
+            statusColor="#34d399"
+            sent={sent}
+            total={420}
+            progress={progress}
+            account="@lead_bot_01"
+            template="Привіт {name}! Бачив твій інтерес…"
+          />
+        </GlassPanel>
+      </FocusCard>
+      <GlassPanel style={{ padding: '12px 14px', marginBottom: 8, opacity: 0.85 }}>
         <CampaignRow
           name="Fitness leads RU"
           status="Пауза"
@@ -35,17 +39,7 @@ export function CampaignsScreen() {
           account="@traffic_ru"
           template="Доброго дня, {name} — коротке питання…"
         />
-        <CampaignRow
-          name="Trading EN night"
-          status="Запланирована"
-          statusColor="#38bdf8"
-          sent={0}
-          total={180}
-          progress={0}
-          account="@dm_warm"
-          template="Hi {name}, quick question about signals…"
-        />
-      </div>
+      </GlassPanel>
     </OutreachChrome>
   );
 }
@@ -70,37 +64,29 @@ function CampaignRow({
   template: string;
 }) {
   return (
-    <div
-      style={{
-        marginBottom: 12,
-        padding: '12px 14px',
-        borderRadius: 14,
-        border: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.03)'
-      }}
-    >
+    <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>{name}</div>
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>{account}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>{name}</div>
+          <div style={{ fontSize: 10, color: PANEL.dim, marginTop: 3 }}>{account}</div>
         </div>
         <span
           style={{
-            fontSize: 10,
+            fontSize: 9,
             fontWeight: 600,
             textTransform: 'uppercase',
             color: statusColor,
             border: `1px solid ${statusColor}44`,
             background: `${statusColor}18`,
             borderRadius: 999,
-            padding: '3px 10px'
+            padding: '3px 9px'
           }}
         >
           {status}
         </span>
       </div>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>{template}</div>
-      <div style={{ marginTop: 10, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+      <div style={{ fontSize: 10, color: PANEL.muted, marginTop: 6 }}>{template}</div>
+      <div style={{ marginTop: 8, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }}>
         <div
           style={{
             width: `${progress}%`,
@@ -110,9 +96,9 @@ function CampaignRow({
           }}
         />
       </div>
-      <div style={{ marginTop: 6, fontSize: 11, color: '#94a3b8', fontFamily: 'ui-monospace' }}>
+      <div style={{ marginTop: 5, fontSize: 10, color: PANEL.muted, fontFamily: 'ui-monospace' }}>
         {sent} / {total} DM · Play · Pause · Stop
       </div>
-    </div>
+    </>
   );
 }

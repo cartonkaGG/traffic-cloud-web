@@ -223,9 +223,9 @@ export const TrafficCloudPromo = () => {
           desc="DM Outreach для Telegram-розсилки та Video Uniquify для унікалізації відео прямо в браузері."
           camera={[
             { frame: 0, scale: 1, x: 0, y: 0 },
-            { frame: 35, scale: 1.28, x: 155, y: 55 },
-            { frame: 95, scale: 1.32, x: 155, y: 55 },
-            { frame: 119, scale: 1.12, x: 90, y: 35 }
+            { frame: 32, scale: 1.16, x: 95, y: 65 },
+            { frame: 95, scale: 1.18, x: 95, y: 65 },
+            { frame: 119, scale: 1.05, x: 50, y: 30 }
           ]}
         >
           <HubScreen />
@@ -337,8 +337,8 @@ export const TrafficCloudPromo = () => {
           desc="Другий модуль Hub: пакетна унікалізація вертикальних відео через FFmpeg.wasm локально."
           camera={[
             { frame: 0, scale: 1, x: 0, y: 0 },
-            { frame: 24, scale: 1.38, x: 0, y: 45 },
-            { frame: 68, scale: 1.38, x: 0, y: 45 }
+            { frame: 22, scale: 1.2, x: -55, y: 85 },
+            { frame: 62, scale: 1.22, x: -55, y: 85 }
           ]}
         >
           <UniquifyScreen />

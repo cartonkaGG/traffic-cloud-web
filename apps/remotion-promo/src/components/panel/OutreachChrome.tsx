@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { CloudMark } from '../CloudMark';
+import { PANEL } from '../../lib/panelTokens';
 
 const NAV = [
   { id: 'overview', label: 'Огляд' },
@@ -81,17 +82,7 @@ export function OutreachChrome({ active, path, kicker, title, children, inboxBad
               TRAFFIC CLOUD
             </span>
           </div>
-          <div
-            style={{
-              marginBottom: 10,
-              padding: '0 10px',
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: '#52525b'
-            }}
-          >
+          <div style={{ marginBottom: 8, padding: '0 10px', fontSize: 9, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#52525b' }}>
             Панель
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -108,9 +99,10 @@ export function OutreachChrome({ active, path, kicker, title, children, inboxBad
                     borderRadius: 10,
                     fontSize: 13,
                     fontWeight: isActive ? 600 : 500,
-                    color: isActive ? '#5ec8ff' : '#94a3b8',
-                    background: isActive ? 'rgba(94,200,255,0.12)' : 'transparent',
-                    border: isActive ? '1px solid rgba(94,200,255,0.25)' : '1px solid transparent'
+                    color: isActive ? PANEL.accent : PANEL.muted,
+                    background: isActive ? PANEL.accentSoft : 'transparent',
+                    border: isActive ? `1px solid ${PANEL.accentBorder}` : '1px solid transparent',
+                    boxShadow: isActive ? 'inset 0 0 0 1px rgba(94,200,255,0.08)' : undefined
                   }}
                 >
                   <span>{item.label}</span>

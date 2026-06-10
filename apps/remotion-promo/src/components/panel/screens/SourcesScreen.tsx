@@ -1,6 +1,7 @@
 import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
-import { HighlightRing } from '../../motion/HighlightRing';
+import { FocusCard, GlassPanel } from '../../motion/FocusCard';
 import { OutreachChrome } from '../OutreachChrome';
+import { PANEL } from '../../../lib/panelTokens';
 
 const SOURCES = [
   { title: '@crypto_chat_ua', kind: 'Група', members: '12 400', leads: 842, phase: 'Готово' },
@@ -18,63 +19,63 @@ export function SourcesScreen() {
 
   return (
     <OutreachChrome active="sources" path="/sources" kicker="Парсер · аудиторія" title="Джерела (Парсер)">
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {['Парсити всі', 'CSV', 'Mute notifications', 'Sync membership'].map((btn, i) => (
           <div
             key={btn}
             style={{
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 600,
-              padding: '6px 12px',
+              padding: '5px 10px',
               borderRadius: 8,
               border: '1px solid rgba(255,255,255,0.1)',
-              background: i === 0 ? 'rgba(94,200,255,0.12)' : 'rgba(255,255,255,0.03)',
-              color: i === 0 ? '#5ec8ff' : '#94a3b8'
+              background: i === 0 ? PANEL.accentSoft : 'rgba(255,255,255,0.03)',
+              color: i === 0 ? PANEL.accent : PANEL.muted
             }}
           >
             {btn}
           </div>
         ))}
       </div>
-      <div style={{ position: 'relative' }}>
-        <HighlightRing x={0} y={98} width={780} height={56} label="Парсинг у реальному часі" delay={12} />
-        {SOURCES.map((s, i) => (
-          <div
-            key={s.title}
-            style={{
-              marginBottom: 10,
-              padding: '12px 14px',
-              borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.03)'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>{s.title}</div>
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
-                  {s.kind} · {s.members} учасників
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {SOURCES.map((s, i) => {
+          const row = (
+            <GlassPanel style={{ padding: '11px 13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{s.title}</div>
+                  <div style={{ fontSize: 10, color: PANEL.dim, marginTop: 3 }}>
+                    {s.kind} · {s.members} учасників
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: 'ui-monospace', fontSize: 12, color: PANEL.accent }}>{s.leads} лідів</div>
+                  <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 3 }}>{s.phase}</div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'ui-monospace', fontSize: 13, color: '#5ec8ff' }}>{s.leads} лідів</div>
-                <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 4 }}>{s.phase}</div>
-              </div>
-            </div>
-            {i === 1 ? (
-              <div style={{ marginTop: 10, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }}>
-                <div
-                  style={{
-                    width: `${parsePct}%`,
-                    height: '100%',
-                    borderRadius: 999,
-                    background: 'linear-gradient(90deg, #0ea5e9, #5ec8ff)'
-                  }}
-                />
-              </div>
-            ) : null}
-          </div>
-        ))}
+              {i === 1 ? (
+                <div style={{ marginTop: 8, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }}>
+                  <div
+                    style={{
+                      width: `${parsePct}%`,
+                      height: '100%',
+                      borderRadius: 999,
+                      background: 'linear-gradient(90deg, #0ea5e9, #5ec8ff)'
+                    }}
+                  />
+                </div>
+              ) : null}
+            </GlassPanel>
+          );
+
+          return i === 1 ? (
+            <FocusCard key={s.title} label="Парсинг у реальному часі" delay={12}>
+              {row}
+            </FocusCard>
+          ) : (
+            <div key={s.title}>{row}</div>
+          );
+        })}
       </div>
     </OutreachChrome>
   );

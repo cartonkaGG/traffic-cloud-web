@@ -37,10 +37,21 @@ export function DynamicPanelScene({
             height: 500 * s,
             transform: 'translateX(-50%)',
             overflow: 'hidden',
-            borderRadius: 18 * s,
-            boxShadow: '0 40px 100px rgba(0,0,0,0.45)'
+            borderRadius: 20 * s,
+            boxShadow:
+              '0 0 0 1px rgba(255,255,255,0.06), 0 48px 100px rgba(0,0,0,0.5), 0 0 80px rgba(94,200,255,0.06)'
           }}
         >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              zIndex: 5,
+              boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35)',
+              borderRadius: 20 * s
+            }}
+          />
           <div
             style={{
               position: 'absolute',
