@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render TrafficCloudPromo ../marketing/public/promo/traffic-cloud-promo.mp4",
-    "render:webm": "remotion render TrafficCloudPromo ../marketing/public/promo/traffic-cloud-promo.webm --codec=vp8"
+    "render": "remotion render TrafficCloudPromo ../marketing/public/promo/traffic-cloud-promo.mp4 --crf=14",
+    "render:webm": "remotion render TrafficCloudPromo ../marketing/public/promo/traffic-cloud-promo.webm --codec=vp9 --crf=18",
+    "render:poster": "remotion still TrafficCloudPromo ../marketing/public/promo/traffic-cloud-promo-poster.jpg --frame=120 --jpeg-quality=96"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.290",

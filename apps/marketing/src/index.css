@@ -803,6 +803,16 @@
   }
 }
 
+.promo-video-player {
+  object-fit: contain;
+  object-position: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+.promo-video-frame {
+  background: linear-gradient(180deg, rgba(94, 200, 255, 0.04), transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora,
   .hero-scroll-chevron,

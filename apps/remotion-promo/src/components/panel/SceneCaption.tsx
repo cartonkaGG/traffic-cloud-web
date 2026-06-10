@@ -1,4 +1,5 @@
 import { Easing, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { useUiScale } from '../../lib/useUiScale';
 
 type Props = {
   eyebrow: string;
@@ -9,6 +10,7 @@ type Props = {
 export function SceneCaption({ eyebrow, title, desc }: Props) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const s = useUiScale();
   const opacity = interpolate(frame, [0, 0.5 * fps], [0, 1], {
     extrapolateRight: 'clamp',
     easing: Easing.out(Easing.cubic)
@@ -24,7 +26,7 @@ export function SceneCaption({ eyebrow, title, desc }: Props) {
         position: 'absolute',
         left: 0,
         right: 0,
-        top: 36,
+        top: 36 * s,
         textAlign: 'center',
         opacity,
         transform: `translateY(${y}px)`,
@@ -35,7 +37,7 @@ export function SceneCaption({ eyebrow, title, desc }: Props) {
       <p
         style={{
           margin: 0,
-          fontSize: 12,
+          fontSize: 12 * s,
           fontWeight: 600,
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
@@ -44,8 +46,8 @@ export function SceneCaption({ eyebrow, title, desc }: Props) {
       >
         {eyebrow}
       </p>
-      <h2 style={{ margin: '8px 0 0', fontSize: 28, fontWeight: 800, color: '#f8fafc' }}>{title}</h2>
-      <p style={{ margin: '8px auto 0', maxWidth: 560, fontSize: 15, color: '#94a3b8', lineHeight: 1.45 }}>
+      <h2 style={{ margin: `${8 * s}px 0 0`, fontSize: 28 * s, fontWeight: 800, color: '#f8fafc' }}>{title}</h2>
+      <p style={{ margin: `${8 * s}px auto 0`, maxWidth: 560 * s, fontSize: 15 * s, color: '#94a3b8', lineHeight: 1.45 }}>
         {desc}
       </p>
     </div>

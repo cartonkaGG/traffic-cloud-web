@@ -1,5 +1,6 @@
 import { Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { ReactNode } from 'react';
+import { useUiScale } from '../../lib/useUiScale';
 import { SceneCaption } from './SceneCaption';
 
 type Props = {
@@ -12,10 +13,11 @@ type Props = {
 export function PanelSlide({ eyebrow, title, desc, children }: Props) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const uiScale = useUiScale();
 
   const enter = spring({ frame, fps, config: { damping: 18, stiffness: 90 } });
   const scale = interpolate(enter, [0, 1], [0.94, 1]);
-  const panelY = interpolate(enter, [0, 1], [40, 0]);
+  const panelY = interpolate(enter, [0, 1], [40 * uiScale, 0]);
   const opacity = interpolate(frame, [0, 0.35 * fps], [0, 1], {
     extrapolateRight: 'clamp',
     easing: Easing.out(Easing.cubic)
@@ -30,15 +32,16 @@ export function PanelSlide({ eyebrow, title, desc, children }: Props) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 20
+        paddingTop: 20 * uiScale
       }}
     >
       <SceneCaption eyebrow={eyebrow} title={title} desc={desc} />
       <div
         style={{
-          marginTop: 108,
+          marginTop: 108 * uiScale,
           opacity,
-          transform: `translateY(${panelY}px) scale(${scale})`
+          transform: `translateY(${panelY}px) scale(${scale * uiScale})`,
+          transformOrigin: 'center top'
         }}
       >
         {children}

@@ -30,16 +30,16 @@ export default function HeroPromoVideo() {
         <ScrollReveal variant="up" delay={0.1}>
           <div className="promo-video-frame relative rounded-2xl sm:rounded-3xl border border-white/[0.1] bg-black/40 p-1 sm:p-1.5 shadow-[0_0_80px_-20px_rgba(94,200,255,0.35)]">
             <video
-              className="w-full rounded-xl sm:rounded-[1.25rem] aspect-video bg-[#030712] object-cover"
+              className="promo-video-player w-full rounded-xl sm:rounded-[1.25rem] aspect-video bg-[#030712]"
               autoPlay
               muted
               loop
               playsInline
-              preload="metadata"
+              preload="auto"
               poster="/promo/traffic-cloud-promo-poster.jpg"
             >
-              <source src={PROMO_WEBM} type="video/webm" />
               <source src={PROMO_MP4} type="video/mp4" />
+              <source src={PROMO_WEBM} type="video/webm" />
             </video>
           </div>
           <p className="mt-4 text-center text-[11px] text-gray-600">

@@ -8,8 +8,8 @@ export const RemotionRoot = () => {
       component={TrafficCloudPromo}
       durationInFrames={720}
       fps={30}
-      width={1280}
-      height={720}
+      width={1920}
+      height={1080}
     />
   );
 };
