@@ -9,80 +9,109 @@ import {
 } from 'remotion';
 import { CloudMark } from './components/CloudMark';
 import { GridBackground } from './components/GridBackground';
-import { PanelSlide } from './components/panel/PanelSlide';
+import { SceneFade } from './components/motion/SceneFade';
+import { DynamicPanelScene } from './components/panel/DynamicPanelScene';
+import { AccountsScreen } from './components/panel/screens/AccountsScreen';
 import { CampaignsScreen } from './components/panel/screens/CampaignsScreen';
 import { DashboardScreen } from './components/panel/screens/DashboardScreen';
 import { HubScreen } from './components/panel/screens/HubScreen';
+import { InboxScreen } from './components/panel/screens/InboxScreen';
+import { MessagesScreen } from './components/panel/screens/MessagesScreen';
 import { SourcesScreen } from './components/panel/screens/SourcesScreen';
+import { UniquifyScreen } from './components/panel/screens/UniquifyScreen';
 import { useUiScale } from './lib/useUiScale';
+
+const DUR = {
+  intro: 90,
+  hub: 120,
+  accounts: 105,
+  sources: 105,
+  messages: 90,
+  campaigns: 120,
+  dashboard: 105,
+  inbox: 105,
+  uniquify: 75,
+  cta: 135
+} as const;
 
 function IntroScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = useUiScale();
 
-  const logoScale = spring({ frame, fps, config: { damping: 14, stiffness: 120 } });
-  const logoOpacity = interpolate(frame, [0, 0.6 * fps], [0, 1], {
-    extrapolateRight: 'clamp',
-    easing: Easing.bezier(0.16, 1, 0.3, 1)
-  });
-  const titleY = interpolate(frame, [0.4 * fps, 1.2 * fps], [24 * s, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: Easing.out(Easing.cubic)
-  });
-  const titleOpacity = interpolate(frame, [0.5 * fps, 1.3 * fps], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp'
-  });
-  const tagOpacity = interpolate(frame, [1.4 * fps, 2.2 * fps], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp'
-  });
-  const tagY = interpolate(frame, [1.4 * fps, 2.2 * fps], [16 * s, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: Easing.out(Easing.cubic)
-  });
+  const punch = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
+  const zoom = interpolate(punch, [0, 1], [0.72, 1]);
+  const logoOpacity = interpolate(frame, [0, 0.5 * fps], [0, 1], { extrapolateRight: 'clamp' });
+  const titleOpacity = interpolate(frame, [0.35 * fps, 1.1 * fps], [0, 1], { extrapolateRight: 'clamp' });
+  const tagOpacity = interpolate(frame, [1.2 * fps, 2 * fps], [0, 1], { extrapolateRight: 'clamp' });
+  const workflowOpacity = interpolate(frame, [2.2 * fps, 2.8 * fps], [0, 1], { extrapolateRight: 'clamp' });
 
   return (
-    <AbsoluteFill
-      style={{
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif'
-      }}
-    >
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ transform: `scale(${logoScale})`, opacity: logoOpacity }}>
-          <CloudMark size={Math.round(140 * s)} />
+    <AbsoluteFill>
+      <SceneFade durationInFrames={DUR.intro}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
+            transform: `scale(${zoom})`
+          }}
+        >
+          <div style={{ opacity: logoOpacity }}>
+            <CloudMark size={Math.round(150 * s)} />
+          </div>
+          <h1
+            style={{
+              marginTop: 28 * s,
+              marginBottom: 0,
+              fontSize: 68 * s,
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              color: '#f8fafc',
+              opacity: titleOpacity
+            }}
+          >
+            Traffic <span style={{ color: '#5ec8ff' }}>Cloud</span>
+          </h1>
+          <p style={{ marginTop: 14 * s, fontSize: 26 * s, color: '#94a3b8', opacity: tagOpacity }}>
+            Веб-платформа для Telegram outreach
+          </p>
+          <div
+            style={{
+              marginTop: 28 * s,
+              display: 'flex',
+              gap: 10,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              maxWidth: 720 * s,
+              opacity: workflowOpacity
+            }}
+          >
+            {['Hub', 'Акаунти', 'Парсер', 'Шаблони', 'Розсилка', 'Inbox', 'Uniquify'].map((step) => (
+              <span
+                key={step}
+                style={{
+                  fontSize: 11 * s,
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: '#5ec8ff',
+                  border: '1px solid rgba(94,200,255,0.25)',
+                  background: 'rgba(94,200,255,0.08)',
+                  borderRadius: 999,
+                  padding: `${6 * s}px ${12 * s}px`
+                }}
+              >
+                {step}
+              </span>
+            ))}
+          </div>
         </div>
-        <h1
-          style={{
-            marginTop: 28 * s,
-            marginBottom: 0,
-            fontSize: 64 * s,
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            color: '#f8fafc',
-            transform: `translateY(${titleY}px)`,
-            opacity: titleOpacity
-          }}
-        >
-          Traffic <span style={{ color: '#5ec8ff' }}>Cloud</span>
-        </h1>
-        <p
-          style={{
-            marginTop: 16 * s,
-            fontSize: 26 * s,
-            color: '#94a3b8',
-            transform: `translateY(${tagY}px)`,
-            opacity: tagOpacity
-          }}
-        >
-          Telegram outreach у хмарі
-        </p>
-      </div>
+      </SceneFade>
     </AbsoluteFill>
   );
 }
@@ -92,117 +121,231 @@ function CtaScene() {
   const { fps } = useVideoConfig();
   const s = useUiScale();
 
-  const opacity = interpolate(frame, [0, 0.6 * fps], [0, 1], {
+  const opacity = interpolate(frame, [0, 0.5 * fps], [0, 1], {
     extrapolateRight: 'clamp',
     easing: Easing.out(Easing.cubic)
   });
-  const scale = spring({ frame, fps, config: { damping: 16, stiffness: 100 } });
-  const glow = interpolate(frame, [0, 2 * fps], [0.3, 0.7], {
-    extrapolateRight: 'clamp'
-  });
+  const enter = spring({ frame, fps, config: { damping: 16, stiffness: 90 } });
+  const scale = interpolate(enter, [0, 1], [0.88, 1]);
+  const glow = interpolate(frame, [0, 2 * fps], [0.25, 0.75], { extrapolateRight: 'clamp' });
+  const drift = interpolate(frame, [0, DUR.cta], [0, -12], { easing: Easing.inOut(Easing.sin) });
 
   return (
-    <AbsoluteFill
-      style={{
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif'
-      }}
-    >
-      <div
-        style={{
-          textAlign: 'center',
-          opacity,
-          transform: `scale(${0.92 + scale * 0.08})`
-        }}
-      >
-        <CloudMark size={Math.round(96 * s)} />
-        <h2
-          style={{
-            marginTop: 32 * s,
-            marginBottom: 12 * s,
-            fontSize: 44 * s,
-            fontWeight: 800,
-            color: '#f8fafc',
-            maxWidth: 720 * s,
-            lineHeight: 1.2
-          }}
-        >
-          Парсіть · розсилайте · аналізуйте — у браузері
-        </h2>
-        <p style={{ fontSize: 20 * s, color: '#94a3b8', marginBottom: 36 * s }}>
-          Веб-панель для Telegram outreach без десктоп-софту
-        </p>
+    <AbsoluteFill>
+      <SceneFade durationInFrames={DUR.cta}>
         <div
           style={{
-            display: 'inline-block',
-            padding: `${16 * s}px ${36 * s}px`,
-            borderRadius: 14 * s,
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
-            boxShadow: `0 0 ${48 * s}px rgba(94, 200, 255, ${glow})`,
-            fontSize: 20 * s,
-            fontWeight: 700,
-            color: '#fff'
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
+            opacity,
+            transform: `translateY(${drift}px) scale(${scale})`
           }}
         >
-          Увійти в панель →
+          <div>
+            <CloudMark size={Math.round(100 * s)} />
+            <h2
+              style={{
+                marginTop: 30 * s,
+                marginBottom: 12 * s,
+                fontSize: 46 * s,
+                fontWeight: 800,
+                color: '#f8fafc',
+                maxWidth: 780 * s,
+                lineHeight: 1.15,
+                marginLeft: 'auto',
+                marginRight: 'auto'
+              }}
+            >
+              Увесь цикл трафіку — від парсингу до відповідей
+            </h2>
+            <p style={{ fontSize: 20 * s, color: '#94a3b8', marginBottom: 32 * s }}>
+              traffic-cloud.app · без десктоп-софту · NOWPayments підписка
+            </p>
+            <div
+              style={{
+                display: 'inline-block',
+                padding: `${16 * s}px ${40 * s}px`,
+                borderRadius: 14 * s,
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
+                boxShadow: `0 0 ${56 * s}px rgba(94, 200, 255, ${glow})`,
+                fontSize: 20 * s,
+                fontWeight: 700,
+                color: '#fff'
+              }}
+            >
+              Увійти в панель →
+            </div>
+          </div>
         </div>
-      </div>
+      </SceneFade>
     </AbsoluteFill>
   );
 }
 
 export const TrafficCloudPromo = () => {
-  const { fps } = useVideoConfig();
+  let t = 0;
+
+  const seq = (dur: number) => {
+    const from = t;
+    t += dur;
+    return from;
+  };
+
+  const introFrom = seq(DUR.intro);
+  const hubFrom = seq(DUR.hub);
+  const accountsFrom = seq(DUR.accounts);
+  const sourcesFrom = seq(DUR.sources);
+  const messagesFrom = seq(DUR.messages);
+  const campaignsFrom = seq(DUR.campaigns);
+  const dashboardFrom = seq(DUR.dashboard);
+  const inboxFrom = seq(DUR.inbox);
+  const uniquifyFrom = seq(DUR.uniquify);
+  const ctaFrom = seq(DUR.cta);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#030712' }}>
       <GridBackground />
-      <Sequence durationInFrames={3 * fps}>
+
+      <Sequence from={introFrom} durationInFrames={DUR.intro}>
         <IntroScene />
       </Sequence>
 
-      <Sequence from={3 * fps} durationInFrames={3.5 * fps}>
-        <PanelSlide
-          eyebrow="Веб-панель"
-          title="Software Hub"
-          desc="Один вхід до всіх інструментів: DM Outreach, Video Uniquify та інші модулі."
+      <Sequence from={hubFrom} durationInFrames={DUR.hub}>
+        <DynamicPanelScene
+          durationInFrames={DUR.hub}
+          eyebrow="Крок 1"
+          title="Software Hub — вибір інструменту"
+          desc="DM Outreach для Telegram-розсилки та Video Uniquify для унікалізації відео прямо в браузері."
+          camera={[
+            { frame: 0, scale: 1, x: 0, y: 0 },
+            { frame: 35, scale: 1.28, x: 155, y: 55 },
+            { frame: 95, scale: 1.32, x: 155, y: 55 },
+            { frame: 119, scale: 1.12, x: 90, y: 35 }
+          ]}
         >
           <HubScreen />
-        </PanelSlide>
+        </DynamicPanelScene>
       </Sequence>
 
-      <Sequence from={6.5 * fps} durationInFrames={3.5 * fps}>
-        <PanelSlide
-          eyebrow="Дашборд"
-          title="Статистика в реальному часі"
-          desc="DM, відповіді, статус акаунтів і live-логи — все на одному екрані."
+      <Sequence from={accountsFrom} durationInFrames={DUR.accounts}>
+        <DynamicPanelScene
+          durationInFrames={DUR.accounts}
+          eyebrow="Крок 2"
+          title="Акаунти Telegram"
+          desc="Підключення через MTProto, SOCKS5-проксі, статуси health і кнопка Open Telegram."
+          camera={[
+            { frame: 0, scale: 1.08, x: 0, y: -15 },
+            { frame: 32, scale: 1.42, x: 95, y: -55 },
+            { frame: 90, scale: 1.42, x: 95, y: -55 }
+          ]}
         >
-          <DashboardScreen />
-        </PanelSlide>
+          <AccountsScreen />
+        </DynamicPanelScene>
       </Sequence>
 
-      <Sequence from={10 * fps} durationInFrames={4 * fps}>
-        <PanelSlide
-          eyebrow="Кампанії"
-          title="Розсилка DM з шаблонами"
-          desc="Запуск, пауза, ліміти та змінні в текстах — кампанія керується з панелі."
-        >
-          <CampaignsScreen />
-        </PanelSlide>
-      </Sequence>
-
-      <Sequence from={14 * fps} durationInFrames={4 * fps}>
-        <PanelSlide
-          eyebrow="Джерела"
-          title="Парсинг аудиторії"
-          desc="Збір лідів з чатів і каналів, фільтри та передача одразу в кампанію."
+      <Sequence from={sourcesFrom} durationInFrames={DUR.sources}>
+        <DynamicPanelScene
+          durationInFrames={DUR.sources}
+          eyebrow="Крок 3"
+          title="Парсер джерел"
+          desc="Збір аудиторії з чатів, каналів і invite-посилань. CSV, фільтри, фази парсингу в реальному часі."
+          camera={[
+            { frame: 0, scale: 1.05, x: -30, y: 0 },
+            { frame: 38, scale: 1.48, x: -70, y: 75 },
+            { frame: 92, scale: 1.48, x: -70, y: 75 }
+          ]}
         >
           <SourcesScreen />
-        </PanelSlide>
+        </DynamicPanelScene>
       </Sequence>
 
-      <Sequence from={18 * fps} durationInFrames={6 * fps}>
+      <Sequence from={messagesFrom} durationInFrames={DUR.messages}>
+        <DynamicPanelScene
+          durationInFrames={DUR.messages}
+          eyebrow="Крок 4"
+          title="Шаблони DM"
+          desc="Тексти зі змінними {name} і {geo}. Активний шаблон, копії при редагуванні — без перезапису."
+          camera={[
+            { frame: 0, scale: 1.15, x: 0, y: -25 },
+            { frame: 28, scale: 1.52, x: 45, y: -48 },
+            { frame: 78, scale: 1.52, x: 45, y: -48 }
+          ]}
+        >
+          <MessagesScreen />
+        </DynamicPanelScene>
+      </Sequence>
+
+      <Sequence from={campaignsFrom} durationInFrames={DUR.campaigns}>
+        <DynamicPanelScene
+          durationInFrames={DUR.campaigns}
+          eyebrow="Крок 5"
+          title="Кампанії розсилки"
+          desc="Запуск, пауза, stop, ліміти DM на акаунт. Прогрес у реальному часі по кожній кампанії."
+          camera={[
+            { frame: 0, scale: 1.08, x: 0, y: 5 },
+            { frame: 36, scale: 1.5, x: 55, y: -25 },
+            { frame: 105, scale: 1.5, x: 55, y: -25 }
+          ]}
+        >
+          <CampaignsScreen />
+        </DynamicPanelScene>
+      </Sequence>
+
+      <Sequence from={dashboardFrom} durationInFrames={DUR.dashboard}>
+        <DynamicPanelScene
+          durationInFrames={DUR.dashboard}
+          eyebrow="Крок 6"
+          title="Дашборд і аналітика"
+          desc="Метрики workspace, статус акаунтів і live-лог подій через WebSocket."
+          camera={[
+            { frame: 0, scale: 1, x: 0, y: 0 },
+            { frame: 28, scale: 1.32, x: -25, y: -35 },
+            { frame: 62, scale: 1.48, x: 35, y: 95 },
+            { frame: 98, scale: 1.48, x: 35, y: 95 }
+          ]}
+        >
+          <DashboardScreen />
+        </DynamicPanelScene>
+      </Sequence>
+
+      <Sequence from={inboxFrom} durationInFrames={DUR.inbox}>
+        <DynamicPanelScene
+          durationInFrames={DUR.inbox}
+          eyebrow="Крок 7"
+          title="Вхідні — відповіді в панелі"
+          desc="Діалоги з лідами, непрочитані, відповідь прямо з веб-інтерфейсу без Telegram Desktop."
+          camera={[
+            { frame: 0, scale: 1.1, x: 0, y: 0 },
+            { frame: 34, scale: 1.55, x: -195, y: -15 },
+            { frame: 92, scale: 1.55, x: -195, y: -15 }
+          ]}
+        >
+          <InboxScreen />
+        </DynamicPanelScene>
+      </Sequence>
+
+      <Sequence from={uniquifyFrom} durationInFrames={DUR.uniquify}>
+        <DynamicPanelScene
+          durationInFrames={DUR.uniquify}
+          eyebrow="Бонус"
+          title="Video Uniquify"
+          desc="Другий модуль Hub: пакетна унікалізація вертикальних відео через FFmpeg.wasm локально."
+          camera={[
+            { frame: 0, scale: 1, x: 0, y: 0 },
+            { frame: 24, scale: 1.38, x: 0, y: 45 },
+            { frame: 68, scale: 1.38, x: 0, y: 45 }
+          ]}
+        >
+          <UniquifyScreen />
+        </DynamicPanelScene>
+      </Sequence>
+
+      <Sequence from={ctaFrom} durationInFrames={DUR.cta}>
         <CtaScene />
       </Sequence>
     </AbsoluteFill>

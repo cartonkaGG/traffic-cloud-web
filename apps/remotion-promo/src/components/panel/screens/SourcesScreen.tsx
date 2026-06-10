@@ -1,69 +1,81 @@
-import { PanelChrome } from '../PanelChrome';
+import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { HighlightRing } from '../../motion/HighlightRing';
+import { OutreachChrome } from '../OutreachChrome';
 
 const SOURCES = [
-  { title: 'Crypto Chat UA', members: '12 400', leads: 842, status: 'Готово' },
-  { title: 'Fitness RU Channel', members: '8 900', leads: 316, status: 'Парсинг…' },
-  { title: 'Trading signals EN', members: '21 100', leads: 1204, status: 'Готово' }
+  { title: '@crypto_chat_ua', kind: 'Група', members: '12 400', leads: 842, phase: 'Готово' },
+  { title: 'Fitness RU Channel', kind: 'Канал', members: '8 900', leads: 316, phase: 'Збір учасників' },
+  { title: 't.me/+trading_signals', kind: 'Invite link', members: '21 100', leads: 1204, phase: 'Готово' }
 ];
 
 export function SourcesScreen() {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const parsePct = interpolate(frame, [0.4 * fps, 2.2 * fps], [18, 74], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp'
+  });
+
   return (
-    <PanelChrome active="sources" path="sources">
-      <div style={{ marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#f8fafc' }}>Джерела аудиторії</h3>
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
-          Парсинг учасників з чатів і каналів · фільтри · blacklist
-        </p>
+    <OutreachChrome active="sources" path="/sources" kicker="Парсер · аудиторія" title="Джерела (Парсер)">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        {['Парсити всі', 'CSV', 'Mute notifications', 'Sync membership'].map((btn, i) => (
+          <div
+            key={btn}
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              padding: '6px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: i === 0 ? 'rgba(94,200,255,0.12)' : 'rgba(255,255,255,0.03)',
+              color: i === 0 ? '#5ec8ff' : '#94a3b8'
+            }}
+          >
+            {btn}
+          </div>
+        ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {SOURCES.map((s) => (
+      <div style={{ position: 'relative' }}>
+        <HighlightRing x={0} y={98} width={780} height={56} label="Парсинг у реальному часі" delay={12} />
+        {SOURCES.map((s, i) => (
           <div
             key={s.title}
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto auto auto',
-              gap: 16,
-              alignItems: 'center',
+              marginBottom: 10,
               padding: '12px 14px',
               borderRadius: 12,
               border: '1px solid rgba(255,255,255,0.08)',
               background: 'rgba(255,255,255,0.03)'
             }}
           >
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>{s.title}</div>
-              <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{s.members} учасників</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>{s.title}</div>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                  {s.kind} · {s.members} учасників
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'ui-monospace', fontSize: 13, color: '#5ec8ff' }}>{s.leads} лідів</div>
+                <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 4 }}>{s.phase}</div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, fontFamily: 'ui-monospace', color: '#5ec8ff' }}>{s.leads} лідів</div>
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                color: s.status === 'Готово' ? '#34d399' : '#fbbf24',
-                border: `1px solid ${s.status === 'Готово' ? 'rgba(52,211,153,0.3)' : 'rgba(251,191,36,0.3)'}`,
-                background: s.status === 'Готово' ? 'rgba(52,211,153,0.1)' : 'rgba(251,191,36,0.1)',
-                borderRadius: 999,
-                padding: '4px 10px'
-              }}
-            >
-              {s.status}
-            </div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94a3b8',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                padding: '6px 10px'
-              }}
-            >
-              → Кампанія
-            </div>
+            {i === 1 ? (
+              <div style={{ marginTop: 10, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }}>
+                <div
+                  style={{
+                    width: `${parsePct}%`,
+                    height: '100%',
+                    borderRadius: 999,
+                    background: 'linear-gradient(90deg, #0ea5e9, #5ec8ff)'
+                  }}
+                />
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
-    </PanelChrome>
+    </OutreachChrome>
   );
 }

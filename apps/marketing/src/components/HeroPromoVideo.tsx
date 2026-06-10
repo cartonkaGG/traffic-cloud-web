@@ -20,10 +20,10 @@ export default function HeroPromoVideo() {
             Презентація
           </div>
           <h2 className="text-2xl sm:text-4xl font-sans font-extrabold text-white tracking-tight">
-            Панель Traffic Cloud за 24 секунди
+            Повний тур платформою за 35 секунд
           </h2>
           <p className="mt-3 text-sm sm:text-base text-gray-400 max-w-2xl mx-auto">
-            Hub, дашборд, кампанії DM і парсинг джерел — подивіться, як виглядає і працює наша веб-панель.
+            Hub → акаунти → парсер → шаблони → розсилка → inbox → Video Uniquify. Зум на реальні екрани панелі.
           </p>
         </ScrollReveal>
 
