@@ -36,6 +36,22 @@ export type AuthResponse = {
   workspaceId: string
 }
 
+export type LoginChallengeResponse = {
+  needsLoginCode: true
+  challengeId: string
+  emailMasked: string
+  expiresInSec: number
+  emailSent: boolean
+  emailError?: string
+  message: string
+}
+
+export type LoginResult = AuthResponse | LoginChallengeResponse
+
+export function isLoginChallenge(res: LoginResult): res is LoginChallengeResponse {
+  return 'needsLoginCode' in res && res.needsLoginCode === true
+}
+
 export type RegisterResponse =
   | AuthResponse
   | {
@@ -122,7 +138,9 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   if (
     token &&
     !path.includes('/auth/login') &&
-    !path.includes('/auth/register')
+    !path.includes('/auth/register') &&
+    !path.includes('/auth/verify-login-code') &&
+    !path.includes('/auth/resend-login-code')
   ) {
     headers.set('Authorization', `Bearer ${token}`)
   }
@@ -158,11 +176,35 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function apiLogin(body: { email: string; password: string }): Promise<AuthResponse> {
-  return fetchJson<AuthResponse>('/v1/auth/login', {
+export async function apiLogin(body: { email: string; password: string }): Promise<LoginResult> {
+  return fetchJson<LoginResult>('/v1/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
+  })
+}
+
+export async function apiVerifyLoginCode(body: {
+  challengeId: string
+  code: string
+}): Promise<AuthResponse & { loginAlertSent?: boolean }> {
+  return fetchJson('/v1/auth/verify-login-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiResendLoginCode(challengeId: string): Promise<{
+  ok: boolean
+  expiresInSec: number
+  emailSent: boolean
+  emailError?: string
+}> {
+  return fetchJson('/v1/auth/resend-login-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ challengeId })
   })
 }
 
@@ -996,10 +1038,11 @@ export async function apiInboxSend(
   })
 }
 
-export function wsUrlFromHttpBase(base: string): string {
+export function wsUrlFromHttpBase(base: string, token?: string | null): string {
   const u = new URL(base)
   u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
   u.pathname = '/ws'
   u.search = ''
+  if (token) u.searchParams.set('token', token)
   return u.toString()
 }

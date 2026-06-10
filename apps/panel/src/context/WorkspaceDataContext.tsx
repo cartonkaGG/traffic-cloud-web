@@ -19,6 +19,7 @@ import {
   type UserRole,
 } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { getAccessToken } from '@/lib/authSession'
 import { getApiBaseUrl } from '@/lib/settings'
 import { useLogs } from '@/context/LogContext'
 export type ApiConnectionStatus = 'idle' | 'loading' | 'online' | 'offline'
@@ -79,7 +80,7 @@ export function WorkspaceDataProvider({ children }: { children: ReactNode }): JS
   const connectWs = useCallback(
     (wid: string, base: string) => {
       wsRef.current?.close()
-      const url = wsUrlFromHttpBase(base)
+      const url = wsUrlFromHttpBase(base, getAccessToken())
       const ws = new WebSocket(url)
       wsRef.current = ws
       widRef.current = wid

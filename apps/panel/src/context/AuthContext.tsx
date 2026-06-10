@@ -6,7 +6,14 @@ import {
   useState,
   type ReactNode
 } from 'react'
-import { apiLogin, apiRegister, type UserRole } from '@/lib/api'
+import {
+  apiLogin,
+  apiRegister,
+  apiVerifyLoginCode,
+  isLoginChallenge,
+  type LoginChallengeResponse,
+  type UserRole
+} from '@/lib/api'
 import {
   clearAccessSession,
   getAccessToken,
@@ -21,7 +28,8 @@ type AuthContextValue = {
   email: string | null
   role: UserRole
   isAdmin: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<LoginChallengeResponse | null>
+  completeLoginWithCode: (challengeId: string, code: string) => Promise<void>
   register: (
     email: string,
     password: string
@@ -41,13 +49,31 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     setRoleState(next)
   }, [])
 
+  const applyAuthResponse = useCallback(
+    (token: string, userEmail: string, userRole: UserRole) => {
+      setAccessSession(token, userEmail, userRole)
+      setEmail(userEmail)
+      setRole(userRole)
+    },
+    [setRole]
+  )
+
   const login = useCallback(async (e: string, password: string) => {
     const res = await apiLogin({ email: e.trim(), password })
+    if (isLoginChallenge(res)) return res
     const userRole = res.user.role ?? 'user'
-    setAccessSession(res.token, res.user.email, userRole)
-    setEmail(res.user.email)
-    setRole(userRole)
-  }, [setRole])
+    applyAuthResponse(res.token, res.user.email, userRole)
+    return null
+  }, [applyAuthResponse])
+
+  const completeLoginWithCode = useCallback(
+    async (challengeId: string, code: string) => {
+      const res = await apiVerifyLoginCode({ challengeId, code })
+      const userRole = res.user.role ?? 'user'
+      applyAuthResponse(res.token, res.user.email, userRole)
+    },
+    [applyAuthResponse]
+  )
 
   const register = useCallback(async (e: string, password: string) => {
     const res = await apiRegister({ email: e.trim().toLowerCase(), password })
@@ -79,11 +105,12 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       role,
       isAdmin: role === 'admin',
       login,
+      completeLoginWithCode,
       register,
       logout,
       setRole
     }),
-    [email, role, login, register, logout, setRole]
+    [email, role, login, completeLoginWithCode, register, logout, setRole]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

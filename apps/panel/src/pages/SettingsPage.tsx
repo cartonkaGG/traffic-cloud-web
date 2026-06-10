@@ -141,7 +141,7 @@ export function SettingsPage(): JSX.Element {
           <a
             href="https://my.telegram.org/apps"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="text-accent underline decoration-accent/40 underline-offset-2 hover:text-accent/90"
           >
             my.telegram.org/apps

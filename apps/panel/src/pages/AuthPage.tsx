@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, Loader2, Mail } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { LoginCodeForm } from '@/components/auth/LoginCodeForm'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { AuthPageBackdrop } from '@/components/layout/AuthPageBackdrop'
 import { useAuth } from '@/context/AuthContext'
-import { apiResendVerification, apiVerificationStatus } from '@/lib/api'
+import { apiResendLoginCode, apiResendVerification, apiVerificationStatus } from '@/lib/api'
 import { BILLING_SUBSCRIBE_PATH, HUB_PATH } from '@/lib/panelRoutes'
 import {
   getResendCooldownLeft,
@@ -15,7 +16,7 @@ import {
 import { getMarketingHomeUrl } from '@/lib/site'
 
 export function AuthPage(): JSX.Element {
-  const { login, register } = useAuth()
+  const { login, completeLoginWithCode, register } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || BILLING_SUBSCRIBE_PATH
@@ -32,9 +33,23 @@ export function AuthPage(): JSX.Element {
   const [emailJustVerified, setEmailJustVerified] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [initialEmailSent, setInitialEmailSent] = useState(true)
+  const [loginChallenge, setLoginChallenge] = useState<{
+    challengeId: string
+    emailMasked: string
+    expiresInSec: number
+  } | null>(null)
+  const [loginResendCooldown, setLoginResendCooldown] = useState(0)
 
   const title = useMemo(() => (mode === 'login' ? 'Вхід' : 'Реєстрація'), [mode])
   const activeEmail = pendingVerifyEmail ?? email.trim().toLowerCase()
+
+  useEffect(() => {
+    if (loginResendCooldown <= 0) return
+    const tick = window.setInterval(() => {
+      setLoginResendCooldown((prev) => Math.max(0, prev - 1))
+    }, 1000)
+    return () => window.clearInterval(tick)
+  }, [loginResendCooldown])
 
   useEffect(() => {
     if (!pendingVerifyEmail) return
@@ -90,7 +105,26 @@ export function AuthPage(): JSX.Element {
     if (raw.includes('Підтвердіть email') || raw.includes('email_not_verified')) {
       return 'Підтвердіть email — відкрийте лист у пошті або надішліть його повторно.'
     }
+    if (raw.includes('invalid_code')) {
+      return 'Невірний код. Перевірте цифри або надішліть новий код.'
+    }
+    if (raw.includes('expired')) {
+      return 'Код прострочено. Увійдіть знову, щоб отримати новий.'
+    }
+    if (raw.includes('too_many_attempts')) {
+      return 'Забагато невдалих спроб. Увійдіть знову.'
+    }
     return raw
+  }
+
+  function navigateAfterAuth(): void {
+    const safe =
+      redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
+    if (safe && !safe.includes('/billing')) {
+      navigate(safe, { replace: true })
+    } else {
+      navigate(HUB_PATH, { replace: true })
+    }
   }
 
   async function submit(e: FormEvent): Promise<void> {
@@ -101,14 +135,19 @@ export function AuthPage(): JSX.Element {
     setSubmitting(true)
     try {
       if (mode === 'login') {
-        await login(email, password)
-        const safe =
-          redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
-        if (safe && !safe.includes('/billing')) {
-          navigate(safe, { replace: true })
-        } else {
-          navigate(HUB_PATH, { replace: true })
+        const challenge = await login(email, password)
+        if (challenge) {
+          if (challenge.emailError) {
+            setFormError(mapAuthError(new Error(challenge.emailError)))
+          }
+          setLoginChallenge({
+            challengeId: challenge.challengeId,
+            emailMasked: challenge.emailMasked,
+            expiresInSec: challenge.expiresInSec
+          })
+          return
         }
+        navigateAfterAuth()
       } else {
         const result = await register(email, password)
         if (result.needsEmailVerification) {
@@ -157,6 +196,70 @@ export function AuthPage(): JSX.Element {
       const left = getResendCooldownLeft(activeEmail)
       if (left > 0) setCooldownLeft(left)
     }
+  }
+
+  async function submitLoginCode(code: string): Promise<void> {
+    if (!loginChallenge || submitting) return
+    setFormError(null)
+    setSubmitting(true)
+    try {
+      await completeLoginWithCode(loginChallenge.challengeId, code)
+      navigateAfterAuth()
+    } catch (err) {
+      setFormError(mapAuthError(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function resendLoginCode(): Promise<void> {
+    if (!loginChallenge || loginResendCooldown > 0) return
+    setFormError(null)
+    try {
+      const res = await apiResendLoginCode(loginChallenge.challengeId)
+      setLoginChallenge((prev) =>
+        prev ? { ...prev, expiresInSec: res.expiresInSec } : prev
+      )
+      setLoginResendCooldown(60)
+      if (res.emailSent === false) {
+        setFormError(mapAuthError(new Error(res.emailError ?? 'smtp_not_configured')))
+      }
+    } catch (err) {
+      setFormError(mapAuthError(err))
+    }
+  }
+
+  if (loginChallenge) {
+    return (
+      <AuthPageBackdrop>
+        <motion.div
+          initial={{ opacity: 0, y: 14, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full max-w-[440px]"
+        >
+          <div className="glass-panel-strong relative overflow-hidden p-8 shadow-glow">
+            <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-[0.35]" />
+            <div className="relative">
+              <PanelBrand layout="auth" />
+              <LoginCodeForm
+                emailMasked={loginChallenge.emailMasked}
+                expiresInSec={loginChallenge.expiresInSec}
+                submitting={submitting}
+                resendCooldownSec={loginResendCooldown}
+                error={formError}
+                onSubmit={(code) => void submitLoginCode(code)}
+                onResend={() => void resendLoginCode()}
+                onBack={() => {
+                  setLoginChallenge(null)
+                  setFormError(null)
+                }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      </AuthPageBackdrop>
+    )
   }
 
   if (pendingVerifyEmail) {
@@ -358,7 +461,7 @@ export function AuthPage(): JSX.Element {
                   className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-[13px] leading-relaxed text-zinc-500"
                 >
                   {mode === 'login'
-                    ? 'Після входу без активної підписки ви потрапите на сторінку оплати.'
+                    ? 'Після пароля надішлемо 6-значний код на email. Після входу — сповіщення про пристрій і локацію.'
                     : 'Мінімум 8 символів. Після реєстрації надішлемо лист для підтвердження email.'}
                 </motion.div>
               </AnimatePresence>

@@ -1424,7 +1424,7 @@ export function AccountsPage(): JSX.Element {
                     <a
                       href="https://my.telegram.org/apps"
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="text-cyan-300 hover:underline"
                     >
                       my.telegram.org/apps
