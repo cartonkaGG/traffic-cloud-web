@@ -1,6 +1,6 @@
 # Traffic Cloud — Remotion promo
 
-18s marketing video (1280×720, 30fps) for the homepage.
+24s marketing video (1280×720, 30fps) with panel UI tour for the homepage.
 
 ## Preview
 
