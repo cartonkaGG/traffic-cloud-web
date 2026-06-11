@@ -1,6 +1,7 @@
 node_modules/
 dist/
 apps/marketing/dist/
+apps/panel/public/ffmpeg/
 .env
 .env.*
 !.env.example

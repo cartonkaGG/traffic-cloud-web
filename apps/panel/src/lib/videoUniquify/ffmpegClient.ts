@@ -1,8 +1,7 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
-import { fetchFile, toBlobURL } from '@ffmpeg/util'
+import { fetchFile } from '@ffmpeg/util'
 
-const CORE_VERSION = '0.12.10'
-const CORE_BASE = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/esm`
+const CORE_BASE = `${import.meta.env.BASE_URL}ffmpeg`
 
 let ffmpeg: FFmpeg | null = null
 let loadPromise: Promise<FFmpeg> | null = null
@@ -11,6 +10,22 @@ let preloadScheduled = false
 export type FfmpegLoadProgress = {
   phase: 'download' | 'ready'
   message: string
+}
+
+export function formatFfmpegLoadError(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error)
+  if (
+    msg.includes('Content Security') ||
+    msg.includes('WebAssembly') ||
+    msg.includes('unsafe-eval') ||
+    msg.includes('Aborted')
+  ) {
+    return 'Браузер заблокував відео-движок. Оновіть сторінку (Ctrl+Shift+R) або відкрийте в Chrome / Edge останньої версії.'
+  }
+  if (msg.includes('404') || msg.includes('Failed to fetch')) {
+    return 'Не вдалося завантажити відео-движок. Спробуйте оновити сторінку — якщо не допоможе, напишіть у підтримку.'
+  }
+  return msg
 }
 
 /** Дати браузеру намалювати UI перед важким завантаженням WASM. */
@@ -42,13 +57,16 @@ export async function loadFfmpeg(
     await yieldToPaint()
     const instance = new FFmpeg()
     await instance.load({
-      coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm')
+      coreURL: `${CORE_BASE}/ffmpeg-core.js`,
+      wasmURL: `${CORE_BASE}/ffmpeg-core.wasm`
     })
     ffmpeg = instance
     onStatus?.({ phase: 'ready', message: 'Готово' })
     return instance
-  })()
+  })().catch((error) => {
+    loadPromise = null
+    throw new Error(formatFfmpegLoadError(error))
+  })
 
   return loadPromise
 }

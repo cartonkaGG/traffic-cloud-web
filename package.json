@@ -9,12 +9,14 @@
     "predev:full": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-dev-ports.ps1",
     "dev:full": "concurrently -n site,panel,api -c green,magenta,cyan \"npm run dev --prefix apps/marketing\" \"npm run dev:panel\" \"npm run dev --prefix ../traffic-cloud-api\"",
     "dev:kill": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-dev-ports.ps1",
+    "predev:panel": "node scripts/copy-ffmpeg-core.mjs",
     "dev:panel": "vite --config config/vite.panel.ts",
     "dev:marketing": "npm run dev --prefix apps/marketing",
-    "build": "npm run build --prefix apps/marketing && vite build --config config/vite.panel.ts && node scripts/finalize-web-app-build.mjs",
+    "build": "npm run build --prefix apps/marketing && node scripts/copy-ffmpeg-core.mjs && vite build --config config/vite.panel.ts && node scripts/finalize-web-app-build.mjs",
     "preview": "npm run preview --prefix apps/marketing"
   },
   "dependencies": {
+    "@ffmpeg/core": "0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "fflate": "^0.8.3",
