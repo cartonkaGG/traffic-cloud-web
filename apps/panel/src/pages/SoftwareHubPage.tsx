@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { CreditCard, Home, Lock, Play, Shield, Sparkles } from 'lucide-react'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { Link, useNavigate } from 'react-router-dom'
+import { DesktopUpdatePill } from '@/components/desktop/DesktopUpdatePill'
 import { DesktopAppGateModal } from '@/components/tiktok/DesktopAppGateModal'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { PanelBrand } from '@/components/brand/PanelBrand'
@@ -178,6 +179,7 @@ export function SoftwareHubPage(): JSX.Element {
       <header className="relative z-10 flex items-center justify-between gap-6 border-b border-white/[0.06] px-8 py-5 backdrop-blur-xl">
         <PanelBrand layout="sidebar" />
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <DesktopUpdatePill />
           <a
             href={getMarketingHomeUrl()}
             className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2 text-sm text-zinc-400 transition-colors hover:border-accent/25 hover:text-zinc-200"

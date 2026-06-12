@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
+import { DesktopUpdatePill } from '@/components/desktop/DesktopUpdatePill'
 import type { TikTokTabId } from '@/lib/tiktokTabStorage'
 import { Sidebar } from './Sidebar'
 
@@ -79,7 +80,10 @@ export function TikTokWarmupShell(): JSX.Element {
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] px-6 py-4">
-          <SubscriptionTerm variant="inline" />
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <SubscriptionTerm variant="inline" />
+            <DesktopUpdatePill />
+          </div>
           <AccountMenu redirectAfterSwitch="/hub" />
         </header>
         <main className="relative isolate min-h-0 flex-1 overflow-y-auto">

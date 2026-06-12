@@ -1,5 +1,8 @@
-import { Download, Monitor, RefreshCw, X } from 'lucide-react'
-import { GlassCard } from '@/components/ui/GlassCard'
+import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { DesktopInstallCard } from '@/components/desktop/DesktopInstallCard'
+import { useDesktopUpdate } from '@/hooks/useDesktopUpdate'
 import {
   canOpenAntidetectBrowser,
   isTrafficCloudShell,
@@ -20,95 +23,109 @@ export function DesktopAppGateModal({
   downloadUrl?: string | null
   forceUpdate?: boolean
 }): JSX.Element | null {
-  if (!open) return null
+  const desktopUpdate = useDesktopUpdate()
+  const [downloadBusy, setDownloadBusy] = useState(false)
 
   const inShell = isTrafficCloudShell()
-  const needsUpdate = forceUpdate || (inShell && !canOpenAntidetectBrowser())
+  const needsUpdate = forceUpdate || (inShell && !canOpenAntidetectBrowser()) || desktopUpdate.updateAvailable
 
-  const openDownload = (): void => {
-    openDesktopInstaller(downloadUrl)
+  const latestVersion = desktopUpdate.latestVersion ?? '0.2.4'
+  const resolvedUrl = downloadUrl ?? desktopUpdate.downloadUrl
+
+  useEffect(() => {
+    if (!open) setDownloadBusy(false)
+  }, [open])
+
+  const handleDownload = (): void => {
+    setDownloadBusy(true)
+    openDesktopInstaller(resolvedUrl)
+    window.setTimeout(() => setDownloadBusy(false), 2400)
   }
 
-  const openInDesktop = (): void => {
+  const handleOpenInApp = (): void => {
     launchTrafficCloudDesktop('tiktok')
     onContinueInDesktop?.()
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <GlassCard className="relative w-full max-w-md p-6">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-zinc-500 hover:text-zinc-200"
-          aria-label="Закрити"
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <X className="h-4 w-4" />
-        </button>
-        <div className="flex items-center gap-2 text-fuchsia-300">
-          {needsUpdate ? <RefreshCw className="h-5 w-5" /> : <Monitor className="h-5 w-5" />}
-          <h2 className="pr-8 text-lg font-semibold text-white">
-            {needsUpdate
-              ? 'Оновіть Traffic Cloud'
-              : 'TikTok Warmup працює лише в десктоп-додатку'}
-          </h2>
-        </div>
-        {needsUpdate ? (
-          <>
-            <p className="mt-3 text-[13px] leading-relaxed text-zinc-500">
-              Ви вже у вікні Traffic Cloud, але версія застаріла або не підключився антидетект-браузер.
-              Завантажте останній інсталятор і перевстановіть — тоді TikTok відкриватиметься коректно.
-            </p>
-            <p className="mt-3 rounded-xl border border-amber-400/15 bg-amber-500/5 px-3 py-2.5 text-[12px] leading-relaxed text-amber-100/85">
-              Після установки закрийте старе вікно і запустіть Traffic Cloud з меню Пуск. Увійдіть у
-              той самий акаунт.
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="mt-3 text-[13px] leading-relaxed text-zinc-500">
-              Автореєстрація та прогрів TikTok потребують антидетект-браузера Electron у додатку Traffic
-              Cloud. У звичайному браузері ці дії недоступні — немає автозаповнення форм, тимчасової
-              пошти та керування профілем.
-            </p>
-            <p className="mt-3 rounded-xl border border-cyan-400/15 bg-cyan-500/5 px-3 py-2.5 text-[12px] leading-relaxed text-cyan-100/85">
-              1. Натисніть «Завантажити додаток» і встановіть Traffic Cloud (Windows). 2. Після
-              установки — «Відкрити в додатку» або запустіть програму з меню Пуск.
-            </p>
-          </>
-        )}
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <button
             type="button"
+            className="absolute inset-0 cursor-pointer bg-black/75 backdrop-blur-md"
+            aria-label="Закрити"
             onClick={onClose}
-            className="rounded-xl border border-white/10 px-4 py-2 text-sm text-zinc-400"
+          />
+          <motion.div
+            className="relative w-full max-w-lg"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="desktop-gate-title"
           >
-            Скасувати
-          </button>
-          <button
-            type="button"
-            onClick={openDownload}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
-          >
-            <Download className="h-4 w-4" />
-            {needsUpdate ? 'Завантажити оновлення' : 'Завантажити додаток'}
-          </button>
-          {!needsUpdate ? (
-            <button
-              type="button"
-              onClick={openInDesktop}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-100"
-            >
-              <Monitor className="h-4 w-4" />
-              Відкрити в додатку
-            </button>
-          ) : null}
-        </div>
-        <p className="mt-4 text-[11px] text-zinc-600">
-          Інсталятор завантажується з цього сайту (~83 МБ).
-          {inShell ? ' Перевстановлення замінить стару версію.' : ' Після установки увійдіть у той самий акаунт.'}
-        </p>
-      </GlassCard>
-    </div>
+            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gray-950/90 shadow-[0_24px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-fuchsia-500/10 via-cyan-500/5 to-transparent"
+                aria-hidden
+              />
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-4 top-4 z-10 cursor-pointer rounded-lg border border-white/10 bg-black/40 p-1.5 text-zinc-500 transition-colors duration-200 hover:text-zinc-200"
+                aria-label="Закрити"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="relative p-6 pt-7">
+                <p
+                  id="desktop-gate-title"
+                  className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-400/80"
+                >
+                  Traffic Cloud Desktop
+                </p>
+                <h2 className="mt-2 pr-10 text-xl font-bold tracking-tight text-white">
+                  {needsUpdate ? 'Оновлення для TikTok Warmup' : 'Десктоп для TikTok Warmup'}
+                </h2>
+                <p className="mt-2 text-[13px] leading-relaxed text-zinc-500">
+                  {needsUpdate
+                    ? 'Автореєстрація та прогрів потребують актуального антидетект-браузера в Electron.'
+                    : 'Автореєстрація, тимчасова пошта, автозаповнення форм і прогрів — лише в десктоп-додатку.'}
+                </p>
+
+                <div className="mt-5">
+                  <DesktopInstallCard
+                    variant={needsUpdate ? 'update' : 'install'}
+                    latestVersion={latestVersion}
+                    currentVersion={desktopUpdate.currentVersion}
+                    onPrimary={handleDownload}
+                    onSecondary={needsUpdate ? undefined : handleOpenInApp}
+                    primaryBusy={downloadBusy}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="mt-4 w-full cursor-pointer rounded-xl border border-white/[0.06] py-2.5 text-sm text-zinc-500 transition-colors duration-200 hover:border-white/12 hover:text-zinc-300"
+                >
+                  Скасувати
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   )
 }

@@ -39,12 +39,15 @@ import {
   apiTestProxyAdhoc,
   apiUpdateTikTokAccount
 } from '@/lib/api'
+import { DesktopInstallCard } from '@/components/desktop/DesktopInstallCard'
 import {
   canOpenAntidetectBrowser,
   fetchDesktopDownloadUrl,
   isTrafficCloudShell,
+  launchTrafficCloudDesktop,
   openDesktopInstaller
 } from '@/lib/desktopAppGate'
+import { useDesktopUpdate } from '@/hooks/useDesktopUpdate'
 import {
   credentialsFromAccount,
   openTikTokFromCreateLaunch,
@@ -192,6 +195,8 @@ export function TikTokWarmupPage(): JSX.Element {
 
   const isDesktopShell = isTrafficCloudShell()
   const canLaunchBrowser = canOpenAntidetectBrowser()
+  const desktopUpdate = useDesktopUpdate()
+  const [bannerDownloadBusy, setBannerDownloadBusy] = useState(false)
 
   useEffect(() => {
     void fetchDesktopDownloadUrl().then(setDownloadUrl)
@@ -716,47 +721,31 @@ export function TikTokWarmupPage(): JSX.Element {
       </div>
 
       {!isDesktopShell ? (
-        <GlassCard className="relative border-amber-400/20 bg-amber-500/5 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-amber-100">
-                TikTok Warmup працює лише в десктоп-додатку
-              </p>
-              <p className="mt-1 max-w-2xl text-[13px] text-amber-200/70">
-                Завантажте Traffic Cloud або відкрийте цю сторінку у встановленому додатку, щоб
-                створювати акаунти, запускати автореєстрацію та прогрів.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => showDesktopGate(false)}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100"
-            >
-              <Monitor className="h-4 w-4" />
-              Завантажити / відкрити
-            </button>
-          </div>
-        </GlassCard>
-      ) : !canLaunchBrowser ? (
-        <GlassCard className="relative border-cyan-400/20 bg-cyan-500/5 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-cyan-100">Оновіть Traffic Cloud</p>
-              <p className="mt-1 max-w-2xl text-[13px] text-cyan-200/70">
-                Ви в додатку, але антидетект-браузер не підключений. Завантажте останній інсталятор
-                0.2.4+ і перевстановіть — інакше TikTok не відкриється.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => openDesktopInstaller(downloadUrl)}
-              className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100"
-            >
-              <Monitor className="h-4 w-4" />
-              Завантажити оновлення
-            </button>
-          </div>
-        </GlassCard>
+        <DesktopInstallCard
+          variant="install"
+          latestVersion={desktopUpdate.latestVersion ?? undefined}
+          compact
+          primaryBusy={bannerDownloadBusy}
+          onPrimary={() => {
+            setBannerDownloadBusy(true)
+            openDesktopInstaller(downloadUrl ?? desktopUpdate.downloadUrl)
+            window.setTimeout(() => setBannerDownloadBusy(false), 2400)
+          }}
+          onSecondary={() => launchTrafficCloudDesktop('tiktok')}
+        />
+      ) : !canLaunchBrowser || desktopUpdate.updateAvailable ? (
+        <DesktopInstallCard
+          variant="update"
+          latestVersion={desktopUpdate.latestVersion ?? undefined}
+          currentVersion={desktopUpdate.currentVersion}
+          compact
+          primaryBusy={bannerDownloadBusy}
+          onPrimary={() => {
+            setBannerDownloadBusy(true)
+            openDesktopInstaller(downloadUrl ?? desktopUpdate.downloadUrl)
+            window.setTimeout(() => setBannerDownloadBusy(false), 2400)
+          }}
+        />
       ) : null}
 
       <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

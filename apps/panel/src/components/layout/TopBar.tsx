@@ -8,6 +8,7 @@ import { PanelBrand } from '@/components/brand/PanelBrand'
 import TrafficCloudMark from '@/components/brand/TrafficCloudMark'
 import { getMarketingHomeUrl } from '@/lib/site'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
+import { DesktopUpdatePill } from '@/components/desktop/DesktopUpdatePill'
 import { useLogs } from '@/context/LogContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
 
@@ -134,6 +135,7 @@ export function TopBar(): JSX.Element {
         </div>
 
         <div className="flex items-center gap-3">
+          <DesktopUpdatePill />
           <div className="hidden lg:flex">
             <PanelBrand layout="compact" homeTo="/hub" />
           </div>
