@@ -4,7 +4,7 @@ type Props = {
   className?: string
   size?: number
   glowColor?: string
-  variant?: 'hero' | 'logo' | 'ambient'
+  variant?: 'hero' | 'logo' | 'ambient' | 'auth'
   glow?: 'full' | 'lean'
 }
 
@@ -16,10 +16,15 @@ export default function TrafficCloudMark({
   glow = 'full'
 }: Props) {
   const height = Math.round(size * cloudMarkAspect)
-  const isLight = variant === 'logo' || variant === 'ambient'
+  const isLight = variant === 'logo' || variant === 'ambient' || variant === 'auth'
+  const isAuth = variant === 'auth'
   const leanHero = variant === 'hero' && glow === 'lean'
   const markClass =
-    variant === 'hero' ? 'neon-cloud-mark hero-cloud-neon' : 'neon-cloud-icon opacity-90'
+    variant === 'hero'
+      ? 'neon-cloud-mark hero-cloud-neon'
+      : isAuth
+        ? 'neon-cloud-auth'
+        : 'neon-cloud-icon opacity-90'
 
   return (
     <div className={`relative inline-block ${markClass} ${className}`.trim()}>
@@ -70,7 +75,27 @@ export default function TrafficCloudMark({
             />
           </>
         )}
-        {isLight ? (
+        {isAuth ? (
+          <>
+            <path
+              d={CLOUD_SHAPE_PATH}
+              fill="none"
+              stroke={glowColor}
+              strokeWidth={5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.85}
+            />
+            <path
+              d={CLOUD_SHAPE_PATH}
+              fill="none"
+              stroke="hsl(195, 100%, 96%)"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </>
+        ) : isLight ? (
           <path
             d={CLOUD_SHAPE_PATH}
             fill="none"
@@ -89,24 +114,28 @@ export default function TrafficCloudMark({
             style={{ filter: leanHero ? undefined : 'blur(3px)' }}
           />
         )}
-        <path
-          d={CLOUD_SHAPE_PATH}
-          fill="none"
-          stroke={glowColor}
-          strokeWidth={isLight ? 3 : 12}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity={0.95}
-          className={!isLight ? 'hero-neon-core' : undefined}
-        />
-        <path
-          d={CLOUD_SHAPE_PATH}
-          fill="none"
-          stroke="hsl(195, 100%, 96%)"
-          strokeWidth={isLight ? 1.5 : 5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {!isAuth ? (
+          <>
+            <path
+              d={CLOUD_SHAPE_PATH}
+              fill="none"
+              stroke={glowColor}
+              strokeWidth={isLight ? 3 : 12}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.95}
+              className={!isLight ? 'hero-neon-core' : undefined}
+            />
+            <path
+              d={CLOUD_SHAPE_PATH}
+              fill="none"
+              stroke="hsl(195, 100%, 96%)"
+              strokeWidth={isLight ? 1.5 : 5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </>
+        ) : null}
       </svg>
     </div>
   )

@@ -1,12 +1,10 @@
 import {
   Download,
   Fingerprint,
-  Mail,
   Monitor,
   RefreshCw,
   Shield,
-  Sparkles,
-  Wand2
+  Sparkles
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BUNDLED_DESKTOP_VERSION } from '@/lib/desktopUpdate'
@@ -19,14 +17,14 @@ const FEATURES = [
     hint: 'Ізольований профіль + проксі'
   },
   {
-    icon: Wand2,
-    title: 'Автореєстрація',
-    hint: 'Форма, код, Next автоматично'
+    icon: Monitor,
+    title: 'Ручний вхід',
+    hint: 'TikTok login у вікні додатку'
   },
   {
-    icon: Mail,
-    title: 'Email-код',
-    hint: 'Gmail app-password / IMAP'
+    icon: Sparkles,
+    title: 'Прогрів',
+    hint: 'Лайки, коментарі, підписки'
   }
 ] as const
 

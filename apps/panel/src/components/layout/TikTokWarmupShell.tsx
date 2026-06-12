@@ -15,7 +15,7 @@ const nav: Array<{
   icon: typeof Users
 }> = [
   { id: 'accounts', to: '/tiktok/accounts', label: 'Акаунти', icon: Users },
-  { id: 'create', to: '/tiktok/create', label: 'Створити акаунт', icon: Plus },
+  { id: 'create', to: '/tiktok/create', label: 'Додати акаунт', icon: Plus },
   { id: 'warmup', to: '/tiktok/warmup', label: 'Запустити прогрів', icon: Flame }
 ]
 

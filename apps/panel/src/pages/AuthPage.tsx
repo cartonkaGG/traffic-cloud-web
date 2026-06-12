@@ -233,13 +233,13 @@ export function AuthPage(): JSX.Element {
     return (
       <AuthPageBackdrop>
         <motion.div
-          initial={{ opacity: 0, y: 14, scale: 0.985 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="relative w-full max-w-[440px]"
         >
-          <div className="glass-panel-strong relative overflow-hidden p-8 shadow-glow">
-            <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-[0.35]" />
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0a0f18]/98 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+            <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-20" />
             <div className="relative">
               <PanelBrand layout="auth" />
               <LoginCodeForm
@@ -266,12 +266,12 @@ export function AuthPage(): JSX.Element {
     return (
       <AuthPageBackdrop>
         <motion.div
-          initial={{ opacity: 0, y: 14, scale: 0.985 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="relative w-full max-w-[440px]"
         >
-          <div className="glass-panel-strong relative overflow-hidden p-8 text-center shadow-glow">
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0a0f18]/98 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
             <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-[0.35]" />
             <div className="relative">
               <PanelBrand layout="auth" />
@@ -347,13 +347,13 @@ export function AuthPage(): JSX.Element {
   return (
     <AuthPageBackdrop>
       <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.985 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-[440px]"
       >
-        <div className="glass-panel-strong relative overflow-hidden p-8 shadow-glow">
-          <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-[0.35]" />
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0a0f18]/98 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+          <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-20" />
           <div className="relative">
             <PanelBrand layout="auth" />
             <div className="mt-6 text-xl font-semibold tracking-tight text-white">
@@ -469,8 +469,6 @@ export function AuthPage(): JSX.Element {
               <motion.button
                 type="submit"
                 disabled={submitting}
-                whileHover={submitting ? undefined : { scale: 1.01 }}
-                whileTap={submitting ? undefined : { scale: 0.99 }}
                 className="group relative w-full overflow-hidden rounded-xl border border-accent/35 bg-gradient-to-r from-accent/20 via-accent/10 to-transparent px-4 py-3 text-sm font-semibold text-white shadow-[0_0_40px_-18px_rgba(94,200,255,0.85)] transition-[box-shadow] hover:shadow-[0_0_52px_-18px_rgba(94,200,255,0.95)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="relative z-10 inline-flex items-center justify-center gap-2">

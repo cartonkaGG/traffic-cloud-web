@@ -20,7 +20,11 @@ export function PanelBrand({
   const inner = (
     <>
       <div className="relative flex shrink-0 items-center justify-center overflow-visible">
-        <TrafficCloudMark size={markSize} variant="logo" />
+        {layout === 'auth' ? (
+          <TrafficCloudMark size={markSize} variant="auth" />
+        ) : (
+          <TrafficCloudMark size={markSize} variant="logo" />
+        )}
       </div>
       <div className="min-w-0">
         <div

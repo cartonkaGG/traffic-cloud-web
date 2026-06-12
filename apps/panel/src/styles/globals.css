@@ -73,6 +73,11 @@
       drop-shadow(0 0 15px hsl(195, 100%, 45%));
   }
 
+  .neon-cloud-auth {
+    color: var(--color-neon-cloud);
+    filter: drop-shadow(0 0 6px hsl(195, 100%, 55% / 0.45));
+  }
+
   .neon-cloud-mark {
     color: var(--color-neon-cloud);
     filter:

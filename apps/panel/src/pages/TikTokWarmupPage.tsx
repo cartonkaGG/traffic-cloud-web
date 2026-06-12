@@ -53,7 +53,8 @@ import {
   credentialsFromAccount,
   openTikTokFromCreateLaunch,
   openTikTokManageForAccount,
-  openTikTokWarmupForAccount
+  openTikTokWarmupForAccount,
+  formatTikTokAccountEmail
 } from '@/lib/openTikTokForAccount'
 import {
   DEFAULT_WARMUP_SETTINGS,
@@ -88,7 +89,7 @@ function statusUi(status: TikTokAccountStatus): { label: string; className: stri
       }
     case 'paused':
       return {
-        label: 'Очікує',
+        label: 'Очікує входу',
         className: 'border-amber-400/25 bg-amber-500/10 text-amber-200'
       }
     case 'error':
@@ -163,8 +164,6 @@ export function TikTokWarmupPage(): JSX.Element {
   }, [proxiesList])
 
   const [settings, setSettings] = useState<TikTokWarmupSettings>(() => readTikTokWarmupSettings())
-  const [email, setEmail] = useState('')
-  const [emailPassword, setEmailPassword] = useState('')
   const [username, setUsername] = useState('')
   const [proxyHost, setProxyHost] = useState('')
   const [proxyPort, setProxyPort] = useState('')
@@ -272,8 +271,6 @@ export function TikTokWarmupPage(): JSX.Element {
   }, [accounts])
 
   const resetCreateForm = useCallback(() => {
-    setEmail('')
-    setEmailPassword('')
     setUsername('')
     setProxyHost('')
     setProxyPort('')
@@ -300,16 +297,10 @@ export function TikTokWarmupPage(): JSX.Element {
       showDesktopGate(true)
       return
     }
-    const trimmedEmail = email.trim()
-    const trimmedEmailPassword = emailPassword.trim()
     const trimmedUsername = username.trim().replace(/^@+/, '')
     const host = proxyHost.trim()
     const port = host ? parsePort(proxyPort) : null
 
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      pushToast('Вкажіть справжній email для реєстрації TikTok', 'error')
-      return
-    }
     if (host && port === null) {
       pushToast('Вкажіть коректний порт проксі', 'error')
       return
@@ -318,8 +309,6 @@ export function TikTokWarmupPage(): JSX.Element {
     setCreateBusy(true)
     try {
       const r = await apiCreateTikTokAccount(workspaceId, {
-        email: trimmedEmail,
-        ...(trimmedEmailPassword ? { emailPassword: trimmedEmailPassword } : {}),
         ...(trimmedUsername ? { username: trimmedUsername } : {}),
         ...(host && port
           ? {
@@ -334,12 +323,6 @@ export function TikTokWarmupPage(): JSX.Element {
       resetCreateForm()
       setTab('accounts')
       await refetch()
-
-      setCredentialsModal({
-        credentials: r.credentials,
-        watchHashtags: [],
-        accountId: r.account.id
-      })
 
       const launchResult = await openTikTokFromCreateLaunch(
         workspaceId,
@@ -358,7 +341,7 @@ export function TikTokWarmupPage(): JSX.Element {
         }
       } else {
         pushToast(
-          `Автореєстрація @${r.account.username} — форма, код і Next автоматично (Electron)`,
+          `@${r.account.username} — увійдіть у TikTok вручну в антидетект-браузері`,
           'ok'
         )
       }
@@ -368,8 +351,6 @@ export function TikTokWarmupPage(): JSX.Element {
       setCreateBusy(false)
     }
   }, [
-    email,
-    emailPassword,
     proxyHost,
     proxyPass,
     proxyPort,
@@ -421,7 +402,7 @@ export function TikTokWarmupPage(): JSX.Element {
       if (!workspaceId) return
       await apiUpdateTikTokAccount(workspaceId, account.id, { status: 'paused', trustScore: 15 })
       await refetch()
-      pushToast(`@${account.username} позначено як зареєстрований`, 'ok')
+      pushToast(`@${account.username} — вхід у TikTok завершено`, 'ok')
     },
     [pushToast, refetch, workspaceId]
   )
@@ -442,8 +423,7 @@ export function TikTokWarmupPage(): JSX.Element {
       }
       setManageBusyId(account.id)
       try {
-        const intent =
-          account.status === 'ready' ? 'home' : account.status === 'creating' ? 'signup' : 'login'
+        const intent = account.status === 'ready' ? 'home' : 'login'
         const r = await openTikTokManageForAccount(workspaceId, account.id, intent)
         if (!r.ok) {
           if (r.needsUpdate) {
@@ -456,21 +436,11 @@ export function TikTokWarmupPage(): JSX.Element {
           }
           return
         }
-        if (intent === 'signup' || intent === 'login') {
-          setCredentialsModal({
-            credentials: r.credentials,
-            watchHashtags: account.watchHashtags,
-            accountId: account.id
-          })
+        if (intent === 'login') {
+          pushToast(`Відкрито TikTok для @${account.username} — увійдіть вручну`, 'ok')
+        } else if (intent === 'home') {
+          pushToast(`Стрічка @${account.username}`, 'ok')
         }
-        pushToast(
-          intent === 'home'
-            ? `Стрічка @${account.username}`
-            : intent === 'signup'
-              ? `Автореєстрація @${account.username} — перевірте код з email`
-              : `Вхід @${account.username}`,
-          'ok'
-        )
         await refetch()
       } finally {
         setManageBusyId(null)
@@ -707,14 +677,14 @@ export function TikTokWarmupPage(): JSX.Element {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-white">
           {activeTab === 'create'
-            ? 'Створити акаунт'
+            ? 'Додати акаунт'
             : activeTab === 'warmup'
               ? 'Запустити прогрів'
               : 'Акаунти TikTok'}
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
           {activeTab === 'create'
-            ? 'Після створення відкриється tiktok.com/signup у десктоп-додатку (не Telegram).'
+            ? 'Створіть слот акаунта — відкриється tiktok.com/login, увійдіть вручну у вікні десктоп-додатку.'
             : activeTab === 'warmup'
               ? 'Налаштуйте прогрів і запускайте сесії для обраних акаунтів.'
               : 'Список акаунтів, проксі та керування профілями.'}
@@ -973,7 +943,7 @@ export function TikTokWarmupPage(): JSX.Element {
           <div className="border-t border-white/[0.06] pt-6">
             <h3 className="text-sm font-semibold text-white">Акаунти для прогріву</h3>
             {accounts.length === 0 ? (
-              <p className="mt-3 text-sm text-zinc-500">Спочатку створіть акаунт на вкладці «Створити акаунт».</p>
+              <p className="mt-3 text-sm text-zinc-500">Спочатку додайте акаунт на вкладці «Додати акаунт».</p>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {accounts.map((account) => {
@@ -1040,42 +1010,21 @@ export function TikTokWarmupPage(): JSX.Element {
       {activeTab === 'create' ? (
         <GlassCard className="relative z-10 max-w-2xl space-y-5 p-6">
           <div>
-            <h2 className="text-lg font-semibold text-white">Автореєстрація TikTok</h2>
+            <h2 className="text-lg font-semibold text-white">Додати TikTok акаунт</h2>
             <p className="mt-1 text-[13px] text-zinc-500">
-              Після створення відкриється <strong className="font-medium text-fuchsia-200">tiktok.com/signup</strong>{' '}
-              у вікні десктоп-додатку (не Telegram). Потрібен справжній email.
+              Натисніть кнопку нижче — відкриється{' '}
+              <strong className="font-medium text-fuchsia-200">tiktok.com/login</strong> у антидетект-браузері.
+              Увійдіть своїм email/телефоном і паролем на сайті TikTok.
             </p>
           </div>
           <div className="pointer-events-auto space-y-4">
             <label className="block space-y-1.5">
-              <span className="text-[11px] uppercase text-zinc-500">Email (обовʼязково)</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@gmail.com"
-                autoComplete="email"
-                className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className="text-[11px] uppercase text-zinc-500">Пароль пошти (app-password)</span>
-              <input
-                type="password"
-                value={emailPassword}
-                onChange={(e) => setEmailPassword(e.target.value)}
-                placeholder="для авто-коду з Gmail"
-                autoComplete="new-password"
-                className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className="text-[11px] uppercase text-zinc-500">Логін (@username, опційно)</span>
+              <span className="text-[11px] uppercase text-zinc-500">Назва в панелі (@username, опційно)</span>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="авто: creator_1234"
+                placeholder="напр. my_tiktok або залиште порожнім"
                 autoComplete="off"
                 className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
               />
@@ -1145,7 +1094,7 @@ export function TikTokWarmupPage(): JSX.Element {
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-4 py-3 text-sm font-medium text-fuchsia-100 disabled:opacity-50 sm:w-auto"
           >
             {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Створити і відкрити TikTok
+            Додати акаунт і відкрити TikTok
           </button>
         </GlassCard>
       ) : null}
@@ -1157,7 +1106,7 @@ export function TikTokWarmupPage(): JSX.Element {
             <UserRound className="h-12 w-12 text-fuchsia-300" />
             <h3 className="mt-4 text-lg font-semibold text-white">Ще немає TikTok акаунтів</h3>
             <p className="mt-2 max-w-md text-sm text-zinc-500">
-              Додайте існуючий акаунт — email, логін і пароль. Тематику відео оберете при прогріві.
+              Додайте акаунт — відкриється TikTok для ручного входу. Тематику відео оберете при прогріві.
             </p>
             <button
               type="button"
@@ -1165,7 +1114,7 @@ export function TikTokWarmupPage(): JSX.Element {
               className="mt-6 inline-flex items-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-2.5 text-sm font-medium text-fuchsia-100"
             >
               <Plus className="h-4 w-4" />
-              Створити акаунт
+              Додати акаунт
             </button>
           </div>
         ) : (
@@ -1194,7 +1143,9 @@ export function TikTokWarmupPage(): JSX.Element {
                     >
                       <td className="px-6 py-4">
                         <div className="font-medium text-white">@{account.username}</div>
-                        <div className="text-[12px] text-zinc-500">{account.email}</div>
+                        <div className="text-[12px] text-zinc-500">
+                          {formatTikTokAccountEmail(account.email)}
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         {account.watchHashtags.length > 0 ? (
@@ -1284,9 +1235,9 @@ export function TikTokWarmupPage(): JSX.Element {
                             ) : (
                               <Rocket className="h-3.5 w-3.5" />
                             )}
-                            {account.status === 'creating' ? 'Авторег' : 'Керувати'}
+                            {account.status === 'ready' ? 'Керувати' : 'Увійти'}
                           </button>
-                          {account.status === 'creating' ? (
+                          {account.status === 'creating' || account.status === 'paused' ? (
                             <button
                               type="button"
                               onClick={() => void markRegistered(account)}
