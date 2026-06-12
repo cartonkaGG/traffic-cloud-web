@@ -21,7 +21,7 @@ export type TikTokWarmupLaunchConfig = {
 }
 
 const TIKTOK_HOME_URL = 'https://www.tiktok.com/'
-const TIKTOK_SIGNUP_URL = 'https://www.tiktok.com/signup'
+const TIKTOK_SIGNUP_URL = 'https://www.tiktok.com/signup/phone-or-email/email'
 const MIN_TIKTOK_DESKTOP_VERSION = '0.2.6'
 
 function compareSemver(a: string, b: string): number {

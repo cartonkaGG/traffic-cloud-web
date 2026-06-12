@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BUNDLED_DESKTOP_VERSION } from '@/lib/desktopUpdate'
+import { WindowsUnblockHelp } from '@/components/desktop/WindowsUnblockHelp'
 
 const FEATURES = [
   {
@@ -220,6 +221,10 @@ export function DesktopInstallCard({
           ? 'Файли замінюються автоматично · перезапуск через кілька секунд'
           : 'Інсталятор з цього сайту · Windows x64'}
       </p>
+
+      <div className="relative mt-3">
+        <WindowsUnblockHelp compact={compact} />
+      </div>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { DesktopInstallCard } from '@/components/desktop/DesktopInstallCard'
+import { WindowsUnblockHelp } from '@/components/desktop/WindowsUnblockHelp'
 import { useDesktopUpdate } from '@/hooks/useDesktopUpdate'
 import {
   canOpenAntidetectBrowser,
@@ -29,7 +30,7 @@ export function DesktopAppGateModal({
   const inShell = isTrafficCloudShell()
   const needsUpdate = forceUpdate || (inShell && !canOpenAntidetectBrowser()) || desktopUpdate.updateAvailable
 
-  const latestVersion = desktopUpdate.latestVersion ?? '0.2.6'
+  const latestVersion = desktopUpdate.latestVersion ?? '0.2.7'
   const resolvedUrl = downloadUrl ?? desktopUpdate.downloadUrl
 
   const handleDownload = (): void => {
@@ -110,6 +111,10 @@ export function DesktopAppGateModal({
                     primaryBusy={downloadBusy}
                     inAppUpdate={desktopUpdate.inAppUpdate}
                   />
+                </div>
+
+                <div className="mt-4">
+                  <WindowsUnblockHelp />
                 </div>
 
                 <button
