@@ -122,7 +122,12 @@ export function SoftwareHubPage(): JSX.Element {
   function launch(product: SoftwareProduct): void {
     if (product.status !== 'active') return
     selectSoftware(product.id)
-    const target = product.id === 'video-uniquify' ? '/uniquify' : '/'
+    const target =
+      product.id === 'video-uniquify'
+        ? '/uniquify'
+        : product.id === 'tiktok-warmup'
+          ? '/tiktok'
+          : '/'
     if (canEnterPanel) {
       navigate(target)
       return
@@ -191,7 +196,7 @@ export function SoftwareHubPage(): JSX.Element {
           </div>
         </div>
 
-        <div className="mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
+        <div className="mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {SOFTWARE_PRODUCTS.map((product, index) => (
             <motion.div
               key={product.id}
@@ -209,7 +214,7 @@ export function SoftwareHubPage(): JSX.Element {
         </div>
 
         <div className="mt-auto pt-12 text-center text-[12px] text-zinc-600">
-          Traffic Cloud Hub · DM Outreach локально · Video Uniquify у браузері
+          Traffic Cloud Hub · DM Outreach · Video Uniquify · TikTok Warmup
         </div>
       </main>
     </div>

@@ -10,6 +10,8 @@ import type {
   ProxyEndpointModel,
   SafetyFiltersConfig,
   TelegramAccountModel,
+  TikTokAccountCredentials,
+  TikTokAccountModel,
   UserFiltersConfig
 } from '@/domain/types'
 import { emitSessionRevoked, getAccessToken } from './authSession'
@@ -128,6 +130,7 @@ export type WorkspaceBundle = {
   activeMessageTemplateId?: string | null
   /** Серверний авто-blacklist (заблокували акаунт під час розсилки), без @, lower-case */
   outreachAutoBlacklistUsernames?: string[]
+  tiktokAccounts?: TikTokAccountModel[]
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -667,6 +670,8 @@ export async function apiTelegramMtprotoComplete(
 export type AntidetectLaunchPayload = {
   profileId: string
   userAgent: string
+  startUrl?: string
+  autoreg?: TikTokAccountCredentials
   proxy: {
     protocol: 'http' | 'socks5'
     host: string
@@ -674,6 +679,111 @@ export type AntidetectLaunchPayload = {
     username?: string | null
     password?: string | null
   } | null
+}
+
+export async function apiCreateTikTokAccount(
+  workspaceId: string,
+  body: {
+    email?: string
+    emailPassword?: string | null
+    username?: string
+    password?: string
+    watchHashtags?: string[] | string
+    proxyId?: string | null
+    proxyHost?: string
+    proxyPort?: number
+    proxyProtocol?: 'http' | 'socks5'
+    proxyUsername?: string | null
+    proxyPassword?: string | null
+  }
+): Promise<{
+  account: TikTokAccountModel
+  profile: BrowserProfile
+  credentials: TikTokAccountCredentials
+  launch: AntidetectLaunchPayload
+}> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/tiktok-accounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiUpdateTikTokAccount(
+  workspaceId: string,
+  accountId: string,
+  body: {
+    status?: TikTokAccountModel['status']
+    trustScore?: number
+    lastWarmupAt?: string | null
+    watchHashtags?: string[] | string
+    username?: string
+    email?: string
+    password?: string
+    emailPassword?: string | null
+    imapHost?: string | null
+    proxyHost?: string | null
+    proxyPort?: number | null
+    proxyProtocol?: 'http' | 'socks5'
+    proxyUsername?: string | null
+    proxyPassword?: string | null
+  }
+): Promise<{ account: TikTokAccountModel }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/tiktok-accounts/${accountId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiTestProxyAdhoc(
+  workspaceId: string,
+  body: {
+    protocol: 'http' | 'socks5'
+    host: string
+    port: number
+    username?: string | null
+    password?: string | null
+  }
+): Promise<{ ok: true; latencyMs: number } | { ok: false; error: string }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/proxies/test-adhoc`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiDeleteTikTokAccount(
+  workspaceId: string,
+  accountId: string
+): Promise<{ ok: true; profileId: string }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/tiktok-accounts/${accountId}`, {
+    method: 'DELETE'
+  })
+}
+
+export async function apiGetTikTokEmailCode(
+  workspaceId: string,
+  accountId: string
+): Promise<{ supported: boolean; code: string | null; email?: string }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/tiktok-accounts/${accountId}/email-code`)
+}
+
+export async function apiGetTikTokLaunch(
+  workspaceId: string,
+  accountId: string,
+  body?: { startUrl?: string; intent?: 'signup' | 'login' | 'home' | 'tag'; tag?: string }
+): Promise<{
+  ok: true
+  webUrl: string
+  credentials: TikTokAccountCredentials
+  launch: AntidetectLaunchPayload
+}> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/tiktok-accounts/${accountId}/launch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {})
+  })
 }
 
 export async function apiCreateTelegramAccount(

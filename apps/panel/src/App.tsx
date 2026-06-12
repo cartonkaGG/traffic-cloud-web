@@ -22,8 +22,10 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SoftwareHubPage } from './pages/SoftwareHubPage'
 import { SourcesPage } from './pages/SourcesPage'
 import { VideoUniquifyPage } from './pages/VideoUniquifyPage'
+import { TikTokWarmupPage } from './pages/TikTokWarmupPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { VideoUniquifyShell } from './components/layout/VideoUniquifyShell'
+import { TikTokWarmupShell } from './components/layout/TikTokWarmupShell'
 import {
   BILLING_SUBSCRIBE_PATH,
   resolvePostAuthPath,
@@ -69,6 +71,7 @@ function RequireSoftware({ children }: { children: ReactNode }): JSX.Element {
   const { selectedSoftwareId } = useSoftware()
   if (!selectedSoftwareId) return <Navigate to="/hub" replace />
   if (selectedSoftwareId === 'video-uniquify') return <Navigate to="/uniquify" replace />
+  if (selectedSoftwareId === 'tiktok-warmup') return <Navigate to="/tiktok" replace />
   return <>{children}</>
 }
 
@@ -76,6 +79,13 @@ function RequireVideoUniquify({ children }: { children: ReactNode }): JSX.Elemen
   const { selectedSoftwareId } = useSoftware()
   if (!selectedSoftwareId) return <Navigate to="/hub" replace />
   if (selectedSoftwareId !== 'video-uniquify') return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
+function RequireTikTokWarmup({ children }: { children: ReactNode }): JSX.Element {
+  const { selectedSoftwareId } = useSoftware()
+  if (!selectedSoftwareId) return <Navigate to="/hub" replace />
+  if (selectedSoftwareId !== 'tiktok-warmup') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -155,6 +165,20 @@ export default function App(): JSX.Element {
         }
       >
         <Route index element={<VideoUniquifyPage />} />
+      </Route>
+      <Route
+        path="/tiktok"
+        element={
+          <Protected>
+            <RequireTikTokWarmup>
+              <RequireSubscription>
+                <TikTokWarmupShell />
+              </RequireSubscription>
+            </RequireTikTokWarmup>
+          </Protected>
+        }
+      >
+        <Route index element={<TikTokWarmupPage />} />
       </Route>
       <Route
         path="/"

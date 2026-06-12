@@ -9,6 +9,26 @@ declare global {
       openBrowserProfile?: (payload: {
         profileId: string
         userAgent: string
+        startUrl?: string
+        autoreg?: {
+          email: string
+          password: string
+          username: string
+          emailIsTemp?: boolean
+          codeUrl?: string
+          rotateUrl?: string
+          authToken?: string
+        }
+        warmup?: {
+          hashtags: string[]
+          durationMinutes: number
+          likes: number
+          comments: number
+          follows: number
+          watchSecondsMin: number
+          watchSecondsMax: number
+          commentTexts: string[]
+        }
         proxy: {
           protocol: 'http' | 'socks5'
           host: string

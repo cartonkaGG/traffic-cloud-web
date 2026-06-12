@@ -16,7 +16,23 @@ export default defineConfig({
       '@': resolve(panelRoot, 'src')
     }
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'panel-trailing-slash',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === '/app') {
+            res.statusCode = 301
+            res.setHeader('Location', '/app/')
+            res.end()
+            return
+          }
+          next()
+        })
+      }
+    }
+  ],
   optimizeDeps: {
     exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
   },

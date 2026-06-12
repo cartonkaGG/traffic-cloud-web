@@ -1,5 +1,5 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
-import { fetchFile } from '@ffmpeg/util'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 const CORE_BASE = `${import.meta.env.BASE_URL}ffmpeg`
 
@@ -56,10 +56,11 @@ export async function loadFfmpeg(
     onStatus?.({ phase: 'download', message: 'Підготовка обробника…' })
     await yieldToPaint()
     const instance = new FFmpeg()
-    await instance.load({
-      coreURL: `${CORE_BASE}/ffmpeg-core.js`,
-      wasmURL: `${CORE_BASE}/ffmpeg-core.wasm`
-    })
+    const [coreURL, wasmURL] = await Promise.all([
+      toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
+      toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm')
+    ])
+    await instance.load({ coreURL, wasmURL })
     ffmpeg = instance
     onStatus?.({ phase: 'ready', message: 'Готово' })
     return instance

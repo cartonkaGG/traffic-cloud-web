@@ -114,7 +114,34 @@ export interface BrowserProfile {
   proxyId: string | null
   storagePath: string
   telegramAccountId: string | null
+  tiktokAccountId?: string | null
   lastLaunchedAt: string | null
+}
+
+export type TikTokAccountStatus = 'creating' | 'paused' | 'warming' | 'ready' | 'error'
+
+export type TikTokAccountCredentials = {
+  email: string
+  username: string
+  password: string
+  emailIsTemp?: boolean
+}
+
+export interface TikTokAccountModel {
+  id: string
+  username: string
+  email: string
+  password: string
+  emailIsTemp?: boolean
+  emailPassword?: string | null
+  imapHost?: string | null
+  watchHashtags: string[]
+  browserProfileId: string
+  proxyId: string | null
+  status: TikTokAccountStatus
+  trustScore: number
+  createdAt: string
+  lastWarmupAt: string | null
 }
 
 export interface TelegramAccountModel {
