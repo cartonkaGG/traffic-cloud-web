@@ -5,6 +5,7 @@ import { useWorkspaceData } from './context/WorkspaceDataContext'
 import { useSoftware } from './context/SoftwareContext'
 import { hasPanelAccess } from './lib/subscriptionAccess'
 import { SessionRevokedListener } from './components/auth/SessionRevokedListener'
+import { DesktopUpdateOverlay } from './components/desktop/DesktopUpdateOverlay'
 import { AppShell } from './components/layout/AppShell'
 import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
 import { AccountsPage } from './pages/AccountsPage'
@@ -119,6 +120,7 @@ export default function App(): JSX.Element {
   return (
     <>
       <SessionRevokedListener />
+      <DesktopUpdateOverlay />
       <Routes>
       <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
       <Route

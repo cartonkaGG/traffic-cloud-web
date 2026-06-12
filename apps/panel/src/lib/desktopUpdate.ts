@@ -12,6 +12,26 @@ export const BUNDLED_DESKTOP_VERSION = BUNDLED_INSTALLER_FILENAME.replace(
   ''
 )
 
+export type DesktopUpdatePhase =
+  | 'idle'
+  | 'checking'
+  | 'downloading'
+  | 'installing'
+  | 'restarting'
+  | 'uptodate'
+  | 'error'
+
+export type DesktopUpdateProgress = {
+  phase: DesktopUpdatePhase
+  percent?: number
+  message?: string
+  currentVersion?: string
+  latestVersion?: string
+  downloadUrl?: string
+  notes?: string | null
+  error?: string
+}
+
 export type DesktopUpdateManifest = {
   configured: boolean
   latestVersion: string | null

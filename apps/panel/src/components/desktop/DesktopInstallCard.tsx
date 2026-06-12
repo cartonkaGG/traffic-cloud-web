@@ -48,7 +48,8 @@ export function DesktopInstallCard({
   onPrimary,
   onSecondary,
   primaryBusy = false,
-  compact = false
+  compact = false,
+  inAppUpdate = false
 }: {
   variant: 'install' | 'update'
   latestVersion?: string
@@ -57,6 +58,7 @@ export function DesktopInstallCard({
   onSecondary?: () => void
   primaryBusy?: boolean
   compact?: boolean
+  inAppUpdate?: boolean
 }): JSX.Element {
   const isUpdate = variant === 'update'
   const steps = isUpdate ? UPDATE_STEPS : INSTALL_STEPS
@@ -189,10 +191,14 @@ export function DesktopInstallCard({
             <Download className="h-4 w-4" />
           )}
           {primaryBusy
-            ? 'Завантаження…'
+            ? 'Запуск оновлення…'
             : isUpdate
-              ? `Оновити до v${latestVersion}`
-              : 'Завантажити додаток'}
+              ? inAppUpdate
+                ? `Оновити зараз до v${latestVersion}`
+                : `Оновити до v${latestVersion}`
+              : inAppUpdate
+                ? 'Встановити з автооновленням'
+                : 'Завантажити додаток'}
         </button>
         {onSecondary && !isUpdate ? (
           <button
@@ -210,7 +216,9 @@ export function DesktopInstallCard({
         <span className="rounded-md border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">
           ~83 MB
         </span>
-        Інсталятор з цього сайту · Windows x64
+        {inAppUpdate && isUpdate
+          ? 'Файли замінюються автоматично · перезапуск через кілька секунд'
+          : 'Інсталятор з цього сайту · Windows x64'}
       </p>
     </div>
   )

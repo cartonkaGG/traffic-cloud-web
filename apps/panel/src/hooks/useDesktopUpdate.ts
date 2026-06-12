@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { openDesktopInstaller } from '@/lib/desktopAppGate'
 import { checkDesktopUpdateAvailable } from '@/lib/desktopUpdate'
+import {
+  canRunInAppDesktopUpdate,
+  startInAppDesktopUpdate
+} from '@/lib/desktopUpdateRunner'
 
 export type DesktopUpdateState = {
   loading: boolean
@@ -10,6 +14,7 @@ export type DesktopUpdateState = {
   notes: string | null
   updateAvailable: boolean
   inShell: boolean
+  inAppUpdate: boolean
 }
 
 const INITIAL: DesktopUpdateState = {
@@ -19,12 +24,13 @@ const INITIAL: DesktopUpdateState = {
   downloadUrl: null,
   notes: null,
   updateAvailable: false,
-  inShell: false
+  inShell: false,
+  inAppUpdate: false
 }
 
 export function useDesktopUpdate(): DesktopUpdateState & {
   refresh: () => void
-  openUpdate: () => void
+  openUpdate: () => Promise<void>
 } {
   const [state, setState] = useState<DesktopUpdateState>(INITIAL)
 
@@ -39,7 +45,8 @@ export function useDesktopUpdate(): DesktopUpdateState & {
           downloadUrl: r.downloadUrl,
           notes: r.notes,
           updateAvailable: r.updateAvailable,
-          inShell: r.inShell
+          inShell: r.inShell,
+          inAppUpdate: canRunInAppDesktopUpdate()
         })
       })
       .catch(() => setState({ ...INITIAL, loading: false }))
@@ -49,7 +56,11 @@ export function useDesktopUpdate(): DesktopUpdateState & {
     refresh()
   }, [refresh])
 
-  const openUpdate = useCallback(() => {
+  const openUpdate = useCallback(async () => {
+    if (canRunInAppDesktopUpdate()) {
+      await startInAppDesktopUpdate(state.downloadUrl)
+      return
+    }
     openDesktopInstaller(state.downloadUrl)
   }, [state.downloadUrl])
 

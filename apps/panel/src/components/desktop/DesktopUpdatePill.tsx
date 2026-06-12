@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { useDesktopUpdate } from '@/hooks/useDesktopUpdate'
 
 export function DesktopUpdatePill(): JSX.Element | null {
-  const { loading, updateAvailable, latestVersion, currentVersion, openUpdate } = useDesktopUpdate()
+  const { loading, updateAvailable, latestVersion, currentVersion, openUpdate, inAppUpdate } =
+    useDesktopUpdate()
 
   if (loading || !updateAvailable || !latestVersion) return null
 
@@ -12,7 +13,7 @@ export function DesktopUpdatePill(): JSX.Element | null {
       type="button"
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      onClick={openUpdate}
+      onClick={() => void openUpdate()}
       className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-cyan-400/30 bg-gradient-to-r from-cyan-500/15 to-fuchsia-500/10 px-3.5 py-1.5 text-[12px] font-medium text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all duration-200 hover:border-cyan-400/50 hover:shadow-[0_0_32px_rgba(34,211,238,0.2)]"
       title={
         currentVersion
@@ -21,7 +22,7 @@ export function DesktopUpdatePill(): JSX.Element | null {
       }
     >
       <ArrowUpCircle className="h-3.5 w-3.5 text-cyan-300 transition-transform duration-200 group-hover:scale-110" />
-      <span>Оновити до v{latestVersion}</span>
+      <span>{inAppUpdate ? 'Оновити зараз' : 'Оновити'} · v{latestVersion}</span>
     </motion.button>
   )
 }

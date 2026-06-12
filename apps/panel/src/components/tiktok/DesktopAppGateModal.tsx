@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { DesktopInstallCard } from '@/components/desktop/DesktopInstallCard'
@@ -6,9 +6,9 @@ import { useDesktopUpdate } from '@/hooks/useDesktopUpdate'
 import {
   canOpenAntidetectBrowser,
   isTrafficCloudShell,
-  launchTrafficCloudDesktop,
-  openDesktopInstaller
+  launchTrafficCloudDesktop
 } from '@/lib/desktopAppGate'
+import { startInAppDesktopUpdate } from '@/lib/desktopUpdateRunner'
 
 export function DesktopAppGateModal({
   open,
@@ -29,17 +29,14 @@ export function DesktopAppGateModal({
   const inShell = isTrafficCloudShell()
   const needsUpdate = forceUpdate || (inShell && !canOpenAntidetectBrowser()) || desktopUpdate.updateAvailable
 
-  const latestVersion = desktopUpdate.latestVersion ?? '0.2.4'
+  const latestVersion = desktopUpdate.latestVersion ?? '0.2.5'
   const resolvedUrl = downloadUrl ?? desktopUpdate.downloadUrl
-
-  useEffect(() => {
-    if (!open) setDownloadBusy(false)
-  }, [open])
 
   const handleDownload = (): void => {
     setDownloadBusy(true)
-    openDesktopInstaller(resolvedUrl)
-    window.setTimeout(() => setDownloadBusy(false), 2400)
+    void startInAppDesktopUpdate(resolvedUrl).finally(() => {
+      window.setTimeout(() => setDownloadBusy(false), 1200)
+    })
   }
 
   const handleOpenInApp = (): void => {
@@ -111,6 +108,7 @@ export function DesktopAppGateModal({
                     onPrimary={handleDownload}
                     onSecondary={needsUpdate ? undefined : handleOpenInApp}
                     primaryBusy={downloadBusy}
+                    inAppUpdate={desktopUpdate.inAppUpdate}
                   />
                 </div>
 

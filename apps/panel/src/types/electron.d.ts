@@ -38,6 +38,11 @@ declare global {
         } | null
       }) => Promise<{ ok: true } | { ok: false; error: string }>
       clearBrowserProfileStorage?: (profileId: string) => Promise<{ ok: boolean }>
+      checkDesktopUpdate?: () => Promise<import('@/lib/desktopUpdate').DesktopUpdateProgress>
+      startDesktopUpdate?: () => Promise<{ ok: true } | { ok: false; error: string }>
+      onDesktopUpdateProgress?: (
+        callback: (payload: import('@/lib/desktopUpdate').DesktopUpdateProgress) => void
+      ) => () => void
     }
   }
 }

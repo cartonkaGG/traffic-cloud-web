@@ -48,6 +48,7 @@ import {
   openDesktopInstaller
 } from '@/lib/desktopAppGate'
 import { useDesktopUpdate } from '@/hooks/useDesktopUpdate'
+import { startInAppDesktopUpdate } from '@/lib/desktopUpdateRunner'
 import {
   credentialsFromAccount,
   openTikTokFromCreateLaunch,
@@ -728,10 +729,12 @@ export function TikTokWarmupPage(): JSX.Element {
           primaryBusy={bannerDownloadBusy}
           onPrimary={() => {
             setBannerDownloadBusy(true)
-            openDesktopInstaller(downloadUrl ?? desktopUpdate.downloadUrl)
-            window.setTimeout(() => setBannerDownloadBusy(false), 2400)
+            void startInAppDesktopUpdate(downloadUrl ?? desktopUpdate.downloadUrl).finally(() => {
+              window.setTimeout(() => setBannerDownloadBusy(false), 1200)
+            })
           }}
           onSecondary={() => launchTrafficCloudDesktop('tiktok')}
+          inAppUpdate={desktopUpdate.inAppUpdate}
         />
       ) : !canLaunchBrowser || desktopUpdate.updateAvailable ? (
         <DesktopInstallCard
@@ -740,10 +743,12 @@ export function TikTokWarmupPage(): JSX.Element {
           currentVersion={desktopUpdate.currentVersion}
           compact
           primaryBusy={bannerDownloadBusy}
+          inAppUpdate={desktopUpdate.inAppUpdate}
           onPrimary={() => {
             setBannerDownloadBusy(true)
-            openDesktopInstaller(downloadUrl ?? desktopUpdate.downloadUrl)
-            window.setTimeout(() => setBannerDownloadBusy(false), 2400)
+            void startInAppDesktopUpdate(downloadUrl ?? desktopUpdate.downloadUrl).finally(() => {
+              window.setTimeout(() => setBannerDownloadBusy(false), 1200)
+            })
           }}
         />
       ) : null}

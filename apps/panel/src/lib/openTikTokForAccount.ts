@@ -22,7 +22,7 @@ export type TikTokWarmupLaunchConfig = {
 
 const TIKTOK_HOME_URL = 'https://www.tiktok.com/'
 const TIKTOK_SIGNUP_URL = 'https://www.tiktok.com/signup'
-const MIN_TIKTOK_DESKTOP_VERSION = '0.2.4'
+const MIN_TIKTOK_DESKTOP_VERSION = '0.2.5'
 
 function compareSemver(a: string, b: string): number {
   const pa = a.split('.').map((x) => Number(x) || 0)
