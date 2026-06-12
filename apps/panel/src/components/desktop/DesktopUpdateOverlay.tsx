@@ -77,6 +77,21 @@ export function DesktopUpdateOverlay(): JSX.Element | null {
     })
   }, [])
 
+  useEffect(() => {
+    if (!progress || progress.phase !== 'checking') return
+    const timer = window.setTimeout(() => {
+      setProgress({
+        phase: 'error',
+        currentVersion: progress.currentVersion,
+        latestVersion: progress.latestVersion,
+        message:
+          'Сервер оновлень не відповідає. Закрийте вікно і завантажте інсталятор вручну з сайту.',
+        error: 'update_check_timeout'
+      })
+    }, 25_000)
+    return () => window.clearTimeout(timer)
+  }, [progress])
+
   const visible = progress != null && progress.phase !== 'idle' && progress.phase !== 'uptodate'
   const activeStep = progress ? stepIndex(progress.phase) : -1
   const percent = useMemo(() => {

@@ -30,7 +30,7 @@ export function DesktopAppGateModal({
   const inShell = isTrafficCloudShell()
   const needsUpdate = forceUpdate || (inShell && !canOpenAntidetectBrowser()) || desktopUpdate.updateAvailable
 
-  const latestVersion = desktopUpdate.latestVersion ?? '0.2.7'
+  const latestVersion = desktopUpdate.latestVersion ?? '0.2.8'
   const resolvedUrl = downloadUrl ?? desktopUpdate.downloadUrl
 
   const handleDownload = (): void => {
