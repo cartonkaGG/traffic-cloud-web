@@ -1,7 +1,6 @@
 import { Download, Monitor, X } from 'lucide-react'
 import { GlassCard } from '@/components/ui/GlassCard'
-
-const DESKTOP_DEEP_LINK = 'trafficcloud://panel/tiktok'
+import { launchTrafficCloudDesktop, resolveDesktopDownloadUrl } from '@/lib/desktopAppGate'
 
 export function DesktopAppGateModal({
   open,
@@ -16,14 +15,14 @@ export function DesktopAppGateModal({
 }): JSX.Element | null {
   if (!open) return null
 
+  const effectiveDownloadUrl = resolveDesktopDownloadUrl(downloadUrl)
+
   const openDownload = (): void => {
-    if (downloadUrl) {
-      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
-    }
+    window.open(effectiveDownloadUrl, '_blank', 'noopener,noreferrer')
   }
 
   const openInDesktop = (): void => {
-    window.location.href = DESKTOP_DEEP_LINK
+    launchTrafficCloudDesktop('tiktok')
     onContinueInDesktop?.()
   }
 
@@ -57,16 +56,14 @@ export function DesktopAppGateModal({
           >
             Скасувати
           </button>
-          {downloadUrl ? (
-            <button
-              type="button"
-              onClick={openDownload}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
-            >
-              <Download className="h-4 w-4" />
-              Завантажити додаток
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={openDownload}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
+          >
+            <Download className="h-4 w-4" />
+            Завантажити додаток
+          </button>
           <button
             type="button"
             onClick={openInDesktop}
@@ -77,8 +74,8 @@ export function DesktopAppGateModal({
           </button>
         </div>
         <p className="mt-4 text-[11px] text-zinc-600">
-          Якщо додаток уже встановлено — натисніть «Відкрити в додатку», потім перезавантажте сторінку
-          у вікні Electron.
+          Спочатку встановіть додаток кнопкою «Завантажити». Якщо вже встановлено — «Відкрити в
+          додатку» запустить Traffic Cloud і відкриє TikTok Warmup у вікні програми.
         </p>
       </GlassCard>
     </div>

@@ -1,12 +1,14 @@
-import { type CSSProperties } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, Home, Lock, Play, Shield, Sparkles } from 'lucide-react'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { Link, useNavigate } from 'react-router-dom'
+import { DesktopAppGateModal } from '@/components/tiktok/DesktopAppGateModal'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { useAuth } from '@/context/AuthContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
+import { fetchDesktopDownloadUrl, hasTrafficCloudDesktop } from '@/lib/desktopAppGate'
 import { hasPanelAccess } from '@/lib/subscriptionAccess'
 import { getMarketingHomeUrl } from '@/lib/site'
 import { useSoftware } from '@/context/SoftwareContext'
@@ -116,11 +118,23 @@ export function SoftwareHubPage(): JSX.Element {
   const { subscription } = useWorkspaceData()
   const { selectSoftware } = useSoftware()
   const navigate = useNavigate()
+  const [desktopGateOpen, setDesktopGateOpen] = useState(false)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
 
   const canEnterPanel = hasPanelAccess(subscription, isAdmin)
 
+  useEffect(() => {
+    void fetchDesktopDownloadUrl().then(setDownloadUrl)
+  }, [])
+
   function launch(product: SoftwareProduct): void {
     if (product.status !== 'active') return
+
+    if (product.id === 'tiktok-warmup' && !hasTrafficCloudDesktop()) {
+      setDesktopGateOpen(true)
+      return
+    }
+
     selectSoftware(product.id)
     const target =
       product.id === 'video-uniquify'
@@ -217,6 +231,12 @@ export function SoftwareHubPage(): JSX.Element {
           Traffic Cloud Hub · DM Outreach · Video Uniquify · TikTok Warmup
         </div>
       </main>
+
+      <DesktopAppGateModal
+        open={desktopGateOpen}
+        onClose={() => setDesktopGateOpen(false)}
+        downloadUrl={downloadUrl}
+      />
     </div>
   )
 }

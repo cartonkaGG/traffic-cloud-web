@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { useWorkspaceData } from './context/WorkspaceDataContext'
@@ -83,9 +83,17 @@ function RequireVideoUniquify({ children }: { children: ReactNode }): JSX.Elemen
 }
 
 function RequireTikTokWarmup({ children }: { children: ReactNode }): JSX.Element {
-  const { selectedSoftwareId } = useSoftware()
-  if (!selectedSoftwareId) return <Navigate to="/hub" replace />
-  if (selectedSoftwareId !== 'tiktok-warmup') return <Navigate to="/" replace />
+  const { selectedSoftwareId, selectSoftware } = useSoftware()
+
+  useEffect(() => {
+    if (selectedSoftwareId !== 'tiktok-warmup') {
+      selectSoftware('tiktok-warmup')
+    }
+  }, [selectSoftware, selectedSoftwareId])
+
+  if (selectedSoftwareId && selectedSoftwareId !== 'tiktok-warmup') {
+    return <Navigate to="/" replace />
+  }
   return <>{children}</>
 }
 

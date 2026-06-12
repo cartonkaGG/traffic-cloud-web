@@ -183,6 +183,12 @@ export function TikTokWarmupPage(): JSX.Element {
     void fetchDesktopDownloadUrl().then(setDownloadUrl)
   }, [])
 
+  useEffect(() => {
+    if (!hasTrafficCloudDesktop()) {
+      setDesktopGateOpen(true)
+    }
+  }, [])
+
   const showDesktopGate = useCallback(() => {
     setDesktopGateOpen(true)
   }, [])
