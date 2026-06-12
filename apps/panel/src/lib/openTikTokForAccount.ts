@@ -21,6 +21,18 @@ export type TikTokWarmupLaunchConfig = {
 }
 
 const TIKTOK_HOME_URL = 'https://www.tiktok.com/'
+const TIKTOK_SIGNUP_URL = 'https://www.tiktok.com/signup'
+const MIN_TIKTOK_DESKTOP_VERSION = '0.2.3'
+
+function compareSemver(a: string, b: string): number {
+  const pa = a.split('.').map((x) => Number(x) || 0)
+  const pb = b.split('.').map((x) => Number(x) || 0)
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (d !== 0) return d
+  }
+  return 0
+}
 
 async function openLaunchPayload(
   workspaceId: string,
@@ -30,7 +42,8 @@ async function openLaunchPayload(
   warmup?: TikTokWarmupLaunchConfig
 ): Promise<TikTokLaunchResult> {
   const tc = window.trafficCloud
-  const startUrl = launch.startUrl?.trim() || TIKTOK_HOME_URL
+  const startUrl =
+    launch.startUrl?.trim() || (warmup ? TIKTOK_HOME_URL : TIKTOK_SIGNUP_URL)
   const baseAutoreg = launch.autoreg ?? credentials
   // Софт сам забере код підтвердження із серверного endpoint (temp mail.tm або IMAP).
   const token = getAccessToken()
@@ -50,6 +63,21 @@ async function openLaunchPayload(
       ok: false,
       error: 'desktop_required',
       needsDesktop: true
+    }
+  }
+
+  if (tc?.getAppVersion) {
+    try {
+      const appVersion = await tc.getAppVersion()
+      if (compareSemver(appVersion, MIN_TIKTOK_DESKTOP_VERSION) < 0) {
+        return {
+          ok: false,
+          error: `Оновіть Traffic Cloud до ${MIN_TIKTOK_DESKTOP_VERSION}+ (зараз ${appVersion}). Стара версія відкриває Telegram замість TikTok.`,
+          needsDesktop: true
+        }
+      }
+    } catch {
+      /* ignore version probe */
     }
   }
 

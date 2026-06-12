@@ -17,6 +17,7 @@ export async function openTelegramForAccount(
       const result = await tc.openBrowserProfile({
         profileId: r.launch.profileId,
         userAgent: r.launch.userAgent,
+        startUrl: r.launch.startUrl?.trim() || r.webUrl || 'https://web.telegram.org/k/',
         proxy: r.launch.proxy
       })
       if (!result.ok) {
