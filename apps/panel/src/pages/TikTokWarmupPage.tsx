@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Eye,
   Check,
@@ -21,7 +22,6 @@ import {
   Workflow
 } from 'lucide-react'
 import { DesktopAppGateModal } from '@/components/tiktok/DesktopAppGateModal'
-import { TikTokTabNav, type TikTokTabId } from '@/components/tiktok/TikTokTabNav'
 import { TikTokCredentialsModal } from '@/components/tiktok/TikTokCredentialsModal'
 import { TikTokEditModal } from '@/components/tiktok/TikTokEditModal'
 import { TikTokWarmupStartModal } from '@/components/tiktok/TikTokWarmupStartModal'
@@ -53,7 +53,12 @@ import {
   type TikTokWarmupSettings,
   writeTikTokWarmupSettings
 } from '@/lib/tiktokWarmupStorage'
-import { readTikTokActiveTab, writeTikTokActiveTab } from '@/lib/tiktokTabStorage'
+import {
+  tabFromPathname,
+  tiktokSectionPath,
+  writeTikTokActiveTab,
+  type TikTokTabId
+} from '@/lib/tiktokTabStorage'
 
 function statusUi(status: TikTokAccountStatus): { label: string; className: string } {
   switch (status) {
@@ -134,6 +139,9 @@ function buildWarmupSteps(account: TikTokAccountModel, settings: TikTokWarmupSet
 }
 
 export function TikTokWarmupPage(): JSX.Element {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const activeTab = useMemo(() => tabFromPathname(location.pathname), [location.pathname])
   const { pushToast } = useToast()
   const { bundle, workspaceId, status, refetch } = useWorkspaceData()
   const accounts = bundle?.tiktokAccounts ?? []
@@ -146,7 +154,6 @@ export function TikTokWarmupPage(): JSX.Element {
   }, [proxiesList])
 
   const [settings, setSettings] = useState<TikTokWarmupSettings>(() => readTikTokWarmupSettings())
-  const [activeTab, setActiveTab] = useState<TikTokTabId>(() => readTikTokActiveTab())
   const [email, setEmail] = useState('')
   const [emailPassword, setEmailPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -184,19 +191,20 @@ export function TikTokWarmupPage(): JSX.Element {
   }, [])
 
   useEffect(() => {
-    if (!hasTrafficCloudDesktop()) {
-      setDesktopGateOpen(true)
-    }
-  }, [])
+    writeTikTokActiveTab(activeTab)
+  }, [activeTab])
 
   const showDesktopGate = useCallback(() => {
     setDesktopGateOpen(true)
   }, [])
 
-  const setTab = useCallback((tab: TikTokTabId) => {
-    setActiveTab(tab)
-    writeTikTokActiveTab(tab)
-  }, [])
+  const setTab = useCallback(
+    (tab: TikTokTabId) => {
+      writeTikTokActiveTab(tab)
+      navigate(tiktokSectionPath(tab))
+    },
+    [navigate]
+  )
 
   const openCreateFlow = useCallback(() => {
     if (!hasTrafficCloudDesktop()) {
@@ -637,9 +645,9 @@ export function TikTokWarmupPage(): JSX.Element {
   }, [accounts, pushToast, refetch, showDesktopGate, status, workspaceId])
 
   return (
-    <div className="relative space-y-8 p-6 sm:p-8">
+    <div className="relative isolate p-6 sm:p-8">
       <div
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0 z-0 opacity-40"
         aria-hidden
         style={{
           background:
@@ -647,15 +655,22 @@ export function TikTokWarmupPage(): JSX.Element {
         }}
       />
 
-      <div className="relative space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">TikTok Warmup</h1>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-500">
-            Створення акаунта та прогрів відкривають TikTok у антидетект-браузері десктоп-додатку —
-            не Telegram Web.
-          </p>
-        </div>
-        <TikTokTabNav active={activeTab} onChange={setTab} />
+      <div className="relative z-10 space-y-8">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-white">
+          {activeTab === 'create'
+            ? 'Створити акаунт'
+            : activeTab === 'warmup'
+              ? 'Запустити прогрів'
+              : 'Акаунти TikTok'}
+        </h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
+          {activeTab === 'create'
+            ? 'Після створення відкриється tiktok.com/signup у десктоп-додатку (не Telegram).'
+            : activeTab === 'warmup'
+              ? 'Налаштуйте прогрів і запускайте сесії для обраних акаунтів.'
+              : 'Список акаунтів, проксі та керування профілями.'}
+        </p>
       </div>
 
       {!isDesktop ? (
@@ -967,7 +982,7 @@ export function TikTokWarmupPage(): JSX.Element {
       ) : null}
 
       {activeTab === 'create' ? (
-        <GlassCard className="relative max-w-2xl space-y-5 p-6">
+        <GlassCard className="relative z-10 max-w-2xl space-y-5 p-6">
           <div>
             <h2 className="text-lg font-semibold text-white">Автореєстрація TikTok</h2>
             <p className="mt-1 text-[13px] text-zinc-500">
@@ -975,7 +990,7 @@ export function TikTokWarmupPage(): JSX.Element {
               у вікні десктоп-додатку (не Telegram). Потрібен справжній email.
             </p>
           </div>
-          <div className="space-y-4">
+          <div className="pointer-events-auto space-y-4">
             <label className="block space-y-1.5">
               <span className="text-[11px] uppercase text-zinc-500">Email (обовʼязково)</span>
               <input
@@ -983,7 +998,8 @@ export function TikTokWarmupPage(): JSX.Element {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@gmail.com"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
+                autoComplete="email"
+                className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
               />
             </label>
             <label className="block space-y-1.5">
@@ -993,8 +1009,8 @@ export function TikTokWarmupPage(): JSX.Element {
                 value={emailPassword}
                 onChange={(e) => setEmailPassword(e.target.value)}
                 placeholder="для авто-коду з Gmail"
-                autoComplete="off"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
+                autoComplete="new-password"
+                className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
               />
             </label>
             <label className="block space-y-1.5">
@@ -1004,7 +1020,8 @@ export function TikTokWarmupPage(): JSX.Element {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="авто: creator_1234"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
+                autoComplete="off"
+                className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
               />
             </label>
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
@@ -1018,7 +1035,7 @@ export function TikTokWarmupPage(): JSX.Element {
                     value={proxyHost}
                     onChange={(e) => setProxyHost(e.target.value)}
                     placeholder="proxy.example.com"
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-fuchsia-400/40"
+                    className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-fuchsia-400/40"
                     autoComplete="off"
                   />
                 </label>
@@ -1028,9 +1045,8 @@ export function TikTokWarmupPage(): JSX.Element {
                     value={proxyPort}
                     onChange={(e) => setProxyPort(e.target.value)}
                     inputMode="numeric"
-                    disabled={!proxyHost.trim()}
                     placeholder="1080"
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                    className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-fuchsia-400/40"
                   />
                 </label>
                 <label className="block space-y-1.5">
@@ -1038,8 +1054,7 @@ export function TikTokWarmupPage(): JSX.Element {
                   <select
                     value={proxyType}
                     onChange={(e) => setProxyType(e.target.value === 'socks5' ? 'socks5' : 'http')}
-                    disabled={!proxyHost.trim()}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                    className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
                   >
                     <option value="socks5">SOCKS5</option>
                     <option value="http">HTTP</option>
@@ -1050,8 +1065,7 @@ export function TikTokWarmupPage(): JSX.Element {
                   <input
                     value={proxyUser}
                     onChange={(e) => setProxyUser(e.target.value)}
-                    disabled={!proxyHost.trim()}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                    className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
                     autoComplete="off"
                   />
                 </label>
@@ -1061,8 +1075,7 @@ export function TikTokWarmupPage(): JSX.Element {
                     type="password"
                     value={proxyPass}
                     onChange={(e) => setProxyPass(e.target.value)}
-                    disabled={!proxyHost.trim()}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                    className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
                     autoComplete="off"
                   />
                 </label>
@@ -1316,6 +1329,7 @@ export function TikTokWarmupPage(): JSX.Element {
         onContinueInDesktop={() => window.location.reload()}
         downloadUrl={downloadUrl}
       />
+      </div>
     </div>
   )
 }

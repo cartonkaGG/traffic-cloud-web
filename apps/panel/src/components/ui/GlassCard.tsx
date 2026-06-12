@@ -23,7 +23,7 @@ export function GlassCard({ children, className = '', glow = false }: Props): JS
         className="pointer-events-none absolute inset-px rounded-[15px] bg-gradient-to-br from-white/[0.07] via-transparent to-transparent opacity-60"
         aria-hidden
       />
-      <div className="relative">{children}</div>
+      <div className="relative z-10">{children}</div>
     </motion.div>
   )
 }

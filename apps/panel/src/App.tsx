@@ -186,7 +186,10 @@ export default function App(): JSX.Element {
           </Protected>
         }
       >
-        <Route index element={<TikTokWarmupPage />} />
+        <Route index element={<Navigate to="accounts" replace />} />
+        <Route path="accounts" element={<TikTokWarmupPage />} />
+        <Route path="create" element={<TikTokWarmupPage />} />
+        <Route path="warmup" element={<TikTokWarmupPage />} />
       </Route>
       <Route
         path="/"

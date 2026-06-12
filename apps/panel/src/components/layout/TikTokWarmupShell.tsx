@@ -1,12 +1,22 @@
-import { Flame, LayoutGrid } from 'lucide-react'
+import { Flame, LayoutGrid, Plus, Users } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
+import type { TikTokTabId } from '@/lib/tiktokTabStorage'
 import { Sidebar } from './Sidebar'
 
-const nav = [{ to: '/tiktok', label: 'Прогрів', icon: Flame, end: true }]
+const nav: Array<{
+  id: TikTokTabId
+  to: string
+  label: string
+  icon: typeof Users
+}> = [
+  { id: 'accounts', to: '/tiktok/accounts', label: 'Акаунти', icon: Users },
+  { id: 'create', to: '/tiktok/create', label: 'Створити акаунт', icon: Plus },
+  { id: 'warmup', to: '/tiktok/warmup', label: 'Запустити прогрів', icon: Flame }
+]
 
 export function TikTokWarmupShell(): JSX.Element {
   const navigate = useNavigate()
@@ -26,9 +36,8 @@ export function TikTokWarmupShell(): JSX.Element {
             const Icon = item.icon
             return (
               <NavLink
-                key={item.to}
+                key={item.id}
                 to={item.to}
-                end={item.end}
                 className={({ isActive }) =>
                   [
                     'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
@@ -73,7 +82,7 @@ export function TikTokWarmupShell(): JSX.Element {
           <SubscriptionTerm variant="inline" />
           <AccountMenu redirectAfterSwitch="/hub" />
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main className="relative isolate min-h-0 flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>
