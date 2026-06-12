@@ -65,8 +65,22 @@
    | Key | Value |
    |-----|--------|
    | `VITE_API_BASE_URL` | URL Render API **без** слеша в кінці, напр. `https://traffic-cloud-api.onrender.com` |
+   | `VITE_DESKTOP_DOWNLOAD_URL` | (опційно) Пряме посилання на `.exe`, поки API manifest `configured: false` |
 
 5. **Deploy**
+
+### Десктоп-інсталятор (TikTok Warmup)
+
+На **Render** (`traffic-cloud-api`) додай:
+
+| Key | Value |
+|-----|--------|
+| `DESKTOP_SETUP_DOWNLOAD_URL` | URL на `.exe` (можна `{version}` у рядку) |
+| `DESKTOP_LATEST_VERSION` | (опційно) версія, напр. `0.2.1` |
+
+Перевірка: `GET https://ТВІЙ-API.onrender.com/v1/desktop/update-manifest` → `configured: true` і `downloadUrl`.
+
+Альтернатива: лише `VITE_DESKTOP_DOWNLOAD_URL` на Vercel (вшивається при build).
 
 ### Перевірка сайту
 
