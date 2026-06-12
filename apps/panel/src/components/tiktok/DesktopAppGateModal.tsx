@@ -1,10 +1,6 @@
-import { Download, MessageCircle, Monitor, X } from 'lucide-react'
+import { Download, Monitor, X } from 'lucide-react'
 import { GlassCard } from '@/components/ui/GlassCard'
-import {
-  DESKTOP_SUPPORT_TELEGRAM_URL,
-  launchTrafficCloudDesktop,
-  resolveDesktopDownloadUrl
-} from '@/lib/desktopAppGate'
+import { launchTrafficCloudDesktop, resolveDesktopDownloadUrl } from '@/lib/desktopAppGate'
 
 export function DesktopAppGateModal({
   open,
@@ -22,7 +18,6 @@ export function DesktopAppGateModal({
   const installerUrl = resolveDesktopDownloadUrl(downloadUrl)
 
   const openDownload = (): void => {
-    if (!installerUrl) return
     window.open(installerUrl, '_blank', 'noopener,noreferrer')
   }
 
@@ -53,12 +48,10 @@ export function DesktopAppGateModal({
           Cloud. У звичайному браузері ці дії недоступні — немає автозаповнення форм, тимчасової
           пошти та керування профілем.
         </p>
-        {!installerUrl ? (
-          <p className="mt-3 rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2.5 text-[12px] leading-relaxed text-amber-100/90">
-            Публічне посилання на інсталятор ще не налаштовано на сервері. Напишіть у Telegram —
-            надішлемо актуальний .exe, або дочекайтесь оновлення панелі.
-          </p>
-        ) : null}
+        <p className="mt-3 rounded-xl border border-cyan-400/15 bg-cyan-500/5 px-3 py-2.5 text-[12px] leading-relaxed text-cyan-100/85">
+          1. Натисніть «Завантажити додаток» і встановіть Traffic Cloud (Windows). 2. Після
+          установки — «Відкрити в додатку» або запустіть програму з меню Пуск.
+        </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <button
             type="button"
@@ -67,26 +60,14 @@ export function DesktopAppGateModal({
           >
             Скасувати
           </button>
-          {installerUrl ? (
-            <button
-              type="button"
-              onClick={openDownload}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
-            >
-              <Download className="h-4 w-4" />
-              Завантажити додаток
-            </button>
-          ) : (
-            <a
-              href={DESKTOP_SUPPORT_TELEGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Отримати інсталятор
-            </a>
-          )}
+          <button
+            type="button"
+            onClick={openDownload}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
+          >
+            <Download className="h-4 w-4" />
+            Завантажити додаток
+          </button>
           <button
             type="button"
             onClick={openInDesktop}
@@ -97,9 +78,8 @@ export function DesktopAppGateModal({
           </button>
         </div>
         <p className="mt-4 text-[11px] text-zinc-600">
-          {installerUrl
-            ? 'Спочатку встановіть додаток кнопкою «Завантажити». Якщо вже встановлено — «Відкрити в додатку» запустить Traffic Cloud.'
-            : 'Після встановлення натисніть «Відкрити в додатку» — відкриється вікно Traffic Cloud з панеллю TikTok.'}
+          Інсталятор завантажується з цього сайту (~83 МБ). Після установки увійдіть у той самий
+          акаунт у вікні Traffic Cloud.
         </p>
       </GlassCard>
     </div>

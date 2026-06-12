@@ -7,6 +7,8 @@ export type DesktopGateResult =
 /** Продакшен-панель (Vercel), якщо потрібен статичний fallback поза браузером. */
 export const DEFAULT_PANEL_ORIGIN = 'https://traffic-cloud-web.vercel.app'
 
+export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.1.exe'
+
 export const DESKTOP_SUPPORT_TELEGRAM_URL = 'https://t.me/trafficcloud_team'
 
 export function hasTrafficCloudDesktop(): boolean {
@@ -30,14 +32,22 @@ export function getPanelBaseUrl(): string {
   return `${origin}${base}`.replace(/\/$/, '')
 }
 
-/** Пряме посилання на .exe — лише з API manifest або VITE_DESKTOP_DOWNLOAD_URL. */
-export function resolveDesktopDownloadUrl(fetched: string | null | undefined): string | null {
-  const fromEnv = import.meta.env.VITE_DESKTOP_DOWNLOAD_URL?.trim()
-  const fromApi = fetched?.trim()
-  return fromApi || fromEnv || null
+export function getBundledInstallerUrl(): string {
+  const path = `/downloads/${BUNDLED_INSTALLER_FILENAME}`
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`
+  }
+  return `${DEFAULT_PANEL_ORIGIN}${path}`
 }
 
-export async function fetchDesktopDownloadUrl(): Promise<string | null> {
+/** API manifest → env override → інсталятор з /downloads на цьому ж сайті. */
+export function resolveDesktopDownloadUrl(fetched: string | null | undefined): string {
+  const fromEnv = import.meta.env.VITE_DESKTOP_DOWNLOAD_URL?.trim()
+  const fromApi = fetched?.trim()
+  return fromApi || fromEnv || getBundledInstallerUrl()
+}
+
+export async function fetchDesktopDownloadUrl(): Promise<string> {
   try {
     const apiBase = getApiBaseUrl()
     const controller = new AbortController()
@@ -47,10 +57,7 @@ export async function fetchDesktopDownloadUrl(): Promise<string | null> {
     })
     window.clearTimeout(timeout)
     if (!res.ok) return resolveDesktopDownloadUrl(null)
-    const data = (await res.json()) as { downloadUrl?: string | null; configured?: boolean }
-    if (data.configured === false && !data.downloadUrl) {
-      return resolveDesktopDownloadUrl(null)
-    }
+    const data = (await res.json()) as { downloadUrl?: string | null }
     return resolveDesktopDownloadUrl(data.downloadUrl)
   } catch {
     return resolveDesktopDownloadUrl(null)

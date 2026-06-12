@@ -82,6 +82,16 @@
 
 Альтернатива: лише `VITE_DESKTOP_DOWNLOAD_URL` на Vercel (вшивається при build).
 
+Інсталятор також лежить на самому сайті: `/downloads/Traffic-Cloud-Setup-0.2.1.exe` (панель підставляє його автоматично).
+
+Оновлення .exe після змін у desktop:
+
+```bash
+cd ../cloudetrafiiick && npm run dist:win
+cd ../traffic-cloud-web && node scripts/copy-desktop-installer.mjs
+git add apps/marketing/public/downloads/
+```
+
 ### Перевірка сайту
 
 | URL | Що |
