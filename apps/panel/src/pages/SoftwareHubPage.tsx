@@ -8,7 +8,11 @@ import { SubscriptionTerm } from '@/components/billing/SubscriptionTerm'
 import { PanelBrand } from '@/components/brand/PanelBrand'
 import { useAuth } from '@/context/AuthContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
-import { fetchDesktopDownloadUrl, hasTrafficCloudDesktop } from '@/lib/desktopAppGate'
+import {
+  canOpenAntidetectBrowser,
+  fetchDesktopDownloadUrl,
+  isTrafficCloudShell
+} from '@/lib/desktopAppGate'
 import { hasPanelAccess } from '@/lib/subscriptionAccess'
 import { getMarketingHomeUrl } from '@/lib/site'
 import { useSoftware } from '@/context/SoftwareContext'
@@ -130,8 +134,13 @@ export function SoftwareHubPage(): JSX.Element {
   function launch(product: SoftwareProduct): void {
     if (product.status !== 'active') return
 
-    if (product.id === 'tiktok-warmup' && !hasTrafficCloudDesktop()) {
+    if (product.id === 'tiktok-warmup' && !isTrafficCloudShell()) {
       setDesktopGateOpen(true)
+      return
+    }
+    if (product.id === 'tiktok-warmup' && !canOpenAntidetectBrowser()) {
+      selectSoftware(product.id)
+      navigate(canEnterPanel ? '/tiktok/create' : '/billing?gate=1&from=hub')
       return
     }
 

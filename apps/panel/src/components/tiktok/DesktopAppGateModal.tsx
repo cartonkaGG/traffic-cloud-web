@@ -1,24 +1,32 @@
-import { Download, Monitor, X } from 'lucide-react'
+import { Download, Monitor, RefreshCw, X } from 'lucide-react'
 import { GlassCard } from '@/components/ui/GlassCard'
-import { launchTrafficCloudDesktop, resolveDesktopDownloadUrl } from '@/lib/desktopAppGate'
+import {
+  canOpenAntidetectBrowser,
+  isTrafficCloudShell,
+  launchTrafficCloudDesktop,
+  openDesktopInstaller
+} from '@/lib/desktopAppGate'
 
 export function DesktopAppGateModal({
   open,
   onClose,
   onContinueInDesktop,
-  downloadUrl
+  downloadUrl,
+  forceUpdate = false
 }: {
   open: boolean
   onClose: () => void
   onContinueInDesktop?: () => void
   downloadUrl?: string | null
+  forceUpdate?: boolean
 }): JSX.Element | null {
   if (!open) return null
 
-  const installerUrl = resolveDesktopDownloadUrl(downloadUrl)
+  const inShell = isTrafficCloudShell()
+  const needsUpdate = forceUpdate || (inShell && !canOpenAntidetectBrowser())
 
   const openDownload = (): void => {
-    window.open(installerUrl, '_blank', 'noopener,noreferrer')
+    openDesktopInstaller(downloadUrl)
   }
 
   const openInDesktop = (): void => {
@@ -38,20 +46,37 @@ export function DesktopAppGateModal({
           <X className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-2 text-fuchsia-300">
-          <Monitor className="h-5 w-5" />
+          {needsUpdate ? <RefreshCw className="h-5 w-5" /> : <Monitor className="h-5 w-5" />}
           <h2 className="pr-8 text-lg font-semibold text-white">
-            TikTok Warmup працює лише в десктоп-додатку
+            {needsUpdate
+              ? 'Оновіть Traffic Cloud'
+              : 'TikTok Warmup працює лише в десктоп-додатку'}
           </h2>
         </div>
-        <p className="mt-3 text-[13px] leading-relaxed text-zinc-500">
-          Автореєстрація та прогрів TikTok потребують антидетект-браузера Electron у додатку Traffic
-          Cloud. У звичайному браузері ці дії недоступні — немає автозаповнення форм, тимчасової
-          пошти та керування профілем.
-        </p>
-        <p className="mt-3 rounded-xl border border-cyan-400/15 bg-cyan-500/5 px-3 py-2.5 text-[12px] leading-relaxed text-cyan-100/85">
-          1. Натисніть «Завантажити додаток» і встановіть Traffic Cloud (Windows). 2. Після
-          установки — «Відкрити в додатку» або запустіть програму з меню Пуск.
-        </p>
+        {needsUpdate ? (
+          <>
+            <p className="mt-3 text-[13px] leading-relaxed text-zinc-500">
+              Ви вже у вікні Traffic Cloud, але версія застаріла або не підключився антидетект-браузер.
+              Завантажте останній інсталятор і перевстановіть — тоді TikTok відкриватиметься коректно.
+            </p>
+            <p className="mt-3 rounded-xl border border-amber-400/15 bg-amber-500/5 px-3 py-2.5 text-[12px] leading-relaxed text-amber-100/85">
+              Після установки закрийте старе вікно і запустіть Traffic Cloud з меню Пуск. Увійдіть у
+              той самий акаунт.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 text-[13px] leading-relaxed text-zinc-500">
+              Автореєстрація та прогрів TikTok потребують антидетект-браузера Electron у додатку Traffic
+              Cloud. У звичайному браузері ці дії недоступні — немає автозаповнення форм, тимчасової
+              пошти та керування профілем.
+            </p>
+            <p className="mt-3 rounded-xl border border-cyan-400/15 bg-cyan-500/5 px-3 py-2.5 text-[12px] leading-relaxed text-cyan-100/85">
+              1. Натисніть «Завантажити додаток» і встановіть Traffic Cloud (Windows). 2. Після
+              установки — «Відкрити в додатку» або запустіть програму з меню Пуск.
+            </p>
+          </>
+        )}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <button
             type="button"
@@ -66,20 +91,22 @@ export function DesktopAppGateModal({
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-100"
           >
             <Download className="h-4 w-4" />
-            Завантажити додаток
+            {needsUpdate ? 'Завантажити оновлення' : 'Завантажити додаток'}
           </button>
-          <button
-            type="button"
-            onClick={openInDesktop}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-100"
-          >
-            <Monitor className="h-4 w-4" />
-            Відкрити в додатку
-          </button>
+          {!needsUpdate ? (
+            <button
+              type="button"
+              onClick={openInDesktop}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-100"
+            >
+              <Monitor className="h-4 w-4" />
+              Відкрити в додатку
+            </button>
+          ) : null}
         </div>
         <p className="mt-4 text-[11px] text-zinc-600">
-          Інсталятор завантажується з цього сайту (~83 МБ). Після установки увійдіть у той самий
-          акаунт у вікні Traffic Cloud.
+          Інсталятор завантажується з цього сайту (~83 МБ).
+          {inShell ? ' Перевстановлення замінить стару версію.' : ' Після установки увійдіть у той самий акаунт.'}
         </p>
       </GlassCard>
     </div>

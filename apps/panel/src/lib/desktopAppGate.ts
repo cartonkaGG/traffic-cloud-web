@@ -7,12 +7,27 @@ export type DesktopGateResult =
 /** Продакшен-панель (Vercel), якщо потрібен статичний fallback поза браузером. */
 export const DEFAULT_PANEL_ORIGIN = 'https://traffic-cloud-web.vercel.app'
 
-export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.3.exe'
+export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.4.exe'
 
 export const DESKTOP_SUPPORT_TELEGRAM_URL = 'https://t.me/trafficcloud_team'
 
-export function hasTrafficCloudDesktop(): boolean {
+const DESKTOP_UA_RE = /\bTrafficCloudDesktop\/[\d.]+/
+
+/** Вікно Traffic Cloud (Electron), навіть якщо preload ще не підключився. */
+export function isTrafficCloudShell(): boolean {
+  const tc = window.trafficCloud
+  if (tc?.platform || tc?.getAppVersion || tc?.openBrowserProfile) return true
+  return DESKTOP_UA_RE.test(navigator.userAgent)
+}
+
+/** Є IPC-міст для антидетект-браузера TikTok / Telegram. */
+export function canOpenAntidetectBrowser(): boolean {
   return Boolean(window.trafficCloud?.openBrowserProfile)
+}
+
+/** @deprecated Використовуйте isTrafficCloudShell / canOpenAntidetectBrowser */
+export function hasTrafficCloudDesktop(): boolean {
+  return isTrafficCloudShell()
 }
 
 export function getPanelBaseUrl(): string {
@@ -62,6 +77,16 @@ export async function fetchDesktopDownloadUrl(): Promise<string> {
   } catch {
     return resolveDesktopDownloadUrl(null)
   }
+}
+
+export function openDesktopInstaller(downloadUrl?: string | null): void {
+  const installerUrl = resolveDesktopDownloadUrl(downloadUrl)
+  const tc = window.trafficCloud
+  if (tc?.openExternal) {
+    void tc.openExternal(installerUrl)
+    return
+  }
+  window.open(installerUrl, '_blank', 'noopener,noreferrer')
 }
 
 /** Відкриває встановлений Traffic Cloud (custom protocol). Працює лише після реєстрації протоколу в інсталяторі. */

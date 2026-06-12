@@ -39,7 +39,12 @@ import {
   apiTestProxyAdhoc,
   apiUpdateTikTokAccount
 } from '@/lib/api'
-import { fetchDesktopDownloadUrl, hasTrafficCloudDesktop } from '@/lib/desktopAppGate'
+import {
+  canOpenAntidetectBrowser,
+  fetchDesktopDownloadUrl,
+  isTrafficCloudShell,
+  openDesktopInstaller
+} from '@/lib/desktopAppGate'
 import {
   credentialsFromAccount,
   openTikTokFromCreateLaunch,
@@ -181,10 +186,12 @@ export function TikTokWarmupPage(): JSX.Element {
   const [editAccount, setEditAccount] = useState<TikTokAccountModel | null>(null)
   const [proxyTestBusyId, setProxyTestBusyId] = useState<string | null>(null)
   const [desktopGateOpen, setDesktopGateOpen] = useState(false)
+  const [desktopGateForceUpdate, setDesktopGateForceUpdate] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const logTimersRef = useRef<number[]>([])
 
-  const isDesktop = hasTrafficCloudDesktop()
+  const isDesktopShell = isTrafficCloudShell()
+  const canLaunchBrowser = canOpenAntidetectBrowser()
 
   useEffect(() => {
     void fetchDesktopDownloadUrl().then(setDownloadUrl)
@@ -194,7 +201,8 @@ export function TikTokWarmupPage(): JSX.Element {
     writeTikTokActiveTab(activeTab)
   }, [activeTab])
 
-  const showDesktopGate = useCallback(() => {
+  const showDesktopGate = useCallback((forceUpdate = false) => {
+    setDesktopGateForceUpdate(forceUpdate)
     setDesktopGateOpen(true)
   }, [])
 
@@ -207,8 +215,12 @@ export function TikTokWarmupPage(): JSX.Element {
   )
 
   const openCreateFlow = useCallback(() => {
-    if (!hasTrafficCloudDesktop()) {
-      showDesktopGate()
+    if (!isTrafficCloudShell()) {
+      showDesktopGate(false)
+      return
+    }
+    if (!canOpenAntidetectBrowser()) {
+      showDesktopGate(true)
       return
     }
     setTab('create')
@@ -274,8 +286,12 @@ export function TikTokWarmupPage(): JSX.Element {
       pushToast('Немає підключення до API', 'error')
       return
     }
-    if (!hasTrafficCloudDesktop()) {
-      showDesktopGate()
+    if (!isTrafficCloudShell()) {
+      showDesktopGate(false)
+      return
+    }
+    if (!canOpenAntidetectBrowser()) {
+      showDesktopGate(true)
       return
     }
     const trimmedEmail = email.trim()
@@ -326,8 +342,11 @@ export function TikTokWarmupPage(): JSX.Element {
         r.account.id
       )
       if (!launchResult.ok) {
-        if (launchResult.needsDesktop) {
-          showDesktopGate()
+        if (launchResult.needsUpdate) {
+          showDesktopGate(true)
+          pushToast(launchResult.error, 'error')
+        } else if (launchResult.needsDesktop) {
+          showDesktopGate(false)
         } else {
           pushToast(launchResult.error, 'error')
         }
@@ -407,8 +426,12 @@ export function TikTokWarmupPage(): JSX.Element {
         pushToast('Немає підключення до API', 'error')
         return
       }
-      if (!hasTrafficCloudDesktop()) {
-        showDesktopGate()
+      if (!isTrafficCloudShell()) {
+        showDesktopGate(false)
+        return
+      }
+      if (!canOpenAntidetectBrowser()) {
+        showDesktopGate(true)
         return
       }
       setManageBusyId(account.id)
@@ -417,8 +440,11 @@ export function TikTokWarmupPage(): JSX.Element {
           account.status === 'ready' ? 'home' : account.status === 'creating' ? 'signup' : 'login'
         const r = await openTikTokManageForAccount(workspaceId, account.id, intent)
         if (!r.ok) {
-          if (r.needsDesktop) {
-            showDesktopGate()
+          if (r.needsUpdate) {
+            showDesktopGate(true)
+            pushToast(r.error, 'error')
+          } else if (r.needsDesktop) {
+            showDesktopGate(false)
           } else {
             pushToast(r.error, 'error')
           }
@@ -474,9 +500,14 @@ export function TikTokWarmupPage(): JSX.Element {
         pushToast('Немає підключення до API', 'error')
         return
       }
-      if (!hasTrafficCloudDesktop()) {
+      if (!isTrafficCloudShell()) {
         setWarmupModal(null)
-        showDesktopGate()
+        showDesktopGate(false)
+        return
+      }
+      if (!canOpenAntidetectBrowser()) {
+        setWarmupModal(null)
+        showDesktopGate(true)
         return
       }
 
@@ -512,8 +543,11 @@ export function TikTokWarmupPage(): JSX.Element {
           commentTexts: settings.commentTexts
         })
         if (!opened.ok) {
-          if (opened.needsDesktop) {
-            showDesktopGate()
+          if (opened.needsUpdate) {
+            showDesktopGate(true)
+            pushToast(opened.error, 'error')
+          } else if (opened.needsDesktop) {
+            showDesktopGate(false)
           } else {
             pushToast(opened.error, 'error')
           }
@@ -562,8 +596,12 @@ export function TikTokWarmupPage(): JSX.Element {
         return
       }
 
-      if (!hasTrafficCloudDesktop()) {
-        showDesktopGate()
+      if (!isTrafficCloudShell()) {
+        showDesktopGate(false)
+        return
+      }
+      if (!canOpenAntidetectBrowser()) {
+        showDesktopGate(true)
         return
       }
 
@@ -613,8 +651,12 @@ export function TikTokWarmupPage(): JSX.Element {
       pushToast('Немає підключення до API', 'error')
       return
     }
-    if (!hasTrafficCloudDesktop()) {
-      showDesktopGate()
+    if (!isTrafficCloudShell()) {
+      showDesktopGate(false)
+      return
+    }
+    if (!canOpenAntidetectBrowser()) {
+      showDesktopGate(true)
       return
     }
     const targets = accounts.filter((a) => a.status !== 'warming')
@@ -673,7 +715,7 @@ export function TikTokWarmupPage(): JSX.Element {
         </p>
       </div>
 
-      {!isDesktop ? (
+      {!isDesktopShell ? (
         <GlassCard className="relative border-amber-400/20 bg-amber-500/5 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -687,11 +729,31 @@ export function TikTokWarmupPage(): JSX.Element {
             </div>
             <button
               type="button"
-              onClick={showDesktopGate}
+              onClick={() => showDesktopGate(false)}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100"
             >
               <Monitor className="h-4 w-4" />
               Завантажити / відкрити
+            </button>
+          </div>
+        </GlassCard>
+      ) : !canLaunchBrowser ? (
+        <GlassCard className="relative border-cyan-400/20 bg-cyan-500/5 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-cyan-100">Оновіть Traffic Cloud</p>
+              <p className="mt-1 max-w-2xl text-[13px] text-cyan-200/70">
+                Ви в додатку, але антидетект-браузер не підключений. Завантажте останній інсталятор
+                0.2.4+ і перевстановіть — інакше TikTok не відкриється.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openDesktopInstaller(downloadUrl)}
+              className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100"
+            >
+              <Monitor className="h-4 w-4" />
+              Завантажити оновлення
             </button>
           </div>
         </GlassCard>
@@ -1325,6 +1387,7 @@ export function TikTokWarmupPage(): JSX.Element {
 
       <DesktopAppGateModal
         open={desktopGateOpen}
+        forceUpdate={desktopGateForceUpdate}
         onClose={() => setDesktopGateOpen(false)}
         onContinueInDesktop={() => window.location.reload()}
         downloadUrl={downloadUrl}

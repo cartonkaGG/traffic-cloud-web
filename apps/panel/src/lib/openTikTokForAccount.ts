@@ -2,12 +2,12 @@ import type { TikTokAccountCredentials } from '@/domain/types'
 import type { AntidetectLaunchPayload } from '@/lib/api'
 import { apiGetTikTokLaunch, apiTouchBrowserProfileLaunch } from '@/lib/api'
 import { getAccessToken } from '@/lib/authSession'
-import { hasTrafficCloudDesktop } from '@/lib/desktopAppGate'
+import { canOpenAntidetectBrowser, isTrafficCloudShell } from '@/lib/desktopAppGate'
 import { getApiBaseUrl } from '@/lib/settings'
 
 export type TikTokLaunchResult =
   | { ok: true; mode: 'electron'; credentials: TikTokAccountCredentials }
-  | { ok: false; error: string; needsDesktop?: boolean }
+  | { ok: false; error: string; needsDesktop?: boolean; needsUpdate?: boolean }
 
 export type TikTokWarmupLaunchConfig = {
   hashtags: string[]
@@ -22,7 +22,7 @@ export type TikTokWarmupLaunchConfig = {
 
 const TIKTOK_HOME_URL = 'https://www.tiktok.com/'
 const TIKTOK_SIGNUP_URL = 'https://www.tiktok.com/signup'
-const MIN_TIKTOK_DESKTOP_VERSION = '0.2.3'
+const MIN_TIKTOK_DESKTOP_VERSION = '0.2.4'
 
 function compareSemver(a: string, b: string): number {
   const pa = a.split('.').map((x) => Number(x) || 0)
@@ -58,11 +58,19 @@ async function openLaunchPayload(
         }
       : baseAutoreg
 
-  if (!hasTrafficCloudDesktop()) {
+  if (!isTrafficCloudShell()) {
     return {
       ok: false,
       error: 'desktop_required',
       needsDesktop: true
+    }
+  }
+
+  if (!canOpenAntidetectBrowser()) {
+    return {
+      ok: false,
+      error: `Оновіть Traffic Cloud до ${MIN_TIKTOK_DESKTOP_VERSION}+ — антидетект-браузер не підключений.`,
+      needsUpdate: true
     }
   }
 
@@ -72,8 +80,8 @@ async function openLaunchPayload(
       if (compareSemver(appVersion, MIN_TIKTOK_DESKTOP_VERSION) < 0) {
         return {
           ok: false,
-          error: `Оновіть Traffic Cloud до ${MIN_TIKTOK_DESKTOP_VERSION}+ (зараз ${appVersion}). Стара версія відкриває Telegram замість TikTok.`,
-          needsDesktop: true
+          error: `Оновіть Traffic Cloud до ${MIN_TIKTOK_DESKTOP_VERSION}+ (зараз ${appVersion}).`,
+          needsUpdate: true
         }
       }
     } catch {
