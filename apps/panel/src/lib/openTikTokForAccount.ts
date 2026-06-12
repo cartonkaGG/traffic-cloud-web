@@ -1,12 +1,13 @@
 import type { TikTokAccountCredentials } from '@/domain/types'
 import type { AntidetectLaunchPayload } from '@/lib/api'
 import { apiGetTikTokLaunch, apiTouchBrowserProfileLaunch } from '@/lib/api'
-import { getApiBaseUrl } from '@/lib/settings'
 import { getAccessToken } from '@/lib/authSession'
+import { hasTrafficCloudDesktop } from '@/lib/desktopAppGate'
+import { getApiBaseUrl } from '@/lib/settings'
 
 export type TikTokLaunchResult =
-  | { ok: true; mode: 'electron' | 'web'; credentials: TikTokAccountCredentials }
-  | { ok: false; error: string }
+  | { ok: true; mode: 'electron'; credentials: TikTokAccountCredentials }
+  | { ok: false; error: string; needsDesktop?: boolean }
 
 export type TikTokWarmupLaunchConfig = {
   hashtags: string[]
@@ -44,30 +45,28 @@ async function openLaunchPayload(
         }
       : baseAutoreg
 
-  if (tc?.openBrowserProfile) {
-    const result = await tc.openBrowserProfile({
-      profileId: launch.profileId,
-      userAgent: launch.userAgent,
-      startUrl,
-      // Під час прогріву акаунт уже зареєстрований — авторег не запускаємо.
-      autoreg: warmup ? undefined : autoreg,
-      warmup,
-      proxy: launch.proxy
-    })
-    if (!result.ok) {
-      return { ok: false, error: 'error' in result ? result.error : 'Не вдалося відкрити вікно' }
+  if (!hasTrafficCloudDesktop()) {
+    return {
+      ok: false,
+      error: 'desktop_required',
+      needsDesktop: true
     }
-    await apiTouchBrowserProfileLaunch(workspaceId, launch.profileId)
-    return { ok: true, mode: 'electron', credentials }
   }
 
-  if (tc?.openExternal) {
-    await tc.openExternal(startUrl)
-    return { ok: true, mode: 'web', credentials }
+  const result = await tc!.openBrowserProfile!({
+    profileId: launch.profileId,
+    userAgent: launch.userAgent,
+    startUrl,
+    // Під час прогріву акаунт уже зареєстрований — авторег не запускаємо.
+    autoreg: warmup ? undefined : autoreg,
+    warmup,
+    proxy: launch.proxy
+  })
+  if (!result.ok) {
+    return { ok: false, error: 'error' in result ? result.error : 'Не вдалося відкрити вікно' }
   }
-
-  window.open(startUrl, '_blank', 'noopener,noreferrer')
-  return { ok: true, mode: 'web', credentials }
+  await apiTouchBrowserProfileLaunch(workspaceId, launch.profileId)
+  return { ok: true, mode: 'electron', credentials }
 }
 
 export async function openTikTokLoginForAccount(

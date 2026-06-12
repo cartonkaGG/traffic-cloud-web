@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Eye,
   Check,
@@ -21,6 +21,7 @@ import {
   Wifi,
   Workflow
 } from 'lucide-react'
+import { DesktopAppGateModal } from '@/components/tiktok/DesktopAppGateModal'
 import { TikTokCredentialsModal } from '@/components/tiktok/TikTokCredentialsModal'
 import { TikTokEditModal } from '@/components/tiktok/TikTokEditModal'
 import { TikTokWarmupStartModal } from '@/components/tiktok/TikTokWarmupStartModal'
@@ -38,6 +39,7 @@ import {
   apiTestProxyAdhoc,
   apiUpdateTikTokAccount
 } from '@/lib/api'
+import { fetchDesktopDownloadUrl, hasTrafficCloudDesktop } from '@/lib/desktopAppGate'
 import {
   credentialsFromAccount,
   openTikTokFromCreateLaunch,
@@ -171,7 +173,27 @@ export function TikTokWarmupPage(): JSX.Element {
   } | null>(null)
   const [editAccount, setEditAccount] = useState<TikTokAccountModel | null>(null)
   const [proxyTestBusyId, setProxyTestBusyId] = useState<string | null>(null)
+  const [desktopGateOpen, setDesktopGateOpen] = useState(false)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const logTimersRef = useRef<number[]>([])
+
+  const isDesktop = hasTrafficCloudDesktop()
+
+  useEffect(() => {
+    void fetchDesktopDownloadUrl().then(setDownloadUrl)
+  }, [])
+
+  const showDesktopGate = useCallback(() => {
+    setDesktopGateOpen(true)
+  }, [])
+
+  const openCreateFlow = useCallback(() => {
+    if (!hasTrafficCloudDesktop()) {
+      showDesktopGate()
+      return
+    }
+    setCreateOpen(true)
+  }, [showDesktopGate])
 
   const persistSettings = useCallback((next: TikTokWarmupSettings) => {
     setSettings(next)
@@ -233,14 +255,19 @@ export function TikTokWarmupPage(): JSX.Element {
       pushToast('Немає підключення до API', 'error')
       return
     }
+    if (!hasTrafficCloudDesktop()) {
+      setCreateOpen(false)
+      showDesktopGate()
+      return
+    }
     const trimmedEmail = email.trim()
     const trimmedEmailPassword = emailPassword.trim()
     const trimmedUsername = username.trim().replace(/^@+/, '')
     const host = proxyHost.trim()
     const port = host ? parsePort(proxyPort) : null
 
-    if (trimmedEmail && !trimmedEmail.includes('@')) {
-      pushToast('Некоректний email', 'error')
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      pushToast('Вкажіть справжній email для реєстрації TikTok', 'error')
       return
     }
     if (host && port === null) {
@@ -251,8 +278,8 @@ export function TikTokWarmupPage(): JSX.Element {
     setCreateBusy(true)
     try {
       const r = await apiCreateTikTokAccount(workspaceId, {
-        ...(trimmedEmail ? { email: trimmedEmail } : {}),
-        ...(trimmedEmail && trimmedEmailPassword ? { emailPassword: trimmedEmailPassword } : {}),
+        email: trimmedEmail,
+        ...(trimmedEmailPassword ? { emailPassword: trimmedEmailPassword } : {}),
         ...(trimmedUsername ? { username: trimmedUsername } : {}),
         ...(host && port
           ? {
@@ -281,16 +308,15 @@ export function TikTokWarmupPage(): JSX.Element {
         r.account.id
       )
       if (!launchResult.ok) {
-        pushToast(launchResult.error, 'error')
-      } else if (launchResult.mode === 'electron') {
+        if (launchResult.needsDesktop) {
+          showDesktopGate()
+        } else {
+          pushToast(launchResult.error, 'error')
+        }
+      } else {
         pushToast(
           `Автореєстрація @${r.account.username} — форма, код і Next автоматично (Electron)`,
           'ok'
-        )
-      } else {
-        pushToast(
-          'Відкрито TikTok у браузері. Автозаповнення працює лише в десктоп-додатку Traffic Cloud.',
-          'error'
         )
       }
     } catch (e) {
@@ -309,6 +335,7 @@ export function TikTokWarmupPage(): JSX.Element {
     pushToast,
     refetch,
     resetCreateForm,
+    showDesktopGate,
     status,
     username,
     workspaceId
@@ -361,13 +388,21 @@ export function TikTokWarmupPage(): JSX.Element {
         pushToast('Немає підключення до API', 'error')
         return
       }
+      if (!hasTrafficCloudDesktop()) {
+        showDesktopGate()
+        return
+      }
       setManageBusyId(account.id)
       try {
         const intent =
           account.status === 'ready' ? 'home' : account.status === 'creating' ? 'signup' : 'login'
         const r = await openTikTokManageForAccount(workspaceId, account.id, intent)
         if (!r.ok) {
-          pushToast(r.error, 'error')
+          if (r.needsDesktop) {
+            showDesktopGate()
+          } else {
+            pushToast(r.error, 'error')
+          }
           return
         }
         if (intent === 'signup' || intent === 'login') {
@@ -378,13 +413,11 @@ export function TikTokWarmupPage(): JSX.Element {
           })
         }
         pushToast(
-          r.mode === 'electron'
-            ? intent === 'home'
-              ? `Стрічка @${account.username}`
-              : intent === 'signup'
-                ? `Автореєстрація @${account.username} — перевірте код з email`
-                : `Вхід @${account.username}`
-            : `TikTok @${account.username} відкрито у браузері`,
+          intent === 'home'
+            ? `Стрічка @${account.username}`
+            : intent === 'signup'
+              ? `Автореєстрація @${account.username} — перевірте код з email`
+              : `Вхід @${account.username}`,
           'ok'
         )
         await refetch()
@@ -392,7 +425,7 @@ export function TikTokWarmupPage(): JSX.Element {
         setManageBusyId(null)
       }
     },
-    [pushToast, refetch, status, workspaceId]
+    [pushToast, refetch, showDesktopGate, status, workspaceId]
   )
 
   const finishWarmup = useCallback(
@@ -420,6 +453,11 @@ export function TikTokWarmupPage(): JSX.Element {
     async (account: TikTokAccountModel, watchHashtags: string[]) => {
       if (!workspaceId || status !== 'online') {
         pushToast('Немає підключення до API', 'error')
+        return
+      }
+      if (!hasTrafficCloudDesktop()) {
+        setWarmupModal(null)
+        showDesktopGate()
         return
       }
 
@@ -455,7 +493,11 @@ export function TikTokWarmupPage(): JSX.Element {
           commentTexts: settings.commentTexts
         })
         if (!opened.ok) {
-          pushToast(opened.error, 'error')
+          if (opened.needsDesktop) {
+            showDesktopGate()
+          } else {
+            pushToast(opened.error, 'error')
+          }
           await apiUpdateTikTokAccount(workspaceId, warmedAccount.id, { status: 'paused' })
           await refetch()
           setBusyId(null)
@@ -483,7 +525,7 @@ export function TikTokWarmupPage(): JSX.Element {
         setWarmupStartBusy(false)
       }
     },
-    [finishWarmup, pushToast, refetch, runVisibleSteps, settings, status, workspaceId]
+    [finishWarmup, pushToast, refetch, runVisibleSteps, settings, showDesktopGate, status, workspaceId]
   )
 
   const toggleWarmup = useCallback(
@@ -501,12 +543,17 @@ export function TikTokWarmupPage(): JSX.Element {
         return
       }
 
+      if (!hasTrafficCloudDesktop()) {
+        showDesktopGate()
+        return
+      }
+
       setWarmupModal({
         account,
         hashtagsRaw: account.watchHashtags.map((t) => `#${t}`).join(', ')
       })
     },
-    [clearLogTimers, pushToast, refetch, status, workspaceId]
+    [clearLogTimers, pushToast, refetch, showDesktopGate, status, workspaceId]
   )
 
   const deleteAccount = useCallback(
@@ -546,6 +593,10 @@ export function TikTokWarmupPage(): JSX.Element {
       pushToast('Немає підключення до API', 'error')
       return
     }
+    if (!hasTrafficCloudDesktop()) {
+      showDesktopGate()
+      return
+    }
     const targets = accounts.filter((a) => a.status !== 'warming')
     if (targets.length === 0) {
       pushToast('Немає акаунтів для прогріву', 'error')
@@ -571,7 +622,7 @@ export function TikTokWarmupPage(): JSX.Element {
       setBulkBusy(false)
       pushToast('Пакетний прогрів завершено', 'ok')
     }, 3500)
-  }, [accounts, pushToast, refetch, status, workspaceId])
+  }, [accounts, pushToast, refetch, showDesktopGate, status, workspaceId])
 
   return (
     <div className="relative space-y-8 p-6 sm:p-8">
@@ -587,8 +638,8 @@ export function TikTokWarmupPage(): JSX.Element {
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
-            Email не обовʼязковий — створиться тимчасова пошта, код підставиться сам. Повна автоматизація
-            лише в десктоп-додатку Traffic Cloud (Electron).
+            Автореєстрація та прогрів TikTok доступні лише в десктоп-додатку Traffic Cloud (Electron
+            + антидетект-браузер). У веб-панелі можна переглядати акаунти та налаштування.
           </p>
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-zinc-400">
             {settings.executionMode === 'visible' ? (
@@ -624,7 +675,7 @@ export function TikTokWarmupPage(): JSX.Element {
           </button>
           <button
             type="button"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => openCreateFlow()}
             className="inline-flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition-colors hover:border-accent/45"
           >
             <Plus className="h-4 w-4" />
@@ -632,6 +683,30 @@ export function TikTokWarmupPage(): JSX.Element {
           </button>
         </div>
       </div>
+
+      {!isDesktop ? (
+        <GlassCard className="relative border-amber-400/20 bg-amber-500/5 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-amber-100">
+                TikTok Warmup працює лише в десктоп-додатку
+              </p>
+              <p className="mt-1 max-w-2xl text-[13px] text-amber-200/70">
+                Завантажте Traffic Cloud або відкрийте цю сторінку у встановленому додатку, щоб
+                створювати акаунти, запускати автореєстрацію та прогрів.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={showDesktopGate}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100"
+            >
+              <Monitor className="h-4 w-4" />
+              Завантажити / відкрити
+            </button>
+          </div>
+        </GlassCard>
+      ) : null}
 
       <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
@@ -862,7 +937,7 @@ export function TikTokWarmupPage(): JSX.Element {
             </p>
             <button
               type="button"
-              onClick={() => setCreateOpen(true)}
+              onClick={() => openCreateFlow()}
               className="mt-6 inline-flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-5 py-2.5 text-sm font-medium text-cyan-100"
             >
               <Plus className="h-4 w-4" />
@@ -1084,38 +1159,38 @@ export function TikTokWarmupPage(): JSX.Element {
           <GlassCard className="w-full max-w-md p-6">
             <h2 className="text-lg font-semibold text-white">Автореєстрація TikTok</h2>
             <p className="mt-1 text-[13px] text-zinc-500">
-              Email опційний — якщо порожньо, створиться тимчасова пошта. Вкажіть свою пошту + пароль
-              (для Gmail/Outlook — app-password), і софт сам прочитає код підтвердження та введе його.
+              Потрібен справжній email для реєстрації TikTok. Вкажіть свою пошту + пароль (для
+              Gmail/Outlook — app-password), і софт прочитає код підтвердження автоматично. Тимчасова
+              пошта (mail.tm) буде доступна пізніше лише в десктоп-додатку — без неї фейковий email
+              не працює для входу в TikTok.
             </p>
             <div className="mt-5 space-y-4">
               <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Email (опційно)</span>
+                <span className="text-[11px] uppercase text-zinc-500">Email (обовʼязково)</span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="авто — тимчасова пошта"
+                  placeholder="you@gmail.com"
                   className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40"
                 />
               </label>
-              {email.trim() ? (
-                <label className="block space-y-1.5">
-                  <span className="text-[11px] uppercase text-zinc-500">
-                    Пароль пошти (app-password, для авто-коду)
-                  </span>
-                  <input
-                    type="password"
-                    value={emailPassword}
-                    onChange={(e) => setEmailPassword(e.target.value)}
-                    placeholder="app-password для IMAP"
-                    autoComplete="off"
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40"
-                  />
-                  <span className="block text-[11px] text-zinc-600">
-                    Gmail: увімкніть IMAP і створіть app-password. Без пароля код доведеться ввести вручну.
-                  </span>
-                </label>
-              ) : null}
+              <label className="block space-y-1.5">
+                <span className="text-[11px] uppercase text-zinc-500">
+                  Пароль пошти (app-password, для авто-коду)
+                </span>
+                <input
+                  type="password"
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  placeholder="app-password для IMAP"
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40"
+                />
+                <span className="block text-[11px] text-zinc-600">
+                  Gmail: увімкніть IMAP і створіть app-password. Без пароля код доведеться ввести вручну.
+                </span>
+              </label>
               <label className="block space-y-1.5">
                 <span className="text-[11px] uppercase text-zinc-500">Логін (@username, опційно)</span>
                 <input
@@ -1215,6 +1290,13 @@ export function TikTokWarmupPage(): JSX.Element {
           </GlassCard>
         </div>
       ) : null}
+
+      <DesktopAppGateModal
+        open={desktopGateOpen}
+        onClose={() => setDesktopGateOpen(false)}
+        onContinueInDesktop={() => window.location.reload()}
+        downloadUrl={downloadUrl}
+      />
     </div>
   )
 }

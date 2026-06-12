@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   /** Попадает в клиент на этапе build. Для продакшена укажите URL API (например Render). */
   readonly VITE_API_BASE_URL?: string
+  /** Fallback URL для завантаження desktop-додатку, якщо update-manifest недоступний. */
+  readonly VITE_DESKTOP_DOWNLOAD_URL?: string
 }
 
 interface ImportMeta {
