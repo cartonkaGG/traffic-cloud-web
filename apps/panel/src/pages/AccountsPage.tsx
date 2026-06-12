@@ -20,6 +20,7 @@ import {
 import { openTelegramForAccount } from '@/lib/openTelegramForAccount'
 import { formatProxyProbeError } from '@/lib/proxyProbeErrors'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
+import { parseDelaySecondsToMs } from '@/lib/delaySecondsUi'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -157,7 +158,7 @@ export function AccountsPage(): JSX.Element {
   const [spamAccount, setSpamAccount] = useState<TelegramAccountModel | null>(null)
   const [spamSourceId, setSpamSourceId] = useState('')
   const [spamMax, setSpamMax] = useState('40')
-  const [spamDelay, setSpamDelay] = useState('2800')
+  const [spamDelay, setSpamDelay] = useState('3')
   const [spamBusy, setSpamBusy] = useState(false)
   const [spamErr, setSpamErr] = useState<string | null>(null)
 
@@ -725,13 +726,13 @@ export function AccountsPage(): JSX.Element {
       return
     }
     const maxN = Number(spamMax)
-    const delayN = Number(spamDelay)
     if (!Number.isFinite(maxN) || maxN < 1) {
       setSpamErr('Ліміт повідомлень: число від 1')
       return
     }
-    if (!Number.isFinite(delayN) || delayN < 500) {
-      setSpamErr('Затримка (мс): мінімум 500')
+    const delayParsed = parseDelaySecondsToMs(spamDelay)
+    if (!delayParsed.ok) {
+      setSpamErr(delayParsed.error)
       return
     }
     setSpamBusy(true)
@@ -741,7 +742,7 @@ export function AccountsPage(): JSX.Element {
       const r = await apiTelegramAccountOutreachStart(workspaceId, spamAccount.id, {
         sourceId: spamSourceId,
         maxMessages: Math.floor(maxN),
-        delayMs: Math.floor(delayN),
+        delayMs: delayParsed.ms,
         templateMode: 'random',
         userFilters: user,
         safetyFilters: safety

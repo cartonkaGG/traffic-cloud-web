@@ -216,6 +216,7 @@ export interface MessageTemplateModel {
   id: string
   title: string
   content: string
+  sortOrder?: number
   createdAt: string
   updatedAt: string
   /** @deprecated use title */

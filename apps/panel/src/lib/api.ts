@@ -125,9 +125,14 @@ export type WorkspaceBundle = {
     }
   >
   analytics: AnalyticsSnapshot
+  messageTemplateStats?: Record<
+    string,
+    { sent: number; sendFailed: number; blocked: number; replies: number }
+  >
   dashboardStats: DashboardStatRemote[]
   logs: LiveLogEntry[]
   activeMessageTemplateId?: string | null
+  activeMessageTemplateIds?: string[] | null
   /** Серверний авто-blacklist (заблокували акаунт під час розсилки), без @, lower-case */
   outreachAutoBlacklistUsernames?: string[]
   tiktokAccounts?: TikTokAccountModel[]
@@ -1056,14 +1061,32 @@ export async function apiStopOutreachJob(
   })
 }
 
+export async function apiResetWorkspaceAnalytics(workspaceId: string): Promise<{ ok: boolean }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/analytics/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
 export async function apiCreateMessageTemplate(
   workspaceId: string,
-  body: { title: string; content: string }
+  body: { title?: string; content: string }
 ): Promise<{ template: MessageTemplateModel }> {
   return fetchJson(`/v1/workspaces/${workspaceId}/message-templates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
+  })
+}
+
+export async function apiReorderMessageTemplates(
+  workspaceId: string,
+  orderedIds: string[]
+): Promise<{ ok: boolean }> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/message-templates/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderedIds })
   })
 }
 
@@ -1085,6 +1108,21 @@ export async function apiDeleteMessageTemplate(
 ): Promise<{ ok: boolean }> {
   return fetchJson(`/v1/workspaces/${workspaceId}/message-templates/${templateId}`, {
     method: 'DELETE'
+  })
+}
+
+export async function apiSetActiveMessageTemplates(
+  workspaceId: string,
+  templateIds: string[]
+): Promise<{
+  ok: boolean
+  activeMessageTemplateId: string | null
+  activeMessageTemplateIds: string[]
+}> {
+  return fetchJson(`/v1/workspaces/${workspaceId}/settings/active-message-template`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ templateIds })
   })
 }
 

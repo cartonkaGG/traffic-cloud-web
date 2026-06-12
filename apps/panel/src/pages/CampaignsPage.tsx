@@ -34,6 +34,7 @@ import {
 import { loadCampaignsUi, saveCampaignsUi } from '@/lib/campaignsUiStorage'
 import { CampaignsSubNav } from '@/components/layout/CampaignsSubNav'
 import { readOutreachFiltersFromStorage } from '@/lib/outreachFiltersStorage'
+import { migrateDelayFieldToSeconds, parseDelaySecondsToMs } from '@/lib/delaySecondsUi'
 
 function statusUi(s: CampaignRunStatus): { label: string; className: string } {
   switch (s) {
@@ -265,7 +266,7 @@ export function CampaignsPage(): JSX.Element {
   const [outreachBusyId, setOutreachBusyId] = useState<string | null>(null)
   const [bulkSourceId, setBulkSourceId] = useState('')
   const [bulkMax, setBulkMax] = useState('40')
-  const [bulkDelay, setBulkDelay] = useState('2800')
+  const [bulkDelay, setBulkDelay] = useState('3')
   const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([])
   const [bulkLaunchBusy, setBulkLaunchBusy] = useState(false)
   const [runHistory, setRunHistory] = useState<OutreachRunRecordModel[]>([])
@@ -302,7 +303,8 @@ export function CampaignsPage(): JSX.Element {
     campaignsHydrateRef.current.done = true
     const s = loadCampaignsUi(workspaceId)
     if (s.bulkMax != null && s.bulkMax !== '') setBulkMax(s.bulkMax)
-    if (s.bulkDelay != null && s.bulkDelay !== '') setBulkDelay(s.bulkDelay)
+    if (s.bulkDelay != null && s.bulkDelay !== '')
+      setBulkDelay(migrateDelayFieldToSeconds(s.bulkDelay, '3'))
     if (s.bulkSourceId && chatSources.some((c) => c.id === s.bulkSourceId)) {
       setBulkSourceId(s.bulkSourceId)
     }
@@ -440,22 +442,23 @@ export function CampaignsPage(): JSX.Element {
       return
     }
     const maxN = Number(bulkMax)
-    const delayN = Number(bulkDelay)
     if (!Number.isFinite(maxN) || maxN < 1) {
       pushToast('Ліміт повідомлень: число від 1', 'error')
       return
     }
-    if (!Number.isFinite(delayN) || delayN < 500) {
-      pushToast('Затримка (мс): мінімум 500', 'error')
+    const delayParsed = parseDelaySecondsToMs(bulkDelay)
+    if (!delayParsed.ok) {
+      pushToast(delayParsed.error, 'error')
       return
     }
+    const delayMs = delayParsed.ms
     setBulkLaunchBusy(true)
     const labelById = new Map(telegramAccounts.map((a) => [a.id, a.label]))
     const { user, safety } = readOutreachFiltersFromStorage()
     const bodyBase = {
       sourceId: bulkSourceId.trim(),
       maxMessages: Math.floor(maxN),
-      delayMs: Math.floor(delayN),
+      delayMs,
       templateMode: 'random' as const,
       userFilters: user,
       safetyFilters: safety
@@ -557,7 +560,7 @@ export function CampaignsPage(): JSX.Element {
                 />
               </label>
               <label className="block space-y-1.5">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Затримка, мс</span>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Затримка, с</span>
                 <input
                   type="number"
                   min={500}
