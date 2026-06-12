@@ -12,7 +12,6 @@ import {
   Play,
   Plus,
   Rocket,
-  Settings2,
   Sparkles,
   Trash2,
   TrendingUp,
@@ -22,6 +21,7 @@ import {
   Workflow
 } from 'lucide-react'
 import { DesktopAppGateModal } from '@/components/tiktok/DesktopAppGateModal'
+import { TikTokTabNav, type TikTokTabId } from '@/components/tiktok/TikTokTabNav'
 import { TikTokCredentialsModal } from '@/components/tiktok/TikTokCredentialsModal'
 import { TikTokEditModal } from '@/components/tiktok/TikTokEditModal'
 import { TikTokWarmupStartModal } from '@/components/tiktok/TikTokWarmupStartModal'
@@ -53,6 +53,7 @@ import {
   type TikTokWarmupSettings,
   writeTikTokWarmupSettings
 } from '@/lib/tiktokWarmupStorage'
+import { readTikTokActiveTab, writeTikTokActiveTab } from '@/lib/tiktokTabStorage'
 
 function statusUi(status: TikTokAccountStatus): { label: string; className: string } {
   switch (status) {
@@ -145,8 +146,7 @@ export function TikTokWarmupPage(): JSX.Element {
   }, [proxiesList])
 
   const [settings, setSettings] = useState<TikTokWarmupSettings>(() => readTikTokWarmupSettings())
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<TikTokTabId>(() => readTikTokActiveTab())
   const [email, setEmail] = useState('')
   const [emailPassword, setEmailPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -193,13 +193,18 @@ export function TikTokWarmupPage(): JSX.Element {
     setDesktopGateOpen(true)
   }, [])
 
+  const setTab = useCallback((tab: TikTokTabId) => {
+    setActiveTab(tab)
+    writeTikTokActiveTab(tab)
+  }, [])
+
   const openCreateFlow = useCallback(() => {
     if (!hasTrafficCloudDesktop()) {
       showDesktopGate()
       return
     }
-    setCreateOpen(true)
-  }, [showDesktopGate])
+    setTab('create')
+  }, [setTab, showDesktopGate])
 
   const persistSettings = useCallback((next: TikTokWarmupSettings) => {
     setSettings(next)
@@ -262,7 +267,6 @@ export function TikTokWarmupPage(): JSX.Element {
       return
     }
     if (!hasTrafficCloudDesktop()) {
-      setCreateOpen(false)
       showDesktopGate()
       return
     }
@@ -297,8 +301,8 @@ export function TikTokWarmupPage(): JSX.Element {
             }
           : {})
       })
-      setCreateOpen(false)
       resetCreateForm()
+      setTab('accounts')
       await refetch()
 
       setCredentialsModal({
@@ -341,6 +345,7 @@ export function TikTokWarmupPage(): JSX.Element {
     pushToast,
     refetch,
     resetCreateForm,
+    setTab,
     showDesktopGate,
     status,
     username,
@@ -554,12 +559,13 @@ export function TikTokWarmupPage(): JSX.Element {
         return
       }
 
+      setTab('warmup')
       setWarmupModal({
         account,
         hashtagsRaw: account.watchHashtags.map((t) => `#${t}`).join(', ')
       })
     },
-    [clearLogTimers, pushToast, refetch, showDesktopGate, status, workspaceId]
+    [clearLogTimers, pushToast, refetch, setTab, showDesktopGate, status, workspaceId]
   )
 
   const deleteAccount = useCallback(
@@ -641,53 +647,15 @@ export function TikTokWarmupPage(): JSX.Element {
         }}
       />
 
-      <div className="relative flex flex-wrap items-start justify-between gap-4">
+      <div className="relative space-y-4">
         <div>
-          <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
-            Автореєстрація та прогрів TikTok доступні лише в десктоп-додатку Traffic Cloud (Electron
-            + антидетект-браузер). У веб-панелі можна переглядати акаунти та налаштування.
+          <h1 className="text-2xl font-bold tracking-tight text-white">TikTok Warmup</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-500">
+            Створення акаунта та прогрів відкривають TikTok у антидетект-браузері десктоп-додатку —
+            не Telegram Web.
           </p>
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-zinc-400">
-            {settings.executionMode === 'visible' ? (
-              <>
-                <Eye className="h-3.5 w-3.5 text-cyan-300" />
-                Режим: процес на екрані
-              </>
-            ) : (
-              <>
-                <Workflow className="h-3.5 w-3.5 text-fuchsia-300" />
-                Режим: під капотом
-              </>
-            )}
-          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:border-fuchsia-400/25 hover:text-white"
-          >
-            <Settings2 className="h-4 w-4" />
-            Налаштування
-          </button>
-          <button
-            type="button"
-            disabled={bulkBusy || accounts.length === 0}
-            onClick={() => void startBulkWarmup()}
-            className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-4 py-2.5 text-sm font-medium text-fuchsia-100 transition-colors hover:border-fuchsia-400/40 disabled:opacity-50"
-          >
-            {bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
-            Прогріти всі
-          </button>
-          <button
-            type="button"
-            onClick={() => openCreateFlow()}
-            className="inline-flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition-colors hover:border-accent/45"
-          >
-            <Plus className="h-4 w-4" />
-            Новий акаунт
-          </button>
-        </div>
+        <TikTokTabNav active={activeTab} onChange={setTab} />
       </div>
 
       {!isDesktop ? (
@@ -740,8 +708,25 @@ export function TikTokWarmupPage(): JSX.Element {
         })}
       </div>
 
-      {settingsOpen ? (
+      {activeTab === 'warmup' ? (
         <GlassCard className="relative space-y-6 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-5">
+            <div>
+              <h2 className="text-sm font-semibold text-white">Налаштування прогріву</h2>
+              <p className="mt-1 text-[12px] text-zinc-500">
+                Оберіть акаунт у списку нижче або прогрійте всі одразу.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={bulkBusy || accounts.length === 0}
+              onClick={() => void startBulkWarmup()}
+              className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-4 py-2.5 text-sm font-medium text-fuchsia-100 transition-colors hover:border-fuchsia-400/40 disabled:opacity-50"
+            >
+              {bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
+              Прогріти всі
+            </button>
+          </div>
           <div>
             <h2 className="text-sm font-semibold text-white">Режим виконання</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -914,10 +899,58 @@ export function TikTokWarmupPage(): JSX.Element {
               </span>
             </label>
           </div>
+          <div className="border-t border-white/[0.06] pt-6">
+            <h3 className="text-sm font-semibold text-white">Акаунти для прогріву</h3>
+            {accounts.length === 0 ? (
+              <p className="mt-3 text-sm text-zinc-500">Спочатку створіть акаунт на вкладці «Створити акаунт».</p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {accounts.map((account) => {
+                  const ui = statusUi(account.status)
+                  const isBusy = busyId === account.id
+                  return (
+                    <div
+                      key={account.id}
+                      className="rounded-2xl border border-white/[0.08] bg-black/20 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-medium text-white">@{account.username}</div>
+                          <span
+                            className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${ui.className}`}
+                          >
+                            {ui.label}
+                          </span>
+                        </div>
+                        <span className="font-mono text-[12px] text-zinc-500">{account.trustScore}%</span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => void toggleWarmup(account)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-fuchsia-400/25 bg-fuchsia-500/10 px-3 py-1.5 text-[12px] text-fuchsia-100"
+                        >
+                          {isBusy ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : account.status === 'warming' ? (
+                            <Pause className="h-3.5 w-3.5" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5 fill-current" />
+                          )}
+                          {account.status === 'warming' ? 'Зупинити' : 'Запустити'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </GlassCard>
       ) : null}
 
-      {settings.executionMode === 'visible' && activityLog.length > 0 ? (
+      {activeTab === 'warmup' && settings.executionMode === 'visible' && activityLog.length > 0 ? (
         <GlassCard className="relative p-5">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
             <Monitor className="h-4 w-4 text-cyan-300" />
@@ -933,6 +966,122 @@ export function TikTokWarmupPage(): JSX.Element {
         </GlassCard>
       ) : null}
 
+      {activeTab === 'create' ? (
+        <GlassCard className="relative max-w-2xl space-y-5 p-6">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Автореєстрація TikTok</h2>
+            <p className="mt-1 text-[13px] text-zinc-500">
+              Після створення відкриється <strong className="font-medium text-fuchsia-200">tiktok.com/signup</strong>{' '}
+              у вікні десктоп-додатку (не Telegram). Потрібен справжній email.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-[11px] uppercase text-zinc-500">Email (обовʼязково)</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@gmail.com"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-[11px] uppercase text-zinc-500">Пароль пошти (app-password)</span>
+              <input
+                type="password"
+                value={emailPassword}
+                onChange={(e) => setEmailPassword(e.target.value)}
+                placeholder="для авто-коду з Gmail"
+                autoComplete="off"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-[11px] uppercase text-zinc-500">Логін (@username, опційно)</span>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="авто: creator_1234"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40"
+              />
+            </label>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                Проксі (опціонально)
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="block space-y-1.5 sm:col-span-2">
+                  <span className="text-[11px] uppercase text-zinc-500">Host</span>
+                  <input
+                    value={proxyHost}
+                    onChange={(e) => setProxyHost(e.target.value)}
+                    placeholder="proxy.example.com"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-fuchsia-400/40"
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] uppercase text-zinc-500">Порт</span>
+                  <input
+                    value={proxyPort}
+                    onChange={(e) => setProxyPort(e.target.value)}
+                    inputMode="numeric"
+                    disabled={!proxyHost.trim()}
+                    placeholder="1080"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] uppercase text-zinc-500">Тип</span>
+                  <select
+                    value={proxyType}
+                    onChange={(e) => setProxyType(e.target.value === 'socks5' ? 'socks5' : 'http')}
+                    disabled={!proxyHost.trim()}
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                  >
+                    <option value="socks5">SOCKS5</option>
+                    <option value="http">HTTP</option>
+                  </select>
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] uppercase text-zinc-500">Логін</span>
+                  <input
+                    value={proxyUser}
+                    onChange={(e) => setProxyUser(e.target.value)}
+                    disabled={!proxyHost.trim()}
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] uppercase text-zinc-500">Пароль</span>
+                  <input
+                    type="password"
+                    value={proxyPass}
+                    onChange={(e) => setProxyPass(e.target.value)}
+                    disabled={!proxyHost.trim()}
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-400/40 disabled:opacity-40"
+                    autoComplete="off"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={createBusy}
+            onClick={() => void createAccount()}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-4 py-3 text-sm font-medium text-fuchsia-100 disabled:opacity-50 sm:w-auto"
+          >
+            {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Створити і відкрити TikTok
+          </button>
+        </GlassCard>
+      ) : null}
+
+      {activeTab === 'accounts' ? (
       <GlassCard className="relative overflow-hidden">
         {accounts.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
@@ -944,10 +1093,10 @@ export function TikTokWarmupPage(): JSX.Element {
             <button
               type="button"
               onClick={() => openCreateFlow()}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-5 py-2.5 text-sm font-medium text-cyan-100"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-2.5 text-sm font-medium text-fuchsia-100"
             >
               <Plus className="h-4 w-4" />
-              Новий акаунт
+              Створити акаунт
             </button>
           </div>
         ) : (
@@ -1116,6 +1265,7 @@ export function TikTokWarmupPage(): JSX.Element {
           </div>
         )}
       </GlassCard>
+      ) : null}
 
       {warmupModal ? (
         <TikTokWarmupStartModal
@@ -1158,143 +1308,6 @@ export function TikTokWarmupPage(): JSX.Element {
           }}
           onError={(message) => pushToast(message, 'error')}
         />
-      ) : null}
-
-      {createOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <GlassCard className="w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold text-white">Автореєстрація TikTok</h2>
-            <p className="mt-1 text-[13px] text-zinc-500">
-              Потрібен справжній email для реєстрації TikTok. Вкажіть свою пошту + пароль (для
-              Gmail/Outlook — app-password), і софт прочитає код підтвердження автоматично. Тимчасова
-              пошта (mail.tm) буде доступна пізніше лише в десктоп-додатку — без неї фейковий email
-              не працює для входу в TikTok.
-            </p>
-            <div className="mt-5 space-y-4">
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Email (обовʼязково)</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@gmail.com"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">
-                  Пароль пошти (app-password, для авто-коду)
-                </span>
-                <input
-                  type="password"
-                  value={emailPassword}
-                  onChange={(e) => setEmailPassword(e.target.value)}
-                  placeholder="app-password для IMAP"
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40"
-                />
-                <span className="block text-[11px] text-zinc-600">
-                  Gmail: увімкніть IMAP і створіть app-password. Без пароля код доведеться ввести вручну.
-                </span>
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Логін (@username, опційно)</span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="авто: creator_1234"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40"
-                />
-              </label>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                  Проксі (опціонально)
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <label className="block space-y-1.5 sm:col-span-2">
-                    <span className="text-[11px] uppercase text-zinc-500">Host</span>
-                    <input
-                      value={proxyHost}
-                      onChange={(e) => setProxyHost(e.target.value)}
-                      placeholder="proxy.example.com"
-                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-accent/40"
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] uppercase text-zinc-500">Порт</span>
-                    <input
-                      value={proxyPort}
-                      onChange={(e) => setProxyPort(e.target.value)}
-                      inputMode="numeric"
-                      disabled={!proxyHost.trim()}
-                      placeholder="1080"
-                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-accent/40 disabled:opacity-40"
-                    />
-                  </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] uppercase text-zinc-500">Тип</span>
-                    <select
-                      value={proxyType}
-                      onChange={(e) =>
-                        setProxyType(e.target.value === 'socks5' ? 'socks5' : 'http')
-                      }
-                      disabled={!proxyHost.trim()}
-                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40 disabled:opacity-40"
-                    >
-                      <option value="socks5">SOCKS5</option>
-                      <option value="http">HTTP</option>
-                    </select>
-                  </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] uppercase text-zinc-500">Логін</span>
-                    <input
-                      value={proxyUser}
-                      onChange={(e) => setProxyUser(e.target.value)}
-                      disabled={!proxyHost.trim()}
-                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40 disabled:opacity-40"
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] uppercase text-zinc-500">Пароль</span>
-                    <input
-                      type="password"
-                      value={proxyPass}
-                      onChange={(e) => setProxyPass(e.target.value)}
-                      disabled={!proxyHost.trim()}
-                      className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-accent/40 disabled:opacity-40"
-                      autoComplete="off"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={createBusy}
-                onClick={() => {
-                  setCreateOpen(false)
-                  resetCreateForm()
-                }}
-                className="rounded-xl border border-white/10 px-4 py-2 text-sm text-zinc-400"
-              >
-                Скасувати
-              </button>
-              <button
-                type="button"
-                disabled={createBusy}
-                onClick={() => void createAccount()}
-                className="inline-flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-cyan-100 disabled:opacity-50"
-              >
-                {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Створити і авторег (повністю)
-              </button>
-            </div>
-          </GlassCard>
-        </div>
       ) : null}
 
       <DesktopAppGateModal
