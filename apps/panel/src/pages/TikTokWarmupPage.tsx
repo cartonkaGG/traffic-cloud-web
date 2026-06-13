@@ -511,19 +511,15 @@ export function TikTokWarmupPage(): JSX.Element {
         }
 
         const steps = buildWarmupSteps(warmedAccount, settings, effectiveTopics)
+        const warmupDurationMs = durationMinutes * 60_000
         if (settings.executionMode === 'visible') {
-          runVisibleSteps(steps, () => {
-            void finishWarmup(warmedAccount, nextTrust)
-          })
+          runVisibleSteps(steps, () => undefined)
         } else {
           pushToast(`Прогрів @${warmedAccount.username} · пошук «${effectiveTopics[0]}»`, 'ok')
-          window.setTimeout(
-            () => {
-              void finishWarmup(warmedAccount, nextTrust)
-            },
-            Math.min(durationMinutes, 2) * 60_000
-          )
         }
+        window.setTimeout(() => {
+          void finishWarmup(warmedAccount, nextTrust)
+        }, warmupDurationMs)
       } catch (e) {
         setBusyId(null)
         pushToast(e instanceof Error ? e.message : String(e), 'error')
