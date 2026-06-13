@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, ArrowUpRight, MessageSquareCode, LayoutDashboard, Shield } from 'lucide-react';
 import TrafficCloudMark from './brand/TrafficCloudMark';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
-
-const PANEL_HREF = '/app/hub';
-const ADMIN_HREF = '/app/admin';
+import { openPanelFromSite } from '../lib/openPanel';
 
 interface HeaderProps {
   onContactClick: () => void;
@@ -102,21 +100,23 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
           {/* Right Action Controls */}
           <div className="hidden md:flex items-center gap-3">
             {isAdmin ? (
-              <a
-                href={ADMIN_HREF}
+              <button
+                type="button"
+                onClick={() => openPanelFromSite('admin')}
                 className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-amber-500/40 text-amber-100 hover:text-white hover:border-amber-400/60 hover:bg-amber-950/40 transition-all flex items-center gap-2"
               >
                 <Shield className="w-4 h-4 text-amber-300" />
                 <span>Адмін-панель</span>
-              </a>
+              </button>
             ) : null}
-            <a
-              href={PANEL_HREF}
+            <button
+              type="button"
+              onClick={() => openPanelFromSite('hub')}
               className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 hover:bg-gray-900/80 transition-all flex items-center gap-2"
             >
               <LayoutDashboard className="w-4 h-4 text-blue-400" />
               <span>{isAdmin ? 'Панель' : 'Увійти'}</span>
-            </a>
+            </button>
             <button
               onClick={onContactClick}
               className="relative overflow-hidden shimmer-btn bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs tracking-wider px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-[0_4px_20px_rgba(59,130,246,0.25)] hover:shadow-[0_4px_25px_rgba(59,130,246,0.35)] transition-all cursor-pointer group uppercase"
@@ -166,23 +166,29 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
               </div>
               
               {isAdmin ? (
-                <a
-                  href={ADMIN_HREF}
-                  onClick={() => setIsOpen(false)}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    openPanelFromSite('admin');
+                  }}
                   className="w-full py-3 rounded-lg text-amber-100 font-medium text-sm text-center flex items-center justify-center gap-2 border border-amber-500/40 bg-amber-950/30 uppercase"
                 >
                   <Shield className="w-4 h-4 text-amber-300" />
                   <span>Адмін-панель</span>
-                </a>
+                </button>
               ) : null}
-              <a
-                href={PANEL_HREF}
-                onClick={() => setIsOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  openPanelFromSite('hub');
+                }}
                 className="w-full py-3 rounded-lg text-white font-medium text-sm text-center flex items-center justify-center gap-2 border border-gray-700 bg-gray-900 uppercase"
               >
                 <LayoutDashboard className="w-4 h-4 text-blue-400" />
                 <span>{isAdmin ? 'Панель' : 'Увійти в панель'}</span>
-              </a>
+              </button>
               <button
                 onClick={() => {
                   setIsOpen(false);
