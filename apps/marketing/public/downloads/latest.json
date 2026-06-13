@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.11",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.11.exe",
-  "notes": "Преміум-завантаження, оновлення панелі, favicon хмара, TikTok warmup search"
+  "latestVersion": "0.2.12",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.12.exe",
+  "notes": "Виправлено оновлення: справжній NSIS-інсталятор замість portable"
 }
