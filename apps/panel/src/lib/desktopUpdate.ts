@@ -80,7 +80,7 @@ export async function fetchDesktopUpdateManifest(): Promise<DesktopUpdateManifes
     const apiBase = getApiBaseUrl()
     const controller = new AbortController()
     const timeout = window.setTimeout(() => controller.abort(), 12_000)
-    const res = await fetch(`${apiBase}/v1/desktop/update-manifest`, {
+    const res = await fetch(`${apiBase}/v1/desktop/update-manifest?_=${Date.now()}`, {
       signal: controller.signal
     })
     window.clearTimeout(timeout)

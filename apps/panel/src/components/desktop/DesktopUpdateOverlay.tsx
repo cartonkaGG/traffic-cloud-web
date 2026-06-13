@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CheckCircle2, Cloud, Download, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import { CheckCircle2, Download, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import TrafficCloudMark from '@/components/brand/TrafficCloudMark'
 import type { DesktopUpdatePhase, DesktopUpdateProgress } from '@/lib/desktopUpdate'
 import { subscribeDesktopUpdateProgress } from '@/lib/desktopUpdateRunner'
 
@@ -149,8 +150,8 @@ export function DesktopUpdateOverlay(): JSX.Element | null {
           >
             <div className="border-b border-white/[0.06] px-6 py-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/10 text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <Cloud className="h-5 w-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/15 to-fuchsia-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <TrafficCloudMark size={28} variant="auth" />
                 </div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-300/80">

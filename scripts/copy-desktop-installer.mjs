@@ -8,9 +8,12 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const monoRoot = join(root, '..', 'cloudetrafiiick')
-const version = '0.2.10'
+const version = '0.2.11'
 const fileName = `Traffic-Cloud-Setup-${version}.exe`
-const src = join(monoRoot, 'release', `Traffic Cloud Setup ${version}.exe`)
+const releaseDir = join(monoRoot, 'release')
+const nsisSrc = join(releaseDir, `Traffic Cloud Setup ${version}.exe`)
+const portableSrc = join(releaseDir, `Traffic Cloud ${version}.exe`)
+const src = existsSync(nsisSrc) ? nsisSrc : portableSrc
 const destDir = join(root, 'apps', 'marketing', 'public', 'downloads')
 const dest = join(destDir, fileName)
 

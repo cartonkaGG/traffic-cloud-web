@@ -5,12 +5,19 @@ import react from '@vitejs/plugin-react'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const panelRoot = resolve(repoRoot, 'apps/panel')
+const panelBuildId =
+  process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ??
+  process.env.GITHUB_SHA?.slice(0, 12) ??
+  `local-${Date.now()}`
 
 export default defineConfig({
   root: panelRoot,
   base: '/app/',
   envDir: repoRoot,
   publicDir: resolve(panelRoot, 'public'),
+  define: {
+    'import.meta.env.VITE_PANEL_BUILD_ID': JSON.stringify(panelBuildId)
+  },
   resolve: {
     alias: {
       '@': resolve(panelRoot, 'src')

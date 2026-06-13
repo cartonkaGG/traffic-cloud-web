@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { openDesktopInstaller } from '@/lib/desktopAppGate'
-import { checkDesktopUpdateAvailable } from '@/lib/desktopUpdate'
+import { checkDesktopUpdateAvailable, compareSemver } from '@/lib/desktopUpdate'
 import {
   canRunInAppDesktopUpdate,
+  checkInAppDesktopUpdate,
   startInAppDesktopUpdate
 } from '@/lib/desktopUpdateRunner'
 
@@ -36,20 +37,37 @@ export function useDesktopUpdate(): DesktopUpdateState & {
 
   const refresh = useCallback(() => {
     setState((s) => ({ ...s, loading: true }))
-    void checkDesktopUpdateAvailable()
-      .then((r) => {
-        setState({
-          loading: false,
-          currentVersion: r.currentVersion,
-          latestVersion: r.latestVersion,
-          downloadUrl: r.downloadUrl,
-          notes: r.notes,
-          updateAvailable: r.updateAvailable,
-          inShell: r.inShell,
-          inAppUpdate: canRunInAppDesktopUpdate()
-        })
+    void (async () => {
+      const base = await checkDesktopUpdateAvailable()
+      let merged = base
+
+      if (canRunInAppDesktopUpdate()) {
+        const ipc = await checkInAppDesktopUpdate()
+        if (ipc?.currentVersion && ipc.latestVersion) {
+          const updateAvailable =
+            compareSemver(ipc.latestVersion, ipc.currentVersion) > 0
+          merged = {
+            ...base,
+            currentVersion: ipc.currentVersion,
+            latestVersion: ipc.latestVersion,
+            downloadUrl: ipc.downloadUrl ?? base.downloadUrl,
+            updateAvailable,
+            inShell: true
+          }
+        }
+      }
+
+      setState({
+        loading: false,
+        currentVersion: merged.currentVersion,
+        latestVersion: merged.latestVersion,
+        downloadUrl: merged.downloadUrl,
+        notes: merged.notes,
+        updateAvailable: merged.updateAvailable,
+        inShell: merged.inShell,
+        inAppUpdate: canRunInAppDesktopUpdate()
       })
-      .catch(() => setState({ ...INITIAL, loading: false }))
+    })().catch(() => setState({ ...INITIAL, loading: false }))
   }, [])
 
   useEffect(() => {
