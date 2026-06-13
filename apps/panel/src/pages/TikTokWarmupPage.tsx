@@ -1,30 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Eye,
   Check,
   Flame,
-  Hash,
   KeyRound,
   Loader2,
-  Monitor,
   Pause,
   Pencil,
   Play,
   Plus,
   Rocket,
+  Search,
   Sparkles,
   Trash2,
   TrendingUp,
   UserRound,
   Users,
-  Wifi,
-  Workflow
+  Wifi
 } from 'lucide-react'
 import { DesktopAppGateModal } from '@/components/tiktok/DesktopAppGateModal'
 import { TikTokCredentialsModal } from '@/components/tiktok/TikTokCredentialsModal'
 import { TikTokEditModal } from '@/components/tiktok/TikTokEditModal'
-import { TikTokWarmupStartModal } from '@/components/tiktok/TikTokWarmupStartModal'
+import { TikTokWarmupPanel } from '@/components/tiktok/TikTokWarmupPanel'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { useToast } from '@/context/ToastContext'
 import { useWorkspaceData } from '@/context/WorkspaceDataContext'
@@ -57,9 +54,8 @@ import {
   formatTikTokAccountEmail
 } from '@/lib/openTikTokForAccount'
 import {
-  DEFAULT_WARMUP_SETTINGS,
+  parseSearchTopicsInput,
   readTikTokWarmupSettings,
-  type TikTokExecutionMode,
   type TikTokWarmupSettings,
   writeTikTokWarmupSettings
 } from '@/lib/tiktokWarmupStorage'
@@ -100,39 +96,22 @@ function statusUi(status: TikTokAccountStatus): { label: string; className: stri
   }
 }
 
-const EXECUTION_MODES: Array<{
-  id: TikTokExecutionMode
-  label: string
-  hint: string
-  icon: typeof Eye
-}> = [
-  {
-    id: 'visible',
-    label: 'На екрані',
-    hint: 'Відкривається антидетект-браузер — ви бачите TikTok і весь прогрів.',
-    icon: Eye
-  },
-  {
-    id: 'headless',
-    label: 'Під капотом',
-    hint: 'Прогрів без вікна. Керування акаунтом — кнопкою «Керувати».',
-    icon: Workflow
-  }
-]
-
-function buildWarmupSteps(account: TikTokAccountModel, settings: TikTokWarmupSettings): string[] {
+function buildWarmupSteps(
+  account: TikTokAccountModel,
+  settings: TikTokWarmupSettings,
+  topics: string[]
+): string[] {
   const scrollMin = Math.min(settings.scrollMinutesMin, settings.scrollMinutesMax)
   const scrollMax = Math.max(settings.scrollMinutesMin, settings.scrollMinutesMax)
   const scrollMins = scrollMin + Math.floor(Math.random() * (scrollMax - scrollMin + 1))
-  const tags = account.watchHashtags.length > 0 ? account.watchHashtags : ['fyp']
-  const tagLine = tags.map((t) => `#${t}`).join(' ')
+  const topicLine = topics.length > 0 ? topics.join(' · ') : 'рекомендації'
   const steps = [
     `[${account.username}] Антидетект-профіль активний`,
-    `[${account.username}] Тематика: ${tagLine}`,
+    `[${account.username}] Пошук: ${topicLine}`,
     `[${account.username}] TikTok · скрол ~${scrollMins} хв`
   ]
-  for (const tag of tags.slice(0, 3)) {
-    steps.push(`[${account.username}] Перегляд #${tag}`)
+  for (const topic of topics.slice(0, 3)) {
+    steps.push(`[${account.username}] Перегляд «${topic}»`)
   }
   for (let i = 1; i <= Math.min(settings.likesPerSession, 4); i++) {
     steps.push(`[${account.username}] Лайк #${i}`)
@@ -173,12 +152,6 @@ export function TikTokWarmupPage(): JSX.Element {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [manageBusyId, setManageBusyId] = useState<string | null>(null)
   const [createBusy, setCreateBusy] = useState(false)
-  const [bulkBusy, setBulkBusy] = useState(false)
-  const [warmupModal, setWarmupModal] = useState<{
-    account: TikTokAccountModel
-    hashtagsRaw: string
-  } | null>(null)
-  const [warmupStartBusy, setWarmupStartBusy] = useState(false)
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null)
   const [activityLog, setActivityLog] = useState<string[]>([])
   const [credentialsModal, setCredentialsModal] = useState<{
@@ -471,31 +444,35 @@ export function TikTokWarmupPage(): JSX.Element {
   )
 
   const startWarmup = useCallback(
-    async (account: TikTokAccountModel, watchHashtags: string[]) => {
+    async (account: TikTokAccountModel) => {
       if (!workspaceId || status !== 'online') {
         pushToast('Немає підключення до API', 'error')
         return
       }
+      const topics = parseSearchTopicsInput(settings.searchTopicsRaw)
+      const effectiveTopics =
+        topics.length > 0 ? topics : account.watchHashtags.filter(Boolean)
+      if (effectiveTopics.length === 0) {
+        pushToast('Вкажіть теми пошуку — що дивитися в TikTok', 'error')
+        setTab('warmup')
+        return
+      }
       if (!isTrafficCloudShell()) {
-        setWarmupModal(null)
         showDesktopGate(false)
         return
       }
       if (!canOpenAntidetectBrowser()) {
-        setWarmupModal(null)
         showDesktopGate(true)
         return
       }
 
-      setWarmupStartBusy(true)
       setBusyId(account.id)
       try {
         const updated = await apiUpdateTikTokAccount(workspaceId, account.id, {
-          watchHashtags,
+          watchHashtags: effectiveTopics,
           status: 'warming'
         })
         await refetch()
-        setWarmupModal(null)
 
         const warmedAccount = updated.account
         const nextTrust = Math.min(
@@ -506,10 +483,10 @@ export function TikTokWarmupPage(): JSX.Element {
         const durationMin = Math.min(settings.scrollMinutesMin, settings.scrollMinutesMax)
         const durationMax = Math.max(settings.scrollMinutesMin, settings.scrollMinutesMax)
         const durationMinutes = durationMin + Math.floor(Math.random() * (durationMax - durationMin + 1))
-        const tags = watchHashtags.length > 0 ? watchHashtags : ['fyp']
 
         const opened = await openTikTokWarmupForAccount(workspaceId, warmedAccount.id, {
-          hashtags: tags,
+          searchQueries: effectiveTopics,
+          hashtags: [],
           durationMinutes,
           likes: settings.likesPerSession,
           comments: settings.commentsPerSession,
@@ -533,13 +510,13 @@ export function TikTokWarmupPage(): JSX.Element {
           return
         }
 
-        const steps = buildWarmupSteps(warmedAccount, settings)
+        const steps = buildWarmupSteps(warmedAccount, settings, effectiveTopics)
         if (settings.executionMode === 'visible') {
           runVisibleSteps(steps, () => {
             void finishWarmup(warmedAccount, nextTrust)
           })
         } else {
-          pushToast(`Прогрів @${warmedAccount.username} запущено`, 'ok')
+          pushToast(`Прогрів @${warmedAccount.username} · пошук «${effectiveTopics[0]}»`, 'ok')
           window.setTimeout(
             () => {
               void finishWarmup(warmedAccount, nextTrust)
@@ -550,11 +527,9 @@ export function TikTokWarmupPage(): JSX.Element {
       } catch (e) {
         setBusyId(null)
         pushToast(e instanceof Error ? e.message : String(e), 'error')
-      } finally {
-        setWarmupStartBusy(false)
       }
     },
-    [finishWarmup, pushToast, refetch, runVisibleSteps, settings, showDesktopGate, status, workspaceId]
+    [finishWarmup, pushToast, refetch, runVisibleSteps, setTab, settings, showDesktopGate, status, workspaceId]
   )
 
   const toggleWarmup = useCallback(
@@ -581,13 +556,9 @@ export function TikTokWarmupPage(): JSX.Element {
         return
       }
 
-      setTab('warmup')
-      setWarmupModal({
-        account,
-        hashtagsRaw: account.watchHashtags.map((t) => `#${t}`).join(', ')
-      })
+      void startWarmup(account)
     },
-    [clearLogTimers, pushToast, refetch, setTab, showDesktopGate, status, workspaceId]
+    [clearLogTimers, pushToast, refetch, showDesktopGate, startWarmup, status, workspaceId]
   )
 
   const deleteAccount = useCallback(
@@ -607,7 +578,6 @@ export function TikTokWarmupPage(): JSX.Element {
       setDeleteBusyId(account.id)
       try {
         await apiDeleteTikTokAccount(workspaceId, account.id)
-        if (warmupModal?.account.id === account.id) setWarmupModal(null)
         if (credentialsModal && credentialsModal.credentials.username === account.username) {
           setCredentialsModal(null)
         }
@@ -619,48 +589,8 @@ export function TikTokWarmupPage(): JSX.Element {
         setDeleteBusyId(null)
       }
     },
-    [credentialsModal, pushToast, refetch, status, warmupModal, workspaceId]
+    [credentialsModal, pushToast, refetch, status, workspaceId]
   )
-
-  const startBulkWarmup = useCallback(async () => {
-    if (!workspaceId || status !== 'online') {
-      pushToast('Немає підключення до API', 'error')
-      return
-    }
-    if (!isTrafficCloudShell()) {
-      showDesktopGate(false)
-      return
-    }
-    if (!canOpenAntidetectBrowser()) {
-      showDesktopGate(true)
-      return
-    }
-    const targets = accounts.filter((a) => a.status !== 'warming')
-    if (targets.length === 0) {
-      pushToast('Немає акаунтів для прогріву', 'error')
-      return
-    }
-    setBulkBusy(true)
-    for (const t of targets) {
-      await apiUpdateTikTokAccount(workspaceId, t.id, { status: 'warming' })
-    }
-    await refetch()
-    pushToast(`Запущено прогрів для ${targets.length} акаунтів`, 'ok')
-
-    window.setTimeout(async () => {
-      for (const t of targets) {
-        const nextTrust = Math.min(100, t.trustScore + 10 + Math.floor(Math.random() * 8))
-        await apiUpdateTikTokAccount(workspaceId, t.id, {
-          status: nextTrust >= 70 ? 'ready' : 'paused',
-          trustScore: nextTrust,
-          lastWarmupAt: new Date().toISOString()
-        })
-      }
-      await refetch()
-      setBulkBusy(false)
-      pushToast('Пакетний прогрів завершено', 'ok')
-    }, 3500)
-  }, [accounts, pushToast, refetch, showDesktopGate, status, workspaceId])
 
   return (
     <div className="relative isolate p-6 sm:p-8">
@@ -679,14 +609,14 @@ export function TikTokWarmupPage(): JSX.Element {
           {activeTab === 'create'
             ? 'Додати акаунт'
             : activeTab === 'warmup'
-              ? 'Запустити прогрів'
+              ? 'Прогрів'
               : 'Акаунти TikTok'}
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
           {activeTab === 'create'
             ? 'Створіть слот акаунта — відкриється tiktok.com/login, увійдіть вручну у вікні десктоп-додатку.'
             : activeTab === 'warmup'
-              ? 'Налаштуйте прогрів і запускайте сесії для обраних акаунтів.'
+              ? 'Вкажіть теми пошуку, налаштуйте сесію і натисніть Старт біля акаунта.'
               : 'Список акаунтів, проксі та керування профілями.'}
         </p>
       </div>
@@ -723,6 +653,7 @@ export function TikTokWarmupPage(): JSX.Element {
         />
       ) : null}
 
+      {activeTab !== 'warmup' ? (
       <div className="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: 'Усього акаунтів', value: stats.total, icon: Users },
@@ -748,263 +679,17 @@ export function TikTokWarmupPage(): JSX.Element {
           )
         })}
       </div>
-
-      {activeTab === 'warmup' ? (
-        <GlassCard className="relative space-y-6 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-5">
-            <div>
-              <h2 className="text-sm font-semibold text-white">Налаштування прогріву</h2>
-              <p className="mt-1 text-[12px] text-zinc-500">
-                Оберіть акаунт у списку нижче або прогрійте всі одразу.
-              </p>
-            </div>
-            <button
-              type="button"
-              disabled={bulkBusy || accounts.length === 0}
-              onClick={() => void startBulkWarmup()}
-              className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-4 py-2.5 text-sm font-medium text-fuchsia-100 transition-colors hover:border-fuchsia-400/40 disabled:opacity-50"
-            >
-              {bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
-              Прогріти всі
-            </button>
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white">Режим виконання</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {EXECUTION_MODES.map((mode) => {
-                const Icon = mode.icon
-                const active = settings.executionMode === mode.id
-                return (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => persistSettings({ ...settings, executionMode: mode.id })}
-                    className={[
-                      'rounded-2xl border p-4 text-left transition-colors',
-                      active
-                        ? 'border-fuchsia-400/35 bg-fuchsia-500/10'
-                        : 'border-white/[0.08] bg-black/20 hover:border-white/15'
-                    ].join(' ')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-fuchsia-300" />
-                      <span className="text-sm font-semibold text-white">{mode.label}</span>
-                    </div>
-                    <p className="mt-2 text-[12px] text-zinc-500">{mode.hint}</p>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div className="border-t border-white/[0.06] pt-6">
-            <h2 className="text-sm font-semibold text-white">Профіль прогріву</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Скрол мін (хв)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={60}
-                  value={settings.scrollMinutesMin}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      scrollMinutesMin:
-                        Number(e.target.value) || DEFAULT_WARMUP_SETTINGS.scrollMinutesMin
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Скрол макс (хв)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={90}
-                  value={settings.scrollMinutesMax}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      scrollMinutesMax:
-                        Number(e.target.value) || DEFAULT_WARMUP_SETTINGS.scrollMinutesMax
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Лайків</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={50}
-                  value={settings.likesPerSession}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      likesPerSession: Number(e.target.value) || 0
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Підписок</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={settings.followsPerSession}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      followsPerSession: Number(e.target.value) || 0
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Коментарів</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={30}
-                  value={settings.commentsPerSession}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      commentsPerSession: Number(e.target.value) || 0
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Перегляд мін (с)</span>
-                <input
-                  type="number"
-                  min={2}
-                  max={120}
-                  value={settings.watchSecondsMin}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      watchSecondsMin:
-                        Number(e.target.value) || DEFAULT_WARMUP_SETTINGS.watchSecondsMin
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-[11px] uppercase text-zinc-500">Перегляд макс (с)</span>
-                <input
-                  type="number"
-                  min={2}
-                  max={180}
-                  value={settings.watchSecondsMax}
-                  onChange={(e) =>
-                    persistSettings({
-                      ...settings,
-                      watchSecondsMax:
-                        Number(e.target.value) || DEFAULT_WARMUP_SETTINGS.watchSecondsMax
-                    })
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-                />
-              </label>
-            </div>
-            <label className="mt-4 block space-y-1.5">
-              <span className="text-[11px] uppercase text-zinc-500">
-                Тексти коментарів (кожен з нового рядка)
-              </span>
-              <textarea
-                rows={4}
-                value={settings.commentTexts.join('\n')}
-                onChange={(e) =>
-                  persistSettings({
-                    ...settings,
-                    commentTexts: e.target.value
-                      .split('\n')
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                  })
-                }
-                placeholder={'🔥🔥🔥\nТопчик\nКласне відео'}
-                className="w-full resize-y rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-fuchsia-400/40"
-              />
-              <span className="text-[11px] text-zinc-600">
-                Софт обирає випадковий текст для кожного коментаря.
-              </span>
-            </label>
-          </div>
-          <div className="border-t border-white/[0.06] pt-6">
-            <h3 className="text-sm font-semibold text-white">Акаунти для прогріву</h3>
-            {accounts.length === 0 ? (
-              <p className="mt-3 text-sm text-zinc-500">Спочатку додайте акаунт на вкладці «Додати акаунт».</p>
-            ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {accounts.map((account) => {
-                  const ui = statusUi(account.status)
-                  const isBusy = busyId === account.id
-                  return (
-                    <div
-                      key={account.id}
-                      className="rounded-2xl border border-white/[0.08] bg-black/20 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-medium text-white">@{account.username}</div>
-                          <span
-                            className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${ui.className}`}
-                          >
-                            {ui.label}
-                          </span>
-                        </div>
-                        <span className="font-mono text-[12px] text-zinc-500">{account.trustScore}%</span>
-                      </div>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => void toggleWarmup(account)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-fuchsia-400/25 bg-fuchsia-500/10 px-3 py-1.5 text-[12px] text-fuchsia-100"
-                        >
-                          {isBusy ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : account.status === 'warming' ? (
-                            <Pause className="h-3.5 w-3.5" />
-                          ) : (
-                            <Play className="h-3.5 w-3.5 fill-current" />
-                          )}
-                          {account.status === 'warming' ? 'Зупинити' : 'Запустити'}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </GlassCard>
       ) : null}
 
-      {activeTab === 'warmup' && settings.executionMode === 'visible' && activityLog.length > 0 ? (
-        <GlassCard className="relative p-5">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-            <Monitor className="h-4 w-4 text-cyan-300" />
-            Журнал процесу
-          </div>
-          <div className="mt-3 max-h-48 space-y-1.5 overflow-y-auto font-mono text-[12px]">
-            {activityLog.map((line, i) => (
-              <div key={`${line}-${i}`} className="text-zinc-400">
-                <span className="text-zinc-600">{String(i + 1).padStart(2, '0')}</span> {line}
-              </div>
-            ))}
-          </div>
-        </GlassCard>
+      {activeTab === 'warmup' ? (
+        <TikTokWarmupPanel
+          accounts={accounts}
+          settings={settings}
+          onSettingsChange={persistSettings}
+          busyId={busyId}
+          activityLog={activityLog}
+          onToggleAccount={(account) => void toggleWarmup(account)}
+        />
       ) : null}
 
       {activeTab === 'create' ? (
@@ -1123,7 +808,7 @@ export function TikTokWarmupPage(): JSX.Element {
               <thead>
                 <tr className="border-b border-white/[0.06] text-[11px] uppercase tracking-[0.14em] text-zinc-500">
                   <th className="px-6 py-4 font-semibold">Акаунт</th>
-                  <th className="px-4 py-4 font-semibold">Тематика</th>
+                  <th className="px-4 py-4 font-semibold">Пошук</th>
                   <th className="px-4 py-4 font-semibold">Проксі</th>
                   <th className="px-4 py-4 font-semibold">Статус</th>
                   <th className="px-4 py-4 font-semibold">Траст</th>
@@ -1150,17 +835,18 @@ export function TikTokWarmupPage(): JSX.Element {
                       <td className="px-4 py-4">
                         {account.watchHashtags.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {account.watchHashtags.slice(0, 4).map((tag) => (
+                            {account.watchHashtags.slice(0, 3).map((topic) => (
                               <span
-                                key={tag}
+                                key={topic}
                                 className="inline-flex items-center gap-0.5 rounded-full border border-fuchsia-400/15 bg-fuchsia-500/5 px-2 py-0.5 text-[10px] text-fuchsia-200"
                               >
-                                <Hash className="h-2.5 w-2.5" />#{tag}
+                                <Search className="h-2.5 w-2.5" />
+                                {topic}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[12px] text-zinc-600">При прогріві</span>
+                          <span className="text-[12px] text-zinc-600">—</span>
                         )}
                       </td>
                       <td className="px-4 py-4 text-zinc-400">
@@ -1285,21 +971,6 @@ export function TikTokWarmupPage(): JSX.Element {
           </div>
         )}
       </GlassCard>
-      ) : null}
-
-      {warmupModal ? (
-        <TikTokWarmupStartModal
-          account={warmupModal.account}
-          hashtagsRaw={warmupModal.hashtagsRaw}
-          onHashtagsChange={(value) =>
-            setWarmupModal((prev) => (prev ? { ...prev, hashtagsRaw: value } : null))
-          }
-          busy={warmupStartBusy}
-          onClose={() => {
-            if (!warmupStartBusy) setWarmupModal(null)
-          }}
-          onConfirm={(tags) => void startWarmup(warmupModal.account, tags)}
-        />
       ) : null}
 
       {credentialsModal ? (

@@ -16,7 +16,7 @@ const nav: Array<{
 }> = [
   { id: 'accounts', to: '/tiktok/accounts', label: 'Акаунти', icon: Users },
   { id: 'create', to: '/tiktok/create', label: 'Додати акаунт', icon: Plus },
-  { id: 'warmup', to: '/tiktok/warmup', label: 'Запустити прогрів', icon: Flame }
+  { id: 'warmup', to: '/tiktok/warmup', label: 'Прогрів', icon: Flame }
 ]
 
 export function TikTokWarmupShell(): JSX.Element {

@@ -2,6 +2,8 @@ export type TikTokExecutionMode = 'visible' | 'headless'
 
 export type TikTokWarmupSettings = {
   executionMode: TikTokExecutionMode
+  /** Теми пошуку TikTok — що дивитися під час прогріву */
+  searchTopicsRaw: string
   scrollMinutesMin: number
   scrollMinutesMax: number
   likesPerSession: number
@@ -28,6 +30,7 @@ export const DEFAULT_COMMENT_TEXTS = [
 
 export const DEFAULT_WARMUP_SETTINGS: TikTokWarmupSettings = {
   executionMode: 'visible',
+  searchTopicsRaw: '',
   scrollMinutesMin: 8,
   scrollMinutesMax: 15,
   likesPerSession: 6,
@@ -54,6 +57,8 @@ export function readTikTokWarmupSettings(): TikTokWarmupSettings {
         Array.isArray(parsed.commentTexts) && parsed.commentTexts.length > 0
           ? parsed.commentTexts
           : DEFAULT_COMMENT_TEXTS,
+      searchTopicsRaw:
+        typeof parsed.searchTopicsRaw === 'string' ? parsed.searchTopicsRaw : '',
       executionMode: parsed.executionMode === 'headless' ? 'headless' : 'visible'
     }
   } catch {
@@ -73,6 +78,21 @@ export function parseHashtagInput(raw: string): string[] {
     if (!tag || seen.has(tag)) continue
     seen.add(tag)
     out.push(tag)
+  }
+  return out
+}
+
+/** Теми пошуку TikTok — фрази через кому (можуть містити пробіли). */
+export function parseSearchTopicsInput(raw: string): string[] {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const part of raw.split(/[,;]+/)) {
+    const topic = part.replace(/^#+/, '').trim()
+    if (!topic) continue
+    const key = topic.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(topic)
   }
   return out
 }

@@ -20,6 +20,7 @@ declare global {
           authToken?: string
         }
         warmup?: {
+          searchQueries: string[]
           hashtags: string[]
           durationMinutes: number
           likes: number
