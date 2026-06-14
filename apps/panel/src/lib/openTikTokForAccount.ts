@@ -25,7 +25,7 @@ export type TikTokWarmupLaunchConfig = {
 
 const TIKTOK_HOME_URL = 'https://www.tiktok.com/foryou'
 const TIKTOK_LOGIN_URL = 'https://www.tiktok.com/login'
-const MIN_TIKTOK_DESKTOP_VERSION = '0.2.19'
+const MIN_TIKTOK_DESKTOP_VERSION = '0.2.21'
 
 function compareSemver(a: string, b: string): number {
   const pa = a.split('.').map((x) => Number(x) || 0)
@@ -120,10 +120,22 @@ export async function openTikTokLoginForAccount(
   }
 }
 
+export async function openTikTokInstallForAccount(
+  workspaceId: string,
+  accountId: string
+): Promise<TikTokLaunchResult> {
+  try {
+    const r = await apiGetTikTokLaunch(workspaceId, accountId, { intent: 'install' })
+    return openLaunchPayload(workspaceId, r.launch, r.credentials, accountId)
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 export async function openTikTokManageForAccount(
   workspaceId: string,
   accountId: string,
-  intent: 'signup' | 'login' | 'home' | 'tag' | 'search' = 'login',
+  intent: 'signup' | 'login' | 'install' | 'home' | 'tag' | 'search' = 'login',
   tag?: string,
   query?: string
 ): Promise<TikTokLaunchResult> {

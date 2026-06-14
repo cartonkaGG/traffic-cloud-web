@@ -49,6 +49,7 @@ import { startInAppDesktopUpdate } from '@/lib/desktopUpdateRunner'
 import {
   credentialsFromAccount,
   openTikTokFromCreateLaunch,
+  openTikTokInstallForAccount,
   openTikTokManageForAccount,
   openTikTokWarmupForAccount,
   formatTikTokAccountEmail
@@ -355,6 +356,46 @@ export function TikTokWarmupPage(): JSX.Element {
       pushToast(`@${account.username} — вхід у TikTok завершено`, 'ok')
     },
     [pushToast, refetch, workspaceId]
+  )
+
+  const installAccount = useCallback(
+    async (account: TikTokAccountModel) => {
+      if (!workspaceId || status !== 'online') {
+        pushToast('Немає підключення до API', 'error')
+        return
+      }
+      if (!isTrafficCloudShell()) {
+        showDesktopGate(false)
+        return
+      }
+      if (!canOpenAntidetectBrowser()) {
+        showDesktopGate(true)
+        return
+      }
+      setManageBusyId(account.id)
+      try {
+        const r = await openTikTokInstallForAccount(workspaceId, account.id)
+        if (!r.ok) {
+          if (r.needsUpdate) {
+            showDesktopGate(true)
+            pushToast(r.error, 'error')
+          } else if (r.needsDesktop) {
+            showDesktopGate(false)
+          } else {
+            pushToast(r.error, 'error')
+          }
+          return
+        }
+        pushToast(
+          `TikTok (Android) для @${account.username} — увійдіть або дивіться стрічку без звуку`,
+          'ok'
+        )
+        await refetch()
+      } finally {
+        setManageBusyId(null)
+      }
+    },
+    [pushToast, refetch, showDesktopGate, status, workspaceId]
   )
 
   const manageAccount = useCallback(
@@ -888,7 +929,11 @@ export function TikTokWarmupPage(): JSX.Element {
                           <button
                             type="button"
                             disabled={isManageBusy}
-                            onClick={() => void manageAccount(account)}
+                            onClick={() =>
+                              void (account.status === 'ready'
+                                ? manageAccount(account)
+                                : installAccount(account))
+                            }
                             className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-[12px] text-cyan-100 disabled:opacity-40"
                           >
                             {isManageBusy ? (

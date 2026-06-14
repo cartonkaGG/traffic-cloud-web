@@ -777,7 +777,7 @@ export async function apiGetTikTokEmailCode(
 export async function apiGetTikTokLaunch(
   workspaceId: string,
   accountId: string,
-  body?: { startUrl?: string; intent?: 'signup' | 'login' | 'home' | 'tag' | 'search'; tag?: string; query?: string }
+  body?: { startUrl?: string; intent?: 'signup' | 'login' | 'install' | 'home' | 'tag' | 'search'; tag?: string; query?: string }
 ): Promise<{
   ok: true
   webUrl: string
