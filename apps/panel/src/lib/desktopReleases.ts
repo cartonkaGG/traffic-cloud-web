@@ -1,15 +1,13 @@
-/** GitHub Releases — Vercel не віддає .exe ~80MB (ERR_INVALID_RESPONSE / 503). */
-export const GITHUB_DESKTOP_REPO = 'cartonkaGG/trafficcloud'
+const DEFAULT_API_BASE = 'https://traffic-cloud-api.onrender.com'
 
-export const GITHUB_DESKTOP_RELEASES_BASE = `https://github.com/${GITHUB_DESKTOP_REPO}/releases/download`
-
-export function githubDesktopInstallerUrl(version: string): string {
-  const v = version.trim().replace(/^v/i, '')
-  return `${GITHUB_DESKTOP_RELEASES_BASE}/v${v}/Traffic-Cloud-Setup-${v}.exe`
+export function resolveDesktopApiBase(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) {
+    return String(import.meta.env.VITE_API_BASE_URL).trim().replace(/\/$/, '')
+  }
+  return DEFAULT_API_BASE
 }
 
-/** Фактична назва asset на GitHub (Windows gh інколи змінює дефіси на крапки). */
-export function githubDesktopInstallerUrlFallback(version: string): string {
+export function desktopInstallerProxyUrl(version: string): string {
   const v = version.trim().replace(/^v/i, '')
-  return `${GITHUB_DESKTOP_RELEASES_BASE}/v${v}/Traffic.Cloud.Setup.${v}.exe`
+  return `${resolveDesktopApiBase()}/v1/desktop/installer/${v}.exe`
 }

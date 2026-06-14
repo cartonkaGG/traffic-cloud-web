@@ -20,8 +20,9 @@ const src = existsSync(nsisSrc) ? nsisSrc : portableSrc
 const downloadsDir = join(root, 'apps', 'marketing', 'public', 'downloads')
 const latestJsonPath = join(downloadsDir, 'latest.json')
 const GITHUB_REPO = 'cartonkaGG/trafficcloud'
+const API_BASE = 'https://traffic-cloud-api.onrender.com'
 const assetName = `Traffic.Cloud.Setup.${version}.exe`
-const downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/${tag}/${assetName}`
+const downloadUrl = `${API_BASE}/v1/desktop/installer/${version}.exe`
 const stagedExe = join(downloadsDir, fileName)
 
 if (!existsSync(src)) {

@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from '@/lib/settings'
-import { githubDesktopInstallerUrl } from '@/lib/desktopReleases'
+import { desktopInstallerProxyUrl } from '@/lib/desktopReleases'
 
 export type DesktopGateResult =
   | { ok: true }
@@ -8,7 +8,7 @@ export type DesktopGateResult =
 /** Продакшен-панель (Vercel), якщо потрібен статичний fallback поза браузером. */
 export const DEFAULT_PANEL_ORIGIN = 'https://traffic-cloud-web.vercel.app'
 
-export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.33.exe'
+export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.34.exe'
 
 export const DESKTOP_SUPPORT_TELEGRAM_URL = 'https://t.me/trafficcloud_team'
 
@@ -50,7 +50,7 @@ export function getPanelBaseUrl(): string {
 
 export function getBundledInstallerUrl(): string {
   const version = BUNDLED_INSTALLER_FILENAME.replace(/^Traffic-Cloud-Setup-/, '').replace(/\.exe$/i, '')
-  return githubDesktopInstallerUrlFallback(version)
+  return desktopInstallerProxyUrl(version)
 }
 
 /** API manifest → env override → інсталятор з /downloads на цьому ж сайті. */
