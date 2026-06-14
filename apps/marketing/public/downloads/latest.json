@@ -1,5 +1,5 @@
 {
   "latestVersion": "0.2.32",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.32.exe",
-  "notes": "Fix setWindowOpenHandler crash, warmup search navigation, icon with dark background v0.2.32"
+  "downloadUrl": "https://github.com/cartonkaGG/trafficcloud/releases/download/v0.2.32/Traffic.Cloud.Setup.0.2.32.exe",
+  "notes": "Installer hosted on GitHub Releases (Vercel cannot serve 80MB files)"
 }

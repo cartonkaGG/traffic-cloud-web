@@ -9,3 +9,4 @@ apps/panel/public/ffmpeg/
 .DS_Store
 .idea/
 .vscode/
+apps/marketing/public/downloads/*.exe

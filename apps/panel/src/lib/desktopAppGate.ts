@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/lib/settings'
+import { githubDesktopInstallerUrl } from '@/lib/desktopReleases'
 
 export type DesktopGateResult =
   | { ok: true }
@@ -48,11 +49,8 @@ export function getPanelBaseUrl(): string {
 }
 
 export function getBundledInstallerUrl(): string {
-  const path = `/downloads/${BUNDLED_INSTALLER_FILENAME}`
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${path}`
-  }
-  return `${DEFAULT_PANEL_ORIGIN}${path}`
+  const version = BUNDLED_INSTALLER_FILENAME.replace(/^Traffic-Cloud-Setup-/, '').replace(/\.exe$/i, '')
+  return githubDesktopInstallerUrlFallback(version)
 }
 
 /** API manifest → env override → інсталятор з /downloads на цьому ж сайті. */
