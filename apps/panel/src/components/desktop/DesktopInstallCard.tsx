@@ -40,6 +40,12 @@ const UPDATE_STEPS = [
   'Перевстановіть і відкрийте TikTok Warmup'
 ] as const
 
+const IN_APP_UPDATE_STEPS = [
+  'Натисніть «Оновити зараз»',
+  'Дочекайтесь завантаження та встановлення',
+  'Додаток перезапуститься автоматично'
+] as const
+
 export function DesktopInstallCard({
   variant,
   latestVersion = BUNDLED_DESKTOP_VERSION,
@@ -60,7 +66,7 @@ export function DesktopInstallCard({
   inAppUpdate?: boolean
 }): JSX.Element {
   const isUpdate = variant === 'update'
-  const steps = isUpdate ? UPDATE_STEPS : INSTALL_STEPS
+  const steps = isUpdate ? (inAppUpdate ? IN_APP_UPDATE_STEPS : UPDATE_STEPS) : INSTALL_STEPS
 
   return (
     <div
@@ -186,15 +192,17 @@ export function DesktopInstallCard({
         >
           {primaryBusy ? (
             <Sparkles className="h-4 w-4 animate-pulse" />
+          ) : isUpdate && inAppUpdate ? (
+            <RefreshCw className="h-4 w-4" />
           ) : (
             <Download className="h-4 w-4" />
           )}
           {primaryBusy
-            ? 'Запуск оновлення…'
+            ? 'Оновлення…'
             : isUpdate
               ? inAppUpdate
                 ? `Оновити зараз до v${latestVersion}`
-                : `Оновити до v${latestVersion}`
+                : `Завантажити v${latestVersion}`
               : inAppUpdate
                 ? 'Встановити з автооновленням'
                 : 'Завантажити додаток'}

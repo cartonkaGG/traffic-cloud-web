@@ -35,6 +35,7 @@ export async function startInAppDesktopUpdate(
         openDesktopInstaller(fallbackDownloadUrl)
         return { ok: false, error: 'Час завантаження вичерпано — відкрито завантаження в браузері', mode: 'fallback' }
       }
+      return { ok: false, error: r.error, mode: 'failed' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       return { ok: false, error: msg, mode: 'failed' }

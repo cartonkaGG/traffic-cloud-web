@@ -159,11 +159,26 @@ export function DesktopUpdateOverlay(): JSX.Element | null {
             </div>
 
             <div className="px-6 py-6">
-              {progress.phase === 'error' ? (
-                <div className="rounded-xl border border-red-400/20 bg-red-500/5 px-4 py-3 text-[13px] text-red-200/90">
-                  <p>{progress.message ?? 'Спробуйте ще раз пізніше'}</p>
-                  {progress.error ? (
-                    <p className="mt-2 font-mono text-[10px] text-red-300/50">{progress.error}</p>
+          {progress.phase === 'error' ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-red-400/20 bg-red-500/5 px-4 py-3 text-[13px] text-red-200/90">
+                    <p>{progress.message ?? 'Спробуйте ще раз пізніше'}</p>
+                    {progress.error ? (
+                      <p className="mt-2 font-mono text-[10px] text-red-300/50">{progress.error}</p>
+                    ) : null}
+                  </div>
+                  {progress.downloadUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tc = window.trafficCloud
+                        if (tc?.openExternal) void tc.openExternal(progress.downloadUrl!)
+                        else window.open(progress.downloadUrl!, '_blank', 'noopener,noreferrer')
+                      }}
+                      className="w-full cursor-pointer rounded-xl border border-white/10 py-2.5 text-sm text-zinc-300 transition-colors hover:border-white/20 hover:text-white"
+                    >
+                      Завантажити вручну з GitHub
+                    </button>
                   ) : null}
                 </div>
               ) : (
