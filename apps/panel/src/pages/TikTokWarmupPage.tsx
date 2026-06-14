@@ -207,8 +207,19 @@ export function TikTokWarmupPage(): JSX.Element {
     warmupProfileIdRef.current = null
     setActivityLog([])
     const tc = window.trafficCloud
-    if (tc?.closeBrowserProfile && account.browserProfileId) {
-      await tc.closeBrowserProfile(account.browserProfileId)
+    try {
+      if (tc?.closeBrowserProfile && account.browserProfileId) {
+        const r = await tc.closeBrowserProfile(account.browserProfileId)
+        if (!r.ok && tc.closeAllTikTokWindows) {
+          await tc.closeAllTikTokWindows()
+        }
+      } else if (tc?.closeAllTikTokWindows) {
+        await tc.closeAllTikTokWindows()
+      }
+    } catch {
+      if (tc?.closeAllTikTokWindows) {
+        await tc.closeAllTikTokWindows().catch(() => undefined)
+      }
     }
   }, [clearLogTimers])
 

@@ -44,6 +44,7 @@ declare global {
       closeBrowserProfile?: (
         profileId: string
       ) => Promise<{ ok: true } | { ok: false; error: string }>
+      closeAllTikTokWindows?: () => Promise<{ ok: true; closed: number }>
       checkDesktopUpdate?: () => Promise<import('@/lib/desktopUpdate').DesktopUpdateProgress>
       startDesktopUpdate?: () => Promise<{ ok: true } | { ok: false; error: string }>
       onDesktopUpdateProgress?: (

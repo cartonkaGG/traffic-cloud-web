@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.30",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.30.exe",
-  "notes": "Fix false update error and silent background check v0.2.30"
+  "latestVersion": "0.2.31",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.31.exe",
+  "notes": "Fix TikTok warmup spam reload, stop button, smaller app icon v0.2.31"
 }
