@@ -15,7 +15,7 @@ export async function checkInAppDesktopUpdate(): Promise<DesktopUpdateProgress |
   }
 }
 
-const UPDATE_START_TIMEOUT_MS = 25_000
+const UPDATE_START_TIMEOUT_MS = 20 * 60_000
 
 export async function startInAppDesktopUpdate(
   fallbackDownloadUrl?: string | null
@@ -33,7 +33,7 @@ export async function startInAppDesktopUpdate(
       }
       if (r.error === 'update_start_timeout') {
         openDesktopInstaller(fallbackDownloadUrl)
-        return { ok: false, error: r.error, mode: 'fallback' }
+        return { ok: false, error: 'Час завантаження вичерпано — відкрито завантаження в браузері', mode: 'fallback' }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)

@@ -70,7 +70,7 @@ export function DesktopUpdateOverlay(): JSX.Element | null {
 
   useEffect(() => {
     return subscribeDesktopUpdateProgress((payload) => {
-      if (payload.phase === 'idle' || payload.phase === 'uptodate') {
+      if (payload.phase === 'idle' || payload.phase === 'uptodate' || payload.phase === 'checking') {
         setProgress(null)
         return
       }
@@ -78,22 +78,11 @@ export function DesktopUpdateOverlay(): JSX.Element | null {
     })
   }, [])
 
-  useEffect(() => {
-    if (!progress || progress.phase !== 'checking') return
-    const timer = window.setTimeout(() => {
-      setProgress({
-        phase: 'error',
-        currentVersion: progress.currentVersion,
-        latestVersion: progress.latestVersion,
-        message:
-          'Сервер оновлень не відповідає. Закрийте вікно і завантажте інсталятор вручну з сайту.',
-        error: 'update_check_timeout'
-      })
-    }, 25_000)
-    return () => window.clearTimeout(timer)
-  }, [progress])
-
-  const visible = progress != null && progress.phase !== 'idle' && progress.phase !== 'uptodate'
+  const visible =
+    progress != null &&
+    progress.phase !== 'idle' &&
+    progress.phase !== 'uptodate' &&
+    progress.phase !== 'checking'
   const activeStep = progress ? stepIndex(progress.phase) : -1
   const percent = useMemo(() => {
     if (!progress) return 0
@@ -172,7 +161,10 @@ export function DesktopUpdateOverlay(): JSX.Element | null {
             <div className="px-6 py-6">
               {progress.phase === 'error' ? (
                 <div className="rounded-xl border border-red-400/20 bg-red-500/5 px-4 py-3 text-[13px] text-red-200/90">
-                  {progress.message ?? progress.error ?? 'Спробуйте ще раз пізніше'}
+                  <p>{progress.message ?? 'Спробуйте ще раз пізніше'}</p>
+                  {progress.error ? (
+                    <p className="mt-2 font-mono text-[10px] text-red-300/50">{progress.error}</p>
+                  ) : null}
                 </div>
               ) : (
                 <>

@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.29",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.29.exe",
-  "notes": "Fix warmup search submit and block For You until results v0.2.29"
+  "latestVersion": "0.2.30",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.30.exe",
+  "notes": "Fix false update error and silent background check v0.2.30"
 }
