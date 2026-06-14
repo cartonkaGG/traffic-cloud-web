@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.23",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.23.exe",
-  "notes": "Fix crash when closing TikTok window during warmup inject v0.2.23"
+  "latestVersion": "0.2.24",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.24.exe",
+  "notes": "Block TikTok App Store popup windows and deny all extra tabs v0.2.24"
 }
