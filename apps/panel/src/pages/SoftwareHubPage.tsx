@@ -121,7 +121,7 @@ function SoftwareTile({
 export function SoftwareHubPage(): JSX.Element {
   const { isAdmin } = useAuth()
   const { subscription } = useWorkspaceData()
-  const { selectSoftware } = useSoftware()
+  const { launchSoftware } = useSoftware()
   const navigate = useNavigate()
   const [desktopGateOpen, setDesktopGateOpen] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
@@ -140,23 +140,21 @@ export function SoftwareHubPage(): JSX.Element {
       return
     }
     if (product.id === 'tiktok-warmup' && !canOpenAntidetectBrowser()) {
-      selectSoftware(product.id)
-      navigate(canEnterPanel ? '/tiktok/create' : '/billing?gate=1&from=hub')
+      launchSoftware(product.id, () => {
+        navigate(canEnterPanel ? '/tiktok/create' : '/billing?gate=1&from=hub')
+      })
       return
     }
 
-    selectSoftware(product.id)
     const target =
       product.id === 'video-uniquify'
         ? '/uniquify'
         : product.id === 'tiktok-warmup'
           ? '/tiktok'
           : '/'
-    if (canEnterPanel) {
-      navigate(target)
-      return
-    }
-    navigate('/billing?gate=1&from=hub')
+    launchSoftware(product.id, () => {
+      navigate(canEnterPanel ? target : '/billing?gate=1&from=hub')
+    })
   }
 
   return (
@@ -170,9 +168,9 @@ export function SoftwareHubPage(): JSX.Element {
         }}
       />
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-accent/10 blur-[140px]"
-        animate={{ opacity: [0.2, 0.35, 0.2] }}
-        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+        className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[780px] -translate-x-1/2 rounded-full bg-accent/12 blur-[130px]"
+        animate={{ opacity: [0.18, 0.28, 0.18] }}
+        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
         aria-hidden
       />
 
@@ -222,19 +220,14 @@ export function SoftwareHubPage(): JSX.Element {
         </div>
 
         <div className="mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {SOFTWARE_PRODUCTS.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            >
+          {SOFTWARE_PRODUCTS.map((product) => (
+            <div key={product.id}>
               <SoftwareTile
                 product={product}
                 needsSubscription={!canEnterPanel}
                 onLaunch={launch}
               />
-            </motion.div>
+            </div>
           ))}
         </div>
 

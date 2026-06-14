@@ -10,6 +10,7 @@ import { DesktopUpdateOverlay } from './components/desktop/DesktopUpdateOverlay'
 import { PanelVersionSync } from './components/layout/PanelVersionSync'
 import { AppShell } from './components/layout/AppShell'
 import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
+import { SoftwareLaunchOverlay } from './components/layout/SoftwareLaunchOverlay'
 import { AccountsPage } from './pages/AccountsPage'
 import { AuthPage } from './pages/AuthPage'
 import { CampaignsPage } from './pages/CampaignsPage'
@@ -37,11 +38,12 @@ import {
 
 function PostAuthRedirect(): JSX.Element {
   const { isAdmin } = useAuth()
-  const { subscription, status } = useWorkspaceData()
+  const { subscription, status, bundle } = useWorkspaceData()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect')
+  const bootstrapped = subscription !== null || bundle !== null || status === 'online'
 
-  if (status === 'loading' && subscription === null) {
+  if (status === 'loading' && !bootstrapped) {
     return <PanelLoadingScreen label="Завантаження…" />
   }
 
@@ -108,8 +110,9 @@ function RequireAdmin({ children }: { children: ReactNode }): JSX.Element {
 
 function RequireSubscription({ children }: { children: ReactNode }): JSX.Element {
   const { isAdmin } = useAuth()
-  const { subscription, status } = useWorkspaceData()
-  if (status === 'loading' && subscription === null) {
+  const { subscription, status, bundle } = useWorkspaceData()
+  const bootstrapped = subscription !== null || bundle !== null || status === 'online'
+  if (status === 'loading' && !bootstrapped) {
     return <PanelLoadingScreen label="Перевірка підписки…" />
   }
   if (!hasPanelAccess(subscription, isAdmin)) {
@@ -125,6 +128,7 @@ export default function App(): JSX.Element {
       <PanelVersionSync />
       <DesktopUpdateBanner />
       <DesktopUpdateOverlay />
+      <SoftwareLaunchOverlay />
       <Routes>
       <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
       <Route
