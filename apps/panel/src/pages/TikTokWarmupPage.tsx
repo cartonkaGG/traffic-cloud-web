@@ -205,6 +205,7 @@ export function TikTokWarmupPage(): JSX.Element {
     }
     clearLogTimers()
     warmupProfileIdRef.current = null
+    setActivityLog([])
     const tc = window.trafficCloud
     if (tc?.closeBrowserProfile && account.browserProfileId) {
       await tc.closeBrowserProfile(account.browserProfileId)
@@ -556,11 +557,15 @@ export function TikTokWarmupPage(): JSX.Element {
         return
       }
       if (account.status === 'warming') {
-        await stopWarmupSession(account)
-        await apiUpdateTikTokAccount(workspaceId, account.id, { status: 'paused' })
-        await refetch()
-        setBusyId(null)
-        pushToast(`Прогрів @${account.username} зупинено`, 'ok')
+        setBusyId(account.id)
+        try {
+          await stopWarmupSession(account)
+          await apiUpdateTikTokAccount(workspaceId, account.id, { status: 'paused' })
+          await refetch()
+          pushToast(`Прогрів @${account.username} зупинено`, 'ok')
+        } finally {
+          setBusyId(null)
+        }
         return
       }
 
