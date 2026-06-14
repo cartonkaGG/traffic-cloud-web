@@ -96,25 +96,6 @@ function statusUi(status: TikTokAccountStatus): { label: string; className: stri
   }
 }
 
-function buildWarmupSteps(
-  account: TikTokAccountModel,
-  settings: TikTokWarmupSettings,
-  topics: string[]
-): string[] {
-  const scrollMin = Math.min(settings.scrollMinutesMin, settings.scrollMinutesMax)
-  const scrollMax = Math.max(settings.scrollMinutesMin, settings.scrollMinutesMax)
-  const scrollMins = scrollMin + Math.floor(Math.random() * (scrollMax - scrollMin + 1))
-  const topicLine = topics.length > 0 ? topics.join(' · ') : 'рекомендації'
-  return [
-    `[${account.username}] Браузер TikTok відкрито`,
-    `[${account.username}] Пошук: ${topicLine}`,
-    `[${account.username}] Автоматизація у вікні TikTok (~${scrollMins} хв)`,
-    `[${account.username}] Перегляд ${settings.watchSecondsMin}–${settings.watchSecondsMax} сек · лайки ${settings.likesPerSession} · коментарі ${settings.commentsPerSession} · підписки ${settings.followsPerSession}`,
-    `[${account.username}] Журнал панелі — статус сесії (дії виконуються у браузері TikTok)`,
-    `[${account.username}] Сесію завершено`
-  ]
-}
-
 export function TikTokWarmupPage(): JSX.Element {
   const navigate = useNavigate()
   const location = useLocation()
@@ -153,6 +134,8 @@ export function TikTokWarmupPage(): JSX.Element {
   const [desktopGateForceUpdate, setDesktopGateForceUpdate] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const logTimersRef = useRef<number[]>([])
+  const warmupFinishTimerRef = useRef<number | null>(null)
+  const warmupProfileIdRef = useRef<string | null>(null)
 
   const isDesktopShell = isTrafficCloudShell()
   const canLaunchBrowser = canOpenAntidetectBrowser()
@@ -166,6 +149,18 @@ export function TikTokWarmupPage(): JSX.Element {
   useEffect(() => {
     writeTikTokActiveTab(activeTab)
   }, [activeTab])
+
+  useEffect(() => {
+    const tc = window.trafficCloud
+    if (!tc?.onTikTokWarmupProgress) return undefined
+    return tc.onTikTokWarmupProgress((payload) => {
+      const activeProfile = warmupProfileIdRef.current
+      if (!activeProfile || payload.profileId !== activeProfile) return
+      if (payload.logs.length > 0) {
+        setActivityLog(payload.logs.slice(-30))
+      }
+    })
+  }, [])
 
   const showDesktopGate = useCallback((forceUpdate = false) => {
     setDesktopGateForceUpdate(forceUpdate)
@@ -202,24 +197,18 @@ export function TikTokWarmupPage(): JSX.Element {
     logTimersRef.current = []
   }, [])
 
-  const appendLog = useCallback((line: string) => {
-    setActivityLog((prev) => [...prev.slice(-24), line])
-  }, [])
-
-  const runVisibleSteps = useCallback(
-    (steps: string[], onDone: () => void) => {
-      clearLogTimers()
-      setActivityLog([])
-      steps.forEach((step, index) => {
-        const timerId = window.setTimeout(() => {
-          appendLog(step)
-          if (index === steps.length - 1) onDone()
-        }, 450 + index * 520)
-        logTimersRef.current.push(timerId)
-      })
-    },
-    [appendLog, clearLogTimers]
-  )
+  const stopWarmupSession = useCallback(async (account: TikTokAccountModel) => {
+    if (warmupFinishTimerRef.current != null) {
+      window.clearTimeout(warmupFinishTimerRef.current)
+      warmupFinishTimerRef.current = null
+    }
+    clearLogTimers()
+    warmupProfileIdRef.current = null
+    const tc = window.trafficCloud
+    if (tc?.closeBrowserProfile && account.browserProfileId) {
+      await tc.closeBrowserProfile(account.browserProfileId)
+    }
+  }, [clearLogTimers])
 
   const stats = useMemo(() => {
     const warming = accounts.filter((a) => a.status === 'warming').length
@@ -500,14 +489,15 @@ export function TikTokWarmupPage(): JSX.Element {
           return
         }
 
-        const steps = buildWarmupSteps(warmedAccount, settings, effectiveTopics)
+        warmupProfileIdRef.current = warmedAccount.browserProfileId
+        setActivityLog([`[${warmedAccount.username}] Прогрів запущено — логи з вікна TikTok`])
+
         const warmupDurationMs = durationMinutes * 60_000
-        if (settings.executionMode === 'visible') {
-          runVisibleSteps(steps, () => undefined)
-        } else {
+        if (settings.executionMode === 'headless') {
           pushToast(`Прогрів @${warmedAccount.username} · пошук «${effectiveTopics[0]}»`, 'ok')
         }
-        window.setTimeout(() => {
+        warmupFinishTimerRef.current = window.setTimeout(() => {
+          warmupFinishTimerRef.current = null
           void finishWarmup(warmedAccount, nextTrust)
         }, warmupDurationMs)
       } catch (e) {
@@ -515,7 +505,7 @@ export function TikTokWarmupPage(): JSX.Element {
         pushToast(e instanceof Error ? e.message : String(e), 'error')
       }
     },
-    [finishWarmup, pushToast, refetch, runVisibleSteps, setTab, settings, showDesktopGate, status, workspaceId]
+    [finishWarmup, pushToast, refetch, setTab, settings, showDesktopGate, status, workspaceId]
   )
 
   const toggleWarmup = useCallback(
@@ -525,7 +515,7 @@ export function TikTokWarmupPage(): JSX.Element {
         return
       }
       if (account.status === 'warming') {
-        clearLogTimers()
+        await stopWarmupSession(account)
         await apiUpdateTikTokAccount(workspaceId, account.id, { status: 'paused' })
         await refetch()
         setBusyId(null)
@@ -544,7 +534,7 @@ export function TikTokWarmupPage(): JSX.Element {
 
       void startWarmup(account)
     },
-    [clearLogTimers, pushToast, refetch, showDesktopGate, startWarmup, status, workspaceId]
+    [pushToast, refetch, showDesktopGate, startWarmup, status, stopWarmupSession, workspaceId]
   )
 
   const deleteAccount = useCallback(

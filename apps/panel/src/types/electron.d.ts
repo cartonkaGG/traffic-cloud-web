@@ -41,10 +41,25 @@ declare global {
         } | null
       }) => Promise<{ ok: true } | { ok: false; error: string }>
       clearBrowserProfileStorage?: (profileId: string) => Promise<{ ok: boolean }>
+      closeBrowserProfile?: (
+        profileId: string
+      ) => Promise<{ ok: true } | { ok: false; error: string }>
       checkDesktopUpdate?: () => Promise<import('@/lib/desktopUpdate').DesktopUpdateProgress>
       startDesktopUpdate?: () => Promise<{ ok: true } | { ok: false; error: string }>
       onDesktopUpdateProgress?: (
         callback: (payload: import('@/lib/desktopUpdate').DesktopUpdateProgress) => void
+      ) => () => void
+      onTikTokWarmupProgress?: (
+        callback: (payload: {
+          profileId: string
+          running: boolean
+          logs: string[]
+          likesDone: number
+          commentsDone: number
+          followsDone: number
+          videosWatched: number
+          phase: string
+        }) => void
       ) => () => void
     }
   }
