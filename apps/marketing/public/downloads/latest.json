@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.21",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.21.exe",
-  "notes": "TikTok install mode: For You feed, mute, hide Play Store prompts v0.2.21"
+  "latestVersion": "0.2.22",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.22.exe",
+  "notes": "TikTok: fix lag on Notifications page, lighter mobile shell v0.2.22"
 }
