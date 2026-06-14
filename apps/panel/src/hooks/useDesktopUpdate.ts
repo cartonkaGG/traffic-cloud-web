@@ -43,13 +43,20 @@ export function useDesktopUpdate(): DesktopUpdateState & {
 
       if (canRunInAppDesktopUpdate()) {
         const ipc = await checkInAppDesktopUpdate()
-        if (ipc?.currentVersion && ipc.latestVersion) {
+        if (ipc?.currentVersion) {
+          const latestCandidates = [base.latestVersion, ipc.latestVersion].filter(
+            (v): v is string => Boolean(v?.trim())
+          )
+          const latestVersion = latestCandidates.reduce((best, v) =>
+            compareSemver(v, best) > 0 ? v : best
+          , latestCandidates[0] ?? base.latestVersion ?? '')
           const updateAvailable =
-            compareSemver(ipc.latestVersion, ipc.currentVersion) > 0
+            Boolean(latestVersion) &&
+            compareSemver(latestVersion, ipc.currentVersion) > 0
           merged = {
             ...base,
             currentVersion: ipc.currentVersion,
-            latestVersion: ipc.latestVersion,
+            latestVersion: latestVersion || base.latestVersion,
             downloadUrl: ipc.downloadUrl ?? base.downloadUrl,
             updateAvailable,
             inShell: true

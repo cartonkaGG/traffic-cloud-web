@@ -76,43 +76,90 @@ export async function readCurrentDesktopVersion(): Promise<string | null> {
 }
 
 export async function fetchDesktopUpdateManifest(): Promise<DesktopUpdateManifest> {
+  const apiBase = getApiBaseUrl()
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 12_000)
+
+  let apiData: {
+    configured?: boolean
+    latestVersion?: string | null
+    downloadUrl?: string | null
+    notes?: string | null
+  } | null = null
+
   try {
-    const apiBase = getApiBaseUrl()
-    const controller = new AbortController()
-    const timeout = window.setTimeout(() => controller.abort(), 12_000)
     const res = await fetch(`${apiBase}/v1/desktop/update-manifest?_=${Date.now()}`, {
       signal: controller.signal
     })
-    window.clearTimeout(timeout)
-    if (!res.ok) {
-      return {
-        configured: false,
-        latestVersion: BUNDLED_DESKTOP_VERSION,
-        downloadUrl: getBundledInstallerUrl(),
-        notes: null
-      }
-    }
-    const data = (await res.json()) as {
-      configured?: boolean
-      latestVersion?: string | null
-      downloadUrl?: string | null
-      notes?: string | null
-    }
-    const latestVersion = data.latestVersion?.trim() || BUNDLED_DESKTOP_VERSION
-    const downloadUrl = resolveDesktopDownloadUrl(data.downloadUrl)
-    return {
-      configured: Boolean(data.configured),
-      latestVersion,
-      downloadUrl,
-      notes: data.notes?.trim() || null
+    if (res.ok) {
+      apiData = (await res.json()) as typeof apiData
     }
   } catch {
+    /* fallback below */
+  } finally {
+    window.clearTimeout(timeout)
+  }
+
+  let staticData: {
+    latestVersion?: string | null
+    downloadUrl?: string | null
+    notes?: string | null
+  } | null = null
+
+  try {
+    const staticController = new AbortController()
+    const staticTimeout = window.setTimeout(() => staticController.abort(), 10_000)
+    const staticRes = await fetch(
+      `${window.location.origin}/downloads/latest.json?_=${Date.now()}`,
+      { signal: staticController.signal }
+    )
+    window.clearTimeout(staticTimeout)
+    if (staticRes.ok) {
+      staticData = (await staticRes.json()) as typeof staticData
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const apiVersion = apiData?.latestVersion?.trim() || null
+  const staticVersion = staticData?.latestVersion?.trim() || null
+  const bundledVersion = BUNDLED_DESKTOP_VERSION
+
+  let latestVersion = bundledVersion
+  if (apiVersion && compareSemver(apiVersion, latestVersion) > 0) latestVersion = apiVersion
+  if (staticVersion && compareSemver(staticVersion, latestVersion) > 0) {
+    latestVersion = staticVersion
+  }
+
+  const pickUrl = (version: string): string => {
+    if (staticVersion === version && staticData?.downloadUrl?.trim()) {
+      return resolveDesktopDownloadUrl(staticData.downloadUrl)
+    }
+    if (apiVersion === version && apiData?.downloadUrl?.trim()) {
+      return resolveDesktopDownloadUrl(apiData.downloadUrl)
+    }
+    return getBundledInstallerUrl()
+  }
+
+  const notes =
+    (staticVersion === latestVersion ? staticData?.notes : null) ??
+    apiData?.notes?.trim() ??
+    null
+
+  if (!apiData && !staticData) {
     return {
       configured: false,
-      latestVersion: BUNDLED_DESKTOP_VERSION,
+      latestVersion: bundledVersion,
       downloadUrl: getBundledInstallerUrl(),
       notes: null
     }
+  }
+
+  return {
+    configured: Boolean(apiData?.configured),
+    latestVersion,
+    downloadUrl: pickUrl(latestVersion),
+    notes: typeof notes === 'string' ? notes.trim() || null : null
   }
 }
 

@@ -1,5 +1,5 @@
-{
-  "latestVersion": "0.2.15",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.15.exe",
-  "notes": "Прозорий favicon-хмара, фікс завантаження, точна тривалість перегляду TikTok"
-}
+{
+  "latestVersion": "0.2.16",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.16.exe",
+  "notes": "TikTok лайки/підписки/коментарі, виправлення сповіщення про оновлення"
+}
