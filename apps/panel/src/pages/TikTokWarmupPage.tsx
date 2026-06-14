@@ -105,34 +105,14 @@ function buildWarmupSteps(
   const scrollMax = Math.max(settings.scrollMinutesMin, settings.scrollMinutesMax)
   const scrollMins = scrollMin + Math.floor(Math.random() * (scrollMax - scrollMin + 1))
   const topicLine = topics.length > 0 ? topics.join(' · ') : 'рекомендації'
-  const steps = [
-    `[${account.username}] Антидетект-профіль активний`,
+  return [
+    `[${account.username}] Браузер TikTok відкрито`,
     `[${account.username}] Пошук: ${topicLine}`,
-    `[${account.username}] TikTok · скрол ~${scrollMins} хв`
+    `[${account.username}] Автоматизація у вікні TikTok (~${scrollMins} хв)`,
+    `[${account.username}] Перегляд ${settings.watchSecondsMin}–${settings.watchSecondsMax} сек · лайки ${settings.likesPerSession} · коментарі ${settings.commentsPerSession} · підписки ${settings.followsPerSession}`,
+    `[${account.username}] Журнал панелі — статус сесії (дії виконуються у браузері TikTok)`,
+    `[${account.username}] Сесію завершено`
   ]
-  for (const topic of topics.slice(0, 3)) {
-    steps.push(`[${account.username}] Перегляд «${topic}»`)
-  }
-  for (let i = 1; i <= Math.min(settings.likesPerSession, 4); i++) {
-    steps.push(`[${account.username}] Лайк #${i}`)
-  }
-  for (let i = 1; i <= Math.min(settings.commentsPerSession, 3); i++) {
-    steps.push(`[${account.username}] Коментар #${i}`)
-  }
-  for (let i = 1; i <= Math.min(settings.followsPerSession, 2); i++) {
-    steps.push(`[${account.username}] Підписка #${i}`)
-  }
-  if (settings.watchFullVideos) {
-    steps.push(
-      `[${account.username}] Перегляд ${settings.watchSecondsMin}–${settings.watchSecondsMax} сек (до кінця в межах)`
-    )
-  } else {
-    steps.push(
-      `[${account.username}] Перегляд ${settings.watchSecondsMin}–${settings.watchSecondsMax} сек`
-    )
-  }
-  steps.push(`[${account.username}] Сесію завершено`)
-  return steps
 }
 
 export function TikTokWarmupPage(): JSX.Element {
