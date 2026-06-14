@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.27",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.27.exe",
-  "notes": "Fix TikTok warmup search on mobile web v0.2.27"
+  "latestVersion": "0.2.28",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.28.exe",
+  "notes": "TikTok warmup types search query and clicks Search button v0.2.28"
 }
