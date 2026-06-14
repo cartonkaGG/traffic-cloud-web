@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.34",
-  "downloadUrl": "https://traffic-cloud-api.onrender.com/v1/desktop/installer/0.2.34.exe",
-  "notes": "Traffic Cloud 0.2.34"
+  "latestVersion": "0.2.35",
+  "downloadUrl": "https://traffic-cloud-api.onrender.com/v1/desktop/installer/0.2.35.exe",
+  "notes": "Fix TikTok warmup search loop — fallback to For You feed"
 }
