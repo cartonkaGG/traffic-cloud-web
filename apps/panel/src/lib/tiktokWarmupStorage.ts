@@ -50,16 +50,30 @@ export function readTikTokWarmupSettings(): TikTokWarmupSettings {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return DEFAULT_WARMUP_SETTINGS
     const parsed = JSON.parse(raw) as Partial<TikTokWarmupSettings>
+    const merged = { ...DEFAULT_WARMUP_SETTINGS, ...parsed }
     return {
-      ...DEFAULT_WARMUP_SETTINGS,
-      ...parsed,
+      ...merged,
       commentTexts:
         Array.isArray(parsed.commentTexts) && parsed.commentTexts.length > 0
           ? parsed.commentTexts
           : DEFAULT_COMMENT_TEXTS,
       searchTopicsRaw:
         typeof parsed.searchTopicsRaw === 'string' ? parsed.searchTopicsRaw : '',
-      executionMode: parsed.executionMode === 'headless' ? 'headless' : 'visible'
+      executionMode: parsed.executionMode === 'headless' ? 'headless' : 'visible',
+      scrollMinutesMin: Math.max(1, Number(merged.scrollMinutesMin) || DEFAULT_WARMUP_SETTINGS.scrollMinutesMin),
+      scrollMinutesMax: Math.max(1, Number(merged.scrollMinutesMax) || DEFAULT_WARMUP_SETTINGS.scrollMinutesMax),
+      likesPerSession: Math.max(0, Number(merged.likesPerSession) || 0),
+      followsPerSession: Math.max(0, Number(merged.followsPerSession) || 0),
+      commentsPerSession: Math.max(0, Number(merged.commentsPerSession) || 0),
+      watchSecondsMin: Math.max(2, Number(merged.watchSecondsMin) || DEFAULT_WARMUP_SETTINGS.watchSecondsMin),
+      watchSecondsMax: Math.max(
+        Math.max(2, Number(merged.watchSecondsMin) || 2),
+        Number(merged.watchSecondsMax) || DEFAULT_WARMUP_SETTINGS.watchSecondsMax
+      ),
+      watchFullVideos:
+        typeof parsed.watchFullVideos === 'boolean'
+          ? parsed.watchFullVideos
+          : DEFAULT_WARMUP_SETTINGS.watchFullVideos
     }
   } catch {
     return DEFAULT_WARMUP_SETTINGS

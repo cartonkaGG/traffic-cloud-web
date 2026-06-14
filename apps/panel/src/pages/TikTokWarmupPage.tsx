@@ -122,7 +122,15 @@ function buildWarmupSteps(
   for (let i = 1; i <= Math.min(settings.followsPerSession, 2); i++) {
     steps.push(`[${account.username}] Підписка #${i}`)
   }
-  if (settings.watchFullVideos) steps.push(`[${account.username}] Перегляд до кінця`)
+  if (settings.watchFullVideos) {
+    steps.push(
+      `[${account.username}] Перегляд ${settings.watchSecondsMin}–${settings.watchSecondsMax} сек (до кінця в межах)`
+    )
+  } else {
+    steps.push(
+      `[${account.username}] Перегляд ${settings.watchSecondsMin}–${settings.watchSecondsMax} сек`
+    )
+  }
   steps.push(`[${account.username}] Сесію завершено`)
   return steps
 }
@@ -493,6 +501,8 @@ export function TikTokWarmupPage(): JSX.Element {
           follows: settings.followsPerSession,
           watchSecondsMin: settings.watchSecondsMin,
           watchSecondsMax: settings.watchSecondsMax,
+          watchFullVideos: settings.watchFullVideos,
+          minimizeWindow: settings.executionMode === 'headless',
           commentTexts: settings.commentTexts
         })
         if (!opened.ok) {

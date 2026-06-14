@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.13",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.13.exe",
-  "notes": "TikTok warmup: авто-скрол, перегляд відео, лайки та коментарі"
+  "latestVersion": "0.2.15",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.15.exe",
+  "notes": "Прозорий favicon-хмара, фікс завантаження, точна тривалість перегляду TikTok"
 }

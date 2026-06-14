@@ -118,7 +118,18 @@ export function TikTokWarmupPanel({
   )
 
   const patch = (partial: Partial<TikTokWarmupSettings>): void => {
-    onSettingsChange({ ...settings, ...partial })
+    let next = { ...settings, ...partial }
+    if (
+      partial.watchSecondsMin !== undefined ||
+      partial.watchSecondsMax !== undefined
+    ) {
+      next.watchSecondsMin = Math.max(2, Number(next.watchSecondsMin) || 5)
+      next.watchSecondsMax = Math.max(
+        next.watchSecondsMin,
+        Number(next.watchSecondsMax) || DEFAULT_WARMUP_SETTINGS.watchSecondsMax
+      )
+    }
+    onSettingsChange(next)
   }
 
   return (

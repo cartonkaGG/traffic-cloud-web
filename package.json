@@ -12,7 +12,8 @@
     "predev:panel": "node scripts/copy-ffmpeg-core.mjs",
     "dev:panel": "vite --config config/vite.panel.ts",
     "dev:marketing": "npm run dev --prefix apps/marketing",
-    "build": "npm run build --prefix apps/marketing && node scripts/copy-ffmpeg-core.mjs && vite build --config config/vite.panel.ts && node scripts/finalize-web-app-build.mjs",
+    "build": "node scripts/generate-cloud-icon.mjs && npm run build --prefix apps/marketing && node scripts/copy-ffmpeg-core.mjs && vite build --config config/vite.panel.ts && node scripts/finalize-web-app-build.mjs",
+    "icon:generate": "node scripts/generate-cloud-icon.mjs",
     "preview": "npm run preview --prefix apps/marketing"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "autoprefixer": "^10.4.20",
     "concurrently": "^9.2.1",
     "postcss": "^8.4.49",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"

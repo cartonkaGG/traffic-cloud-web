@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Traffic Cloud — Панель</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="./cloud-icon.png" />
-    <link rel="icon" type="image/png" sizes="256x256" href="./cloud-icon.png" />
-    <link rel="shortcut icon" type="image/png" href="./cloud-icon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="./cloud-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./cloud-icon.png?v=15" />
+    <link rel="icon" type="image/png" sizes="256x256" href="./cloud-icon.png?v=15" />
+    <link rel="shortcut icon" type="image/png" href="./cloud-icon.png?v=15" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./cloud-icon.png?v=15" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,7 +19,43 @@
     class="bg-ink antialiased selection:bg-accent/25 selection:text-white"
     style="margin: 0; min-height: 100%; background-color: #030712"
   >
-    <div id="root"></div>
+    <div id="root">
+      <div
+        id="tc-boot-loader"
+        style="
+          display: flex;
+          min-height: 100vh;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #030712;
+          color: #a1a1aa;
+          font-family: 'Segoe UI', system-ui, sans-serif;
+        "
+      >
+        <svg width="52" height="52" viewBox="30 14 255 118" fill="none" aria-hidden="true" style="filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.45))">
+          <path
+            d="M 60,130 H 240 C 265,130 280,112 280,90 C 280,68 262,52 235,52 C 230,52 224,53 218,55 C 205,33 182,18 155,18 C 122,18 95,39 90,67 C 84,64 78,63 72,63 C 49,63 35,79 35,98 C 35,118 48,130 60,130 Z"
+            stroke="#22d3ee"
+            stroke-width="9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            opacity="0.9"
+          />
+          <path
+            d="M 60,130 H 240 C 265,130 280,112 280,90 C 280,68 262,52 235,52 C 230,52 224,53 218,55 C 205,33 182,18 155,18 C 122,18 95,39 90,67 C 84,64 78,63 72,63 C 49,63 35,79 35,98 C 35,118 48,130 60,130 Z"
+            stroke="#e0f7ff"
+            stroke-width="3.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <p style="margin-top: 24px; font-size: 13px; letter-spacing: 0.2em; color: #fff; font-weight: 700">
+          TRAFFIC CLOUD
+        </p>
+        <p style="margin-top: 8px; font-size: 12px">Завантаження панелі…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.web.tsx"></script>
   </body>
 </html>

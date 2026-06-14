@@ -28,6 +28,8 @@ declare global {
           follows: number
           watchSecondsMin: number
           watchSecondsMax: number
+          watchFullVideos: boolean
+          minimizeWindow: boolean
           commentTexts: string[]
         }
         proxy: {
