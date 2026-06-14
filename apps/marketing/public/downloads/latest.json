@@ -1,5 +1,5 @@
-{
-  "latestVersion": "0.2.18",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.18.exe",
-  "notes": "Реальні логи прогріву, стоп TikTok, лайки/підписки, яскравий favicon"
-}
+{
+  "latestVersion": "0.2.20",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.20.exe",
+  "notes": "TikTok як Android-додаток: Chrome mobile, touch, PWA-режим, стрічка For You"
+}

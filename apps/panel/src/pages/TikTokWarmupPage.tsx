@@ -387,9 +387,9 @@ export function TikTokWarmupPage(): JSX.Element {
           return
         }
         if (intent === 'login') {
-          pushToast(`Відкрито TikTok для @${account.username} — увійдіть вручну`, 'ok')
+          pushToast(`Відкрито TikTok (Android) для @${account.username} — увійдіть вручну`, 'ok')
         } else if (intent === 'home') {
-          pushToast(`Стрічка @${account.username}`, 'ok')
+          pushToast(`Стрічка TikTok (Android) @${account.username}`, 'ok')
         }
         await refetch()
       } finally {
@@ -673,9 +673,8 @@ export function TikTokWarmupPage(): JSX.Element {
           <div>
             <h2 className="text-lg font-semibold text-white">Додати TikTok акаунт</h2>
             <p className="mt-1 text-[13px] text-zinc-500">
-              Натисніть кнопку нижче — відкриється{' '}
-              <strong className="font-medium text-fuchsia-200">tiktok.com/login</strong> у антидетект-браузері.
-              Увійдіть своїм email/телефоном і паролем на сайті TikTok.
+              Відкриється TikTok у режимі <strong className="font-medium text-fuchsia-200">Android-телефону</strong>{' '}
+              (як встановлений додаток). Увійдіть email/телефоном і паролем — сесія збережеться в профілі.
             </p>
           </div>
           <div className="pointer-events-auto space-y-4">
@@ -755,7 +754,7 @@ export function TikTokWarmupPage(): JSX.Element {
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 px-4 py-3 text-sm font-medium text-fuchsia-100 disabled:opacity-50 sm:w-auto"
           >
             {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Додати акаунт і відкрити TikTok
+            Додати акаунт і встановити TikTok
           </button>
         </GlassCard>
       ) : null}
@@ -767,7 +766,7 @@ export function TikTokWarmupPage(): JSX.Element {
             <UserRound className="h-12 w-12 text-fuchsia-300" />
             <h3 className="mt-4 text-lg font-semibold text-white">Ще немає TikTok акаунтів</h3>
             <p className="mt-2 max-w-md text-sm text-zinc-500">
-              Додайте акаунт — відкриється TikTok для ручного входу. Тематику відео оберете при прогріві.
+              Додайте акаунт — відкриється TikTok як на Android. Після входу натисніть «Готово».
             </p>
             <button
               type="button"
@@ -897,7 +896,7 @@ export function TikTokWarmupPage(): JSX.Element {
                             ) : (
                               <Rocket className="h-3.5 w-3.5" />
                             )}
-                            {account.status === 'ready' ? 'Керувати' : 'Увійти'}
+                            {account.status === 'ready' ? 'Керувати' : 'Встановити'}
                           </button>
                           {account.status === 'creating' || account.status === 'paused' ? (
                             <button
