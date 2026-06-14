@@ -7,7 +7,7 @@ export type DesktopGateResult =
 /** Продакшен-панель (Vercel), якщо потрібен статичний fallback поза браузером. */
 export const DEFAULT_PANEL_ORIGIN = 'https://traffic-cloud-web.vercel.app'
 
-export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.24.exe'
+export const BUNDLED_INSTALLER_FILENAME = 'Traffic-Cloud-Setup-0.2.25.exe'
 
 export const DESKTOP_SUPPORT_TELEGRAM_URL = 'https://t.me/trafficcloud_team'
 

@@ -1,5 +1,5 @@
 {
-  "latestVersion": "0.2.24",
-  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.24.exe",
-  "notes": "Block TikTok App Store popup windows and deny all extra tabs v0.2.24"
+  "latestVersion": "0.2.25",
+  "downloadUrl": "https://traffic-cloud-web.vercel.app/downloads/Traffic-Cloud-Setup-0.2.25.exe",
+  "notes": "Auto-dismiss TikTok Open App modals (Не зараз) v0.2.25"
 }

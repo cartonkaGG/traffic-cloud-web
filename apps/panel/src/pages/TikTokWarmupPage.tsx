@@ -374,7 +374,7 @@ export function TikTokWarmupPage(): JSX.Element {
       }
       setManageBusyId(account.id)
       try {
-        const r = await openTikTokInstallForAccount(workspaceId, account.id)
+        const r = await openTikTokInstallForAccount(workspaceId, account.id, account.status)
         if (!r.ok) {
           if (r.needsUpdate) {
             showDesktopGate(true)
