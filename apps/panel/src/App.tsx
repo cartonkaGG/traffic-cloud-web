@@ -220,7 +220,15 @@ export default function App(): JSX.Element {
       {!affiliateOnly ? <DesktopUpdateOverlay /> : null}
       {!affiliateOnly ? <SoftwareLaunchOverlay /> : null}
       <Routes>
-        <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
+        <Route
+        path="/subscribe"
+        element={
+          <Navigate
+            to={affiliateOnly ? AFFILIATE_HOME_PATH : SUBSCRIBE_ENTRY_PATH}
+            replace
+          />
+        }
+      />
         <Route
           path="/auth"
           element={
@@ -232,14 +240,18 @@ export default function App(): JSX.Element {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route
-          path="/billing"
-          element={
+      <Route
+        path="/billing"
+        element={
+          FEATURES.affiliateOnlyMode ? (
+            <Navigate to={AFFILIATE_HOME_PATH} replace />
+          ) : (
             <Protected>
               <BillingPage />
             </Protected>
-          }
-        />
+          )
+        }
+      />
 
         {affiliateOnly ? (
           <>

@@ -1,5 +1,6 @@
 import { FEATURES } from '@/config/features'
 import type { SubscriptionInfo } from '@/lib/api'
+import { FEATURES } from '@/config/features'
 import { hasPanelAccess } from '@/lib/subscriptionAccess'
 
 /** Головна сторінка партнерки (без підписки). */
@@ -13,7 +14,14 @@ export const HUB_PATH = '/hub'
 export const BILLING_SUBSCRIBE_REDIRECT = encodeURIComponent(BILLING_SUBSCRIBE_PATH)
 
 /** Єдиний вхід на оформлення підписки: спочатку auth, потім billing. */
-export const SUBSCRIBE_ENTRY_PATH = `/auth?redirect=${BILLING_SUBSCRIBE_REDIRECT}`
+export const SUBSCRIBE_ENTRY_PATH = FEATURES.affiliateOnlyMode
+  ? `/auth?redirect=${encodeURIComponent(AFFILIATE_HOME_PATH)}`
+  : `/auth?redirect=${BILLING_SUBSCRIBE_REDIRECT}`
+
+/** Дефолтний redirect після входу (query `redirect` на /auth). */
+export function defaultAuthRedirect(): string {
+  return FEATURES.affiliateOnlyMode ? AFFILIATE_HOME_PATH : BILLING_SUBSCRIBE_PATH
+}
 
 /** Куди відправити після входу. */
 export function resolvePostAuthPath(

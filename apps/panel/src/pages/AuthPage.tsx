@@ -7,7 +7,13 @@ import { PanelBrand } from '@/components/brand/PanelBrand'
 import { AuthPageBackdrop } from '@/components/layout/AuthPageBackdrop'
 import { useAuth } from '@/context/AuthContext'
 import { apiResendLoginCode, apiResendVerification, apiVerificationStatus } from '@/lib/api'
-import { BILLING_SUBSCRIBE_PATH, HUB_PATH } from '@/lib/panelRoutes'
+import { FEATURES } from '@/config/features'
+import {
+  AFFILIATE_HOME_PATH,
+  BILLING_SUBSCRIBE_PATH,
+  defaultAuthRedirect,
+  resolvePostAuthPath
+} from '@/lib/panelRoutes'
 import {
   getResendCooldownLeft,
   RESEND_COOLDOWN_SEC,
@@ -16,10 +22,10 @@ import {
 import { getMarketingHomeUrl } from '@/lib/site'
 
 export function AuthPage(): JSX.Element {
-  const { login, completeLoginWithCode, register } = useAuth()
+  const { login, completeLoginWithCode, register, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || BILLING_SUBSCRIBE_PATH
+  const redirectTo = searchParams.get('redirect') || defaultAuthRedirect()
   const subscribeFlow = redirectTo.includes('/billing')
   const sessionRevoked = searchParams.get('reason') === 'session_revoked'
 
@@ -69,7 +75,10 @@ export function AuthPage(): JSX.Element {
           if (res.verified) {
             setEmailJustVerified(true)
             window.setTimeout(() => {
-              navigate('/subscribe', { replace: true })
+              navigate(
+                FEATURES.affiliateOnlyMode ? AFFILIATE_HOME_PATH : '/subscribe',
+                { replace: true }
+              )
             }, 1800)
           }
         } catch {
@@ -120,11 +129,7 @@ export function AuthPage(): JSX.Element {
   function navigateAfterAuth(): void {
     const safe =
       redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
-    if (safe && !safe.includes('/billing')) {
-      navigate(safe, { replace: true })
-    } else {
-      navigate(HUB_PATH, { replace: true })
-    }
+    navigate(resolvePostAuthPath(safe, null, isAdmin), { replace: true })
   }
 
   async function submit(e: FormEvent): Promise<void> {
@@ -163,11 +168,7 @@ export function AuthPage(): JSX.Element {
         }
         const safe =
           redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
-        if (safe && !safe.includes('/billing')) {
-          navigate(safe, { replace: true })
-        } else {
-          navigate(HUB_PATH, { replace: true })
-        }
+        navigate(resolvePostAuthPath(safe, null, isAdmin), { replace: true })
       }
     } catch (err) {
       setFormError(mapAuthError(err))
