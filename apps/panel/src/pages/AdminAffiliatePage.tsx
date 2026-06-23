@@ -118,6 +118,7 @@ export function AdminAffiliatePage(): JSX.Element {
   const [partnerLinks, setPartnerLinks] = useState<AdminAffiliateLinkRow[]>([])
   const [linkOfferFilter, setLinkOfferFilter] = useState('')
   const [webhookInfo, setWebhookInfo] = useState<Record<string, string>>({})
+  const [webhookMismatch, setWebhookMismatch] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -424,6 +425,12 @@ export function AdminAffiliatePage(): JSX.Element {
     setBusy(`wh-bot-${botId}`)
     try {
       await apiAdminSetupAffiliateBotWebhook(botId)
+      setWebhookMismatch((prev) => ({ ...prev, [botId]: false }))
+      setWebhookInfo((prev) => {
+        const next = { ...prev }
+        delete next[botId]
+        return next
+      })
       await load()
     } catch (err) {
       setError(parseApiError(err))
@@ -437,10 +444,22 @@ export function AdminAffiliatePage(): JSX.Element {
     try {
       const info = await apiAdminAffiliateBotWebhookStatus(botId)
       const tg = info.telegram
-      const summary = tg.error
-        ? `Помилка: ${tg.error}`
-        : `URL: ${tg.url || '—'}\nОчікується: ${info.expectedUrl}\nПодії: ${(tg.allowedUpdates ?? []).join(', ') || '—'}`
-      setWebhookInfo((prev) => ({ ...prev, [botId]: summary }))
+      const lines: string[] = []
+      if (tg.error) {
+        lines.push(`Помилка: ${tg.error}`)
+      } else {
+        lines.push(`URL: ${tg.url || '—'}`)
+        lines.push(`Очікується: ${info.expectedUrl}`)
+        lines.push(`Події: ${(tg.allowedUpdates ?? []).join(', ') || '—'}`)
+        if (!info.urlMatches) {
+          lines.push('⚠ URL не збігається — події йдуть на інший запис бота. Натисніть «Виправити webhook».')
+        }
+        if (!info.eventsOk) {
+          lines.push('⚠ Не всі потрібні події увімкнені (chat_member, chat_join_request).')
+        }
+      }
+      setWebhookMismatch((prev) => ({ ...prev, [botId]: !info.urlMatches }))
+      setWebhookInfo((prev) => ({ ...prev, [botId]: lines.join('\n') }))
     } catch (err) {
       setError(parseApiError(err))
     } finally {
@@ -603,39 +622,41 @@ export function AdminAffiliatePage(): JSX.Element {
                     </h3>
                     <p className="mt-1 text-xs text-zinc-500">
                       {b.channelCount} каналів · {b.offerCount} оферів ·{' '}
-                      {b.webhookConfigured ? (
+                      {b.webhookConfigured && !webhookMismatch[b.id] ? (
                         <span className="text-emerald-400">webhook OK</span>
+                      ) : webhookMismatch[b.id] ? (
+                        <span className="text-red-300">webhook — невірний URL</span>
                       ) : (
                         <span className="text-amber-300">webhook не налаштовано</span>
                       )}
                     </p>
                   </div>
-                  {!b.webhookConfigured ? (
-                    <button
-                      type="button"
-                      onClick={() => void setupBotWebhook(b.id)}
-                      disabled={busy === `wh-bot-${b.id}`}
-                      className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-300"
-                    >
-                      {busy === `wh-bot-${b.id}` ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        'Підключити webhook'
-                      )}
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!b.webhookConfigured || webhookMismatch[b.id] ? (
                       <button
                         type="button"
-                        onClick={() => void checkBotWebhook(b.id)}
-                        disabled={busy === `wh-check-${b.id}`}
-                        className="rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-400 hover:text-white"
+                        onClick={() => void setupBotWebhook(b.id)}
+                        disabled={busy === `wh-bot-${b.id}`}
+                        className="cursor-pointer rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-100"
                       >
-                        {busy === `wh-check-${b.id}` ? '…' : 'Перевірити'}
+                        {busy === `wh-bot-${b.id}` ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          'Виправити webhook'
+                        )}
                       </button>
-                    </div>
-                  )}
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void checkBotWebhook(b.id)}
+                      disabled={busy === `wh-check-${b.id}`}
+                      className="cursor-pointer rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-400 hover:text-white"
+                    >
+                      {busy === `wh-check-${b.id}` ? '…' : 'Перевірити'}
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => void deleteBot(b.id)}
@@ -651,7 +672,14 @@ export function AdminAffiliatePage(): JSX.Element {
                   </button>
                 </div>
                 {webhookInfo[b.id] ? (
-                  <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-white/[0.06] bg-black/30 p-2 text-[10px] text-zinc-400">
+                  <pre
+                    className={[
+                      'mt-3 whitespace-pre-wrap rounded-lg border p-2 text-[10px]',
+                      webhookMismatch[b.id]
+                        ? 'border-red-400/25 bg-red-500/10 text-red-100'
+                        : 'border-white/[0.06] bg-black/30 text-zinc-400'
+                    ].join(' ')}
+                  >
                     {webhookInfo[b.id]}
                   </pre>
                 ) : null}

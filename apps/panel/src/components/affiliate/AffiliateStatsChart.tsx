@@ -145,7 +145,7 @@ export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props
                 Закрити
               </button>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
                   <TrendingUp className="h-3.5 w-3.5 text-cyan-400" />
@@ -163,15 +163,25 @@ export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props
               <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
                   <Wallet className="h-3.5 w-3.5 text-emerald-400" />
-                  Заробіток
+                  Нараховано
                 </div>
                 <div className="mt-1 text-2xl font-semibold text-emerald-200">
                   ${selected.earnedUsd.toFixed(2)}
                 </div>
               </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
+                  <TrendingDown className="h-3.5 w-3.5 text-rose-300" />
+                  Списано
+                </div>
+                <div className="mt-1 text-2xl font-semibold text-rose-200">
+                  −${(selected.lostUsd ?? 0).toFixed(2)}
+                </div>
+              </div>
             </div>
             <p className="mt-3 text-xs text-zinc-600">
-              Чистий приріст: {selected.joins - (selected.leaves ?? 0)} ·{' '}
+              Чистий приріст: {selected.joins - (selected.leaves ?? 0)} · чистий прибуток:{' '}
+              ${((selected.earnedUsd ?? 0) - (selected.lostUsd ?? 0)).toFixed(2)} ·{' '}
               {formatDayLabel(selected.date)}
             </p>
           </motion.div>

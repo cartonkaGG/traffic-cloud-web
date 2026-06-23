@@ -73,10 +73,16 @@ export function AffiliateLinkBreakdown({
                 />
               </div>
               <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-zinc-400">
-                <span>+{row.joins} підп.</span>
-                {row.leaves > 0 ? <span>−{row.leaves} відп.</span> : null}
+                <span className="text-cyan-300/90">+{row.joins} підп.</span>
+                {row.leaves > 0 ? <span className="text-rose-300/90">−{row.leaves} відп.</span> : null}
                 <span>{row.activeJoins} активних</span>
-                <span className="text-emerald-300/90">{usd(row.earnedUsd)}</span>
+                <span className="text-emerald-300/90">+{usd(row.earnedUsd)}</span>
+                {(row.lostUsd ?? 0) > 0 ? (
+                  <span className="text-rose-300/90">−{usd(row.lostUsd ?? 0)}</span>
+                ) : null}
+                <span className="text-white/80">
+                  чистий {usd(row.earnedUsd - (row.lostUsd ?? 0))}
+                </span>
               </div>
             </div>
             <ChevronRight

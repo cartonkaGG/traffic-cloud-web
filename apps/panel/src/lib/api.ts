@@ -1256,7 +1256,18 @@ export type AffiliateDailyStat = {
   joins: number
   leaves: number
   earnedUsd: number
+  lostUsd?: number
   activeJoins?: number
+}
+
+export type AffiliatePeriodSummary = {
+  joins: number
+  leaves: number
+  netJoins: number
+  earnedUsd: number
+  lostUsd: number
+  netEarnedUsd: number
+  activeJoins: number
 }
 
 export type AffiliateLinkStat = {
@@ -1267,6 +1278,7 @@ export type AffiliateLinkStat = {
   joins: number
   leaves: number
   earnedUsd: number
+  lostUsd?: number
   activeJoins: number
 }
 
@@ -1363,6 +1375,7 @@ export async function apiAffiliateStats(
   offerId: string | null
   linkId: string | null
   byLink: AffiliateLinkStat[]
+  summary: AffiliatePeriodSummary
 }> {
   const params = new URLSearchParams({ days: String(days) })
   if (offerId) params.set('offerId', offerId)
@@ -1474,6 +1487,8 @@ export async function apiAdminSetupAffiliateBotWebhook(
 export async function apiAdminAffiliateBotWebhookStatus(botId: string): Promise<{
   expectedUrl: string
   configured: boolean
+  urlMatches: boolean
+  eventsOk: boolean
   telegram: { url?: string; allowedUpdates?: string[]; error?: string }
 }> {
   return fetchJson(`/v1/admin/affiliate/bots/${botId}/webhook-status`)

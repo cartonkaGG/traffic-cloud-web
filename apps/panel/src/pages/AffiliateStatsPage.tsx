@@ -6,6 +6,7 @@ import {
   Loader2,
   RefreshCw,
   Send,
+  TrendingDown,
   TrendingUp,
   Users,
   Wallet
@@ -22,6 +23,7 @@ import {
   type AffiliateBalanceInfo,
   type AffiliateLinkRow,
   type AffiliateLinkStat,
+  type AffiliatePeriodSummary,
   type AffiliateWithdrawalRow
 } from '@/lib/api'
 
@@ -54,6 +56,7 @@ export function AffiliateStatsPage(): JSX.Element {
     { date: string; joins: number; leaves: number; earnedUsd: number }[]
   >([])
   const [byLink, setByLink] = useState<AffiliateLinkStat[]>([])
+  const [summary, setSummary] = useState<AffiliatePeriodSummary | null>(null)
   const [withdrawals, setWithdrawals] = useState<AffiliateWithdrawalRow[]>([])
   const [myLinks, setMyLinks] = useState<AffiliateLinkRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,6 +93,7 @@ export function AffiliateStatsPage(): JSX.Element {
       setBalance(bal)
       setDaily(stats.daily)
       setByLink(stats.byLink)
+      setSummary(stats.summary)
       setWithdrawals(wds.items)
       setMyLinks(links.items)
       setSelectedChartDate(null)
@@ -140,16 +144,15 @@ export function AffiliateStatsPage(): JSX.Element {
     }
   }
 
-  const periodTotals = useMemo(() => {
-    return daily.reduce(
-      (acc, d) => ({
-        joins: acc.joins + d.joins,
-        leaves: acc.leaves + (d.leaves ?? 0),
-        earnedUsd: acc.earnedUsd + d.earnedUsd
-      }),
-      { joins: 0, leaves: 0, earnedUsd: 0 }
-    )
-  }, [daily])
+  const period = summary ?? {
+    joins: 0,
+    leaves: 0,
+    netJoins: 0,
+    earnedUsd: 0,
+    lostUsd: 0,
+    netEarnedUsd: 0,
+    activeJoins: balance?.totalJoins ?? 0
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8 lg:py-8">
@@ -161,7 +164,7 @@ export function AffiliateStatsPage(): JSX.Element {
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Статистика</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Аналітика по методах заливу, оферах і виведення USDT.
+            Аналітика по методах заливу, оферах і виведення USDT. Відписки автоматично списуються з балансу.
           </p>
         </div>
         <button
@@ -230,7 +233,7 @@ export function AffiliateStatsPage(): JSX.Element {
       ) : (
         <>
           {balance ? (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {[
                 {
                   label: 'Баланс',
@@ -241,22 +244,35 @@ export function AffiliateStatsPage(): JSX.Element {
                 },
                 {
                   label: `Підписки (${days} д.)`,
-                  value: `+${periodTotals.joins}`,
-                  sub: periodTotals.leaves > 0 ? `−${periodTotals.leaves} відп.` : undefined,
-                  icon: Users,
+                  value: `+${period.joins}`,
+                  icon: TrendingUp,
                   accent: 'text-cyan-300'
                 },
                 {
-                  label: `Заробіток (${days} д.)`,
-                  value: usd(periodTotals.earnedUsd),
+                  label: `Відписки (${days} д.)`,
+                  value: `−${period.leaves}`,
+                  icon: TrendingDown,
+                  accent: 'text-rose-300'
+                },
+                {
+                  label: 'Чистий приріст',
+                  value: `${period.netJoins >= 0 ? '+' : ''}${period.netJoins}`,
+                  icon: Users,
+                  accent: 'text-violet-300'
+                },
+                {
+                  label: 'Нараховано',
+                  value: usd(period.earnedUsd),
+                  sub: period.lostUsd > 0 ? `списано ${usd(period.lostUsd)}` : undefined,
                   icon: DollarSign,
                   accent: 'text-amber-200'
                 },
                 {
-                  label: linkId ? 'Активних (лінк)' : offerId ? 'Активних (офер)' : 'Активних',
-                  value: String(balance.today.activeJoins ?? balance.totalJoins),
+                  label: 'Чистий прибуток',
+                  value: usd(period.netEarnedUsd),
+                  sub: `${period.activeJoins} активних`,
                   icon: TrendingUp,
-                  accent: 'text-violet-300'
+                  accent: period.netEarnedUsd >= 0 ? 'text-emerald-300' : 'text-rose-300'
                 }
               ].map(({ label, value, sub, icon: Icon, accent }) => (
                 <motion.div
