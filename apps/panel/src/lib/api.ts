@@ -1234,6 +1234,7 @@ export type AffiliateLinkRow = {
   categoryName?: string
   inviteLink: string
   joins?: number
+  pendingJoins?: number
   totalJoins?: number
   leaves?: number
   isReady?: boolean

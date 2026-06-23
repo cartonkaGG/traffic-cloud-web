@@ -30,12 +30,14 @@ type Props = {
 
 function joinLabel(link: AffiliateLinkRow, joinRequiresApproval?: boolean): string {
   const joins = link.joins ?? 0
+  const pending = link.pendingJoins ?? 0
   const leaves = link.leaves ?? 0
-  if (joins === 0 && leaves === 0) {
+  if (joins === 0 && pending === 0 && leaves === 0) {
     return joinRequiresApproval ? 'Ще ніхто не подав заявку' : 'Ще ніхто не приєднався'
   }
   const parts: string[] = []
   if (joins > 0) parts.push(`${joins} підписник${joins === 1 ? '' : joins < 5 ? 'и' : 'ів'}`)
+  if (pending > 0) parts.push(`${pending} заявок очікує`)
   if (leaves > 0) parts.push(`−${leaves} відп.`)
   return parts.join(' · ')
 }
