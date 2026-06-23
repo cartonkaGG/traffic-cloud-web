@@ -65,6 +65,7 @@ export function AffiliateStatsPage(): JSX.Element {
   const [payNetwork, setPayNetwork] = useState<PayNetworkId>('trc20')
   const [withdrawing, setWithdrawing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [withdrawError, setWithdrawError] = useState<string | null>(null)
   const [withdrawOk, setWithdrawOk] = useState(false)
   const [selectedChartDate, setSelectedChartDate] = useState<string | null>(null)
 
@@ -128,7 +129,7 @@ export function AffiliateStatsPage(): JSX.Element {
     const walletInfo = `USDT ${net.label} · ${address}`
     setWithdrawing(true)
     setWithdrawOk(false)
-    setError(null)
+    setWithdrawError(null)
     try {
       await apiAffiliateRequestWithdrawal(amount, walletInfo)
       setWithdrawAmount('')
@@ -138,7 +139,7 @@ export function AffiliateStatsPage(): JSX.Element {
       setBalance(bal)
       setWithdrawals(wds.items)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Помилка виведення')
+      setWithdrawError(err instanceof Error ? err.message : 'Помилка виведення')
     } finally {
       setWithdrawing(false)
     }
@@ -319,6 +320,15 @@ export function AffiliateStatsPage(): JSX.Element {
               <h2 className="text-lg font-semibold text-white">Виведення USDT</h2>
               <p className="mt-1 text-sm text-zinc-500">
                 Доступно: {balance ? usd(balance.balanceUsd) : '—'}
+                {balance ? (
+                  <>
+                    {' '}
+                    · мін. вивід{' '}
+                    <span className="text-zinc-400">
+                      ${(balance.minWithdrawalUsd ?? 10).toFixed(2)}
+                    </span>
+                  </>
+                ) : null}
               </p>
 
               <div className="mt-5">
@@ -352,8 +362,12 @@ export function AffiliateStatsPage(): JSX.Element {
                 <input
                   type="number"
                   step="0.01"
-                  min="0"
-                  placeholder="Сума USD"
+                  min={balance?.minWithdrawalUsd ?? 10}
+                  placeholder={
+                    balance
+                      ? `Сума USD (мін. $${(balance.minWithdrawalUsd ?? 10).toFixed(2)})`
+                      : 'Сума USD'
+                  }
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   className="w-full rounded-xl border border-white/[0.08] bg-black/30 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-emerald-400/30"
@@ -374,6 +388,9 @@ export function AffiliateStatsPage(): JSX.Element {
                   Запросити виведення
                 </button>
               </form>
+              {withdrawError ? (
+                <p className="mt-3 text-sm text-red-300">{withdrawError}</p>
+              ) : null}
               {withdrawOk ? (
                 <p className="mt-3 text-sm text-emerald-400">
                   Заявку надіслано. Очікуйте підтвердження адміна.

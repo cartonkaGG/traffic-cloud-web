@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { CalendarDays, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { BarChart3, CalendarDays, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import type { AffiliateDailyStat } from '@/lib/api'
 
 type Props = {
@@ -7,6 +7,8 @@ type Props = {
   selectedDate: string | null
   onSelectDate: (date: string | null) => void
 }
+
+const CHART_HEIGHT_PX = 112
 
 function formatDayLabel(iso: string): string {
   const d = new Date(`${iso}T12:00:00`)
@@ -26,6 +28,9 @@ export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props
   const maxJoins = Math.max(1, ...daily.map((d) => d.joins + (d.leaves ?? 0)))
   const maxEarned = Math.max(0.01, ...daily.map((d) => d.earnedUsd))
   const selected = selectedDate ? daily.find((d) => d.date === selectedDate) ?? null : null
+  const hasActivity = daily.some(
+    (d) => d.joins > 0 || (d.leaves ?? 0) > 0 || d.earnedUsd > 0 || (d.lostUsd ?? 0) > 0
+  )
 
   return (
     <div className="space-y-4">
@@ -37,86 +42,105 @@ export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props
             </span>
             <span className="text-[10px] text-zinc-600">{daily.length} днів</span>
           </div>
-          <div className="mt-5 flex h-32 items-end justify-between gap-1">
-            {daily.map((d) => {
-              const active = selectedDate === d.date
-              return (
-                <button
-                  key={d.date}
-                  type="button"
-                  onClick={() => onSelectDate(active ? null : d.date)}
-                  className="group flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-2 focus:outline-none"
-                  aria-pressed={active}
-                >
-                  <div
-                    className="flex w-full max-w-[2.25rem] flex-col items-stretch justify-end gap-0.5"
-                    style={{ height: '100%' }}
+          {hasActivity ? (
+            <div className="mt-5 flex h-32 items-end gap-1">
+              {daily.map((d) => {
+                const active = selectedDate === d.date
+                const joinPx = Math.round((d.joins / maxJoins) * CHART_HEIGHT_PX)
+                const leavePx = Math.round(((d.leaves ?? 0) / maxJoins) * CHART_HEIGHT_PX)
+                return (
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => onSelectDate(active ? null : d.date)}
+                    className="group flex h-32 min-w-0 flex-1 cursor-pointer flex-col items-center justify-end gap-2 focus:outline-none"
+                    aria-pressed={active}
                   >
-                    <motion.div
-                      layout
+                    <div
+                      className="flex w-full max-w-[2.25rem] flex-col items-stretch justify-end gap-0.5"
+                      style={{ height: CHART_HEIGHT_PX }}
+                    >
+                      {joinPx > 0 ? (
+                        <motion.div
+                          layout
+                          className={[
+                            'w-full rounded-t-md bg-gradient-to-t from-cyan-500/25 to-cyan-400/80 transition-opacity',
+                            active ? 'ring-1 ring-cyan-300/60' : 'group-hover:opacity-90'
+                          ].join(' ')}
+                          style={{ height: joinPx }}
+                        />
+                      ) : null}
+                      {leavePx > 0 ? (
+                        <motion.div
+                          layout
+                          className="w-full rounded-t-md bg-gradient-to-t from-rose-500/25 to-rose-400/70"
+                          style={{ height: leavePx }}
+                        />
+                      ) : null}
+                    </div>
+                    <span
                       className={[
-                        'w-full rounded-t-md bg-gradient-to-t from-cyan-500/25 to-cyan-400/80 transition-opacity',
-                        active ? 'ring-1 ring-cyan-300/60' : 'group-hover:opacity-90'
+                        'text-[9px] font-medium transition-colors',
+                        active ? 'text-cyan-300' : 'text-zinc-600 group-hover:text-zinc-400'
                       ].join(' ')}
-                      style={{ height: `${Math.max(6, (d.joins / maxJoins) * 72)}%` }}
-                    />
-                    {(d.leaves ?? 0) > 0 ? (
-                      <motion.div
-                        layout
-                        className="w-full rounded-t-md bg-gradient-to-t from-rose-500/25 to-rose-400/70"
-                        style={{ height: `${Math.max(4, ((d.leaves ?? 0) / maxJoins) * 72)}%` }}
-                      />
-                    ) : null}
-                  </div>
-                  <span
-                    className={[
-                      'text-[9px] font-medium transition-colors',
-                      active ? 'text-cyan-300' : 'text-zinc-600 group-hover:text-zinc-400'
-                    ].join(' ')}
-                  >
-                    {d.date.slice(8)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+                    >
+                      {d.date.slice(8)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="mt-5 flex h-32 flex-col items-center justify-center gap-2 text-center">
+              <BarChart3 className="h-8 w-8 text-zinc-700" />
+              <p className="text-xs text-zinc-500">Немає підписок і відписок за обраний період</p>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e14]/80 p-5">
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
             Заробіток USD
           </div>
-          <div className="mt-5 flex h-32 items-end justify-between gap-1">
-            {daily.map((d) => {
-              const active = selectedDate === d.date
-              return (
-                <button
-                  key={`e-${d.date}`}
-                  type="button"
-                  onClick={() => onSelectDate(active ? null : d.date)}
-                  className="group flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-2 focus:outline-none"
-                  aria-pressed={active}
-                >
-                  <motion.div
-                    layout
-                    className={[
-                      'w-full max-w-[2.25rem] rounded-t-md bg-gradient-to-t from-emerald-500/25 to-emerald-400/80 transition-opacity',
-                      active ? 'ring-1 ring-emerald-300/60' : 'group-hover:opacity-90'
-                    ].join(' ')}
-                    style={{ height: `${Math.max(6, (d.earnedUsd / maxEarned) * 100)}%` }}
-                  />
-                  <span
-                    className={[
-                      'text-[9px] font-medium transition-colors',
-                      active ? 'text-emerald-300' : 'text-zinc-600 group-hover:text-zinc-400'
-                    ].join(' ')}
+          {hasActivity ? (
+            <div className="mt-5 flex h-32 items-end gap-1">
+              {daily.map((d) => {
+                const active = selectedDate === d.date
+                const earnPx = Math.max(d.earnedUsd > 0 ? 4 : 0, Math.round((d.earnedUsd / maxEarned) * CHART_HEIGHT_PX))
+                return (
+                  <button
+                    key={`e-${d.date}`}
+                    type="button"
+                    onClick={() => onSelectDate(active ? null : d.date)}
+                    className="group flex h-32 min-w-0 flex-1 cursor-pointer flex-col items-center justify-end gap-2 focus:outline-none"
+                    aria-pressed={active}
                   >
-                    {d.date.slice(8)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+                    <motion.div
+                      layout
+                      className={[
+                        'w-full max-w-[2.25rem] rounded-t-md bg-gradient-to-t from-emerald-500/25 to-emerald-400/80 transition-opacity',
+                        active ? 'ring-1 ring-emerald-300/60' : 'group-hover:opacity-90'
+                      ].join(' ')}
+                      style={{ height: earnPx }}
+                    />
+                    <span
+                      className={[
+                        'text-[9px] font-medium transition-colors',
+                        active ? 'text-emerald-300' : 'text-zinc-600 group-hover:text-zinc-400'
+                      ].join(' ')}
+                    >
+                      {d.date.slice(8)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="mt-5 flex h-32 flex-col items-center justify-center gap-2 text-center">
+              <BarChart3 className="h-8 w-8 text-zinc-700" />
+              <p className="text-xs text-zinc-500">Немає нарахувань за обраний період</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -185,7 +209,7 @@ export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props
               {formatDayLabel(selected.date)}
             </p>
           </motion.div>
-        ) : (
+        ) : hasActivity ? (
           <motion.p
             key="hint"
             initial={{ opacity: 0 }}
@@ -195,7 +219,7 @@ export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props
           >
             Натисніть на стовпчик графіка, щоб переглянути деталі за день
           </motion.p>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   )

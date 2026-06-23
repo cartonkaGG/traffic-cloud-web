@@ -162,12 +162,26 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
     let detail: string | undefined
     let errKey: string | undefined
     try {
-      const j = JSON.parse(text) as { hint?: unknown; error?: unknown; detail?: unknown }
+      const j = JSON.parse(text) as {
+        hint?: unknown
+        error?: unknown
+        detail?: unknown
+        minUsd?: unknown
+      }
       if (typeof j.hint === 'string') hint = j.hint
       if (typeof j.detail === 'string') detail = j.detail
       if (typeof j.error === 'string') errKey = j.error
-    } catch {
-      /* not JSON */
+      if (errKey === 'below_min_withdrawal') {
+        const min = typeof j.minUsd === 'number' ? j.minUsd : 10
+        throw new Error(`Мінімальна сума для виведення — $${min.toFixed(2)}`)
+      }
+      if (errKey === 'insufficient_balance') {
+        throw new Error('Недостатньо коштів на балансі')
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('Мінімальна сума')) throw e
+      if (e instanceof Error && e.message === 'Недостатньо коштів на балансі') throw e
+      /* not JSON or other */
     }
     if (res.status === 401) {
       const shouldReauth =
@@ -1248,6 +1262,7 @@ export type AffiliateBalanceInfo = {
   totalEarnedUsd: number
   totalWithdrawnUsd: number
   totalJoins: number
+  minWithdrawalUsd: number
   today: { joins: number; leaves: number; earnedUsd: number; activeJoins: number }
 }
 
