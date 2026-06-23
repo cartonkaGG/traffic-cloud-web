@@ -97,6 +97,11 @@ export function AffiliateShell(): JSX.Element {
 
         <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3 text-[11px] leading-relaxed text-zinc-500">
           Обирайте офер, отримуйте посилання та заробляйте за кожного підписника в Telegram-канал.
+          {import.meta.env.VITE_PANEL_BUILD_ID ? (
+            <div className="mt-2 font-mono text-[9px] text-zinc-600">
+              build {String(import.meta.env.VITE_PANEL_BUILD_ID).slice(0, 12)}
+            </div>
+          ) : null}
         </div>
       </Sidebar>
 

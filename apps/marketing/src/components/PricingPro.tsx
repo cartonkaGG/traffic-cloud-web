@@ -4,7 +4,7 @@ import { ArrowRight, Check, Crown, Sparkles } from 'lucide-react'
 import { ScrollReveal } from './ScrollReveal'
 import { fetchPublicBillingPlan } from '../lib/api'
 
-const PANEL_ENTRY_HREF = '/app/auth'
+const PANEL_ENTRY_HREF = '/app/affiliate'
 
 function formatUsd(n: number): string {
   if (Number.isInteger(n)) return String(n)
