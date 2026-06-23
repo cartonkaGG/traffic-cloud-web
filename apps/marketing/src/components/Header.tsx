@@ -12,8 +12,6 @@ interface HeaderProps {
   activeSection: string;
 }
 
-const PANEL_OFFERS = '/app/affiliate/offers';
-const PANEL_STATS = '/app/affiliate/stats';
 
 export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const { isAdmin } = usePanelAdmin();
@@ -24,8 +22,8 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const navItems = affiliate
     ? [
         { name: 'Головна', id: 'hero', href: null as string | null },
-        { name: 'Офери', id: 'offers', href: PANEL_OFFERS },
-        { name: 'Статистика', id: 'stats', href: PANEL_STATS },
+        { name: 'Як працює', id: 'offers', href: null },
+        { name: 'Аналітика', id: 'stats', href: null },
         { name: 'Контакти', id: 'contact', href: null }
       ]
     : [

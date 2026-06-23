@@ -1,23 +1,30 @@
-import { ChevronDown, Shield, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { ChevronDown, TrendingUp } from 'lucide-react';
 import CloudLogo3D from './CloudLogo3D';
 import HeroAmbient from './HeroAmbient';
 import { ScrollReveal } from './ScrollReveal';
 import { FEATURES } from '../config/features';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
 import { usePanelSession } from '../lib/usePanelSession';
-import { openPanelFromSite } from '../lib/openPanel';
 
 interface HeroProps {
   onContactClick: () => void;
 }
 
-const PANEL_OFFERS = '/app/affiliate/offers';
-const PANEL_STATS = '/app/affiliate/stats';
+const PANEL_ENTRY = '/app/affiliate/offers';
+
+function panelAuthHref(): string {
+  return `/app/auth?redirect=${encodeURIComponent(PANEL_ENTRY)}`;
+}
 
 export default function Hero({ onContactClick }: HeroProps) {
   const { isAdmin } = usePanelAdmin();
   const { isLoggedIn } = usePanelSession();
   const affiliate = FEATURES.affiliateOnlyMode;
+
+  const scrollToOffers = useCallback(() => {
+    document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
   return (
     <section
@@ -52,8 +59,8 @@ export default function Hero({ onContactClick }: HeroProps) {
                 {affiliate ? (
                   <>
                     Обирай офери Telegram-каналів, отримуй{' '}
-                    <span className="text-emerald-200/95">унікальне посилання</span> і заробляй за
-                    кожного підписника. Статистика та виведення — в особистому кабінеті.
+                    <span className="text-emerald-200/95">унікальні посилання</span> (до 10 на офер) і
+                    заробляй за кожного підписника. Статистика та виведення — в особистому кабінеті.
                   </>
                 ) : (
                   <>
@@ -67,29 +74,21 @@ export default function Hero({ onContactClick }: HeroProps) {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => openPanelFromSite('admin')}
-                    className="hero-cta-secondary min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-amber-100 text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 border border-amber-500/35 bg-amber-950/25 hover:bg-amber-950/40 touch-manipulation"
-                  >
-                    <Shield className="w-4 h-4 text-amber-300" />
-                    <span>Адмін</span>
-                  </button>
-                ) : null}
                 <a
-                  href={PANEL_OFFERS}
+                  href={isLoggedIn ? PANEL_ENTRY : panelAuthHref()}
                   className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 touch-manipulation bg-gradient-to-r from-emerald-500 to-cyan-500"
                 >
-                  <span>{affiliate ? 'Офери' : isLoggedIn ? 'Панель' : 'Увійти в панель'}</span>
+                  <span>{isLoggedIn ? 'Відкрити панель' : 'Увійти в панель'}</span>
                 </a>
                 {affiliate ? (
-                  <a
-                    href={PANEL_STATS}
-                    className="hero-cta-secondary min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-gray-200 text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center touch-manipulation border border-white/10"
+                  <button
+                    type="button"
+                    onClick={scrollToOffers}
+                    className="hero-cta-secondary min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-gray-200 text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 touch-manipulation border border-white/10"
                   >
-                    Статистика
-                  </a>
+                    Як це працює
+                    <ChevronDown className="h-4 w-4 opacity-70" />
+                  </button>
                 ) : null}
                 <button
                   type="button"
@@ -99,6 +98,15 @@ export default function Hero({ onContactClick }: HeroProps) {
                   Зв&apos;язатися
                 </button>
               </div>
+
+              {affiliate && isAdmin ? (
+                <p className="mt-4 text-xs text-zinc-500">
+                  Адмін: кнопка в шапці сайту або{' '}
+                  <a href="/app/admin/affiliate" className="text-amber-300/90 hover:underline">
+                    керування оферами
+                  </a>
+                </p>
+              ) : null}
             </div>
           </ScrollReveal>
 

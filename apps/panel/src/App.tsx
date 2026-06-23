@@ -22,12 +22,8 @@ import { InboxPage } from './pages/InboxPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AdminPage } from './pages/AdminPage'
-const AffiliateOffersPage = lazy(() =>
-  import('./pages/AffiliateOffersPage').then((m) => ({ default: m.AffiliateOffersPage }))
-)
-const AffiliateStatsPage = lazy(() =>
-  import('./pages/AffiliateStatsPage').then((m) => ({ default: m.AffiliateStatsPage }))
-)
+import { AffiliateOffersPage } from './pages/AffiliateOffersPage'
+import { AffiliateStatsPage } from './pages/AffiliateStatsPage'
 const AdminAffiliatePageLazy = lazy(() =>
   import('./pages/AdminAffiliatePage').then((m) => ({ default: m.AdminAffiliatePage }))
 )
@@ -220,7 +216,7 @@ export default function App(): JSX.Element {
   const affiliateOnly = FEATURES.affiliateOnlyMode
 
   return (
-    <>
+    <div className="min-h-screen h-full">
       <SessionRevokedListener />
       <PanelVersionSync />
       {!affiliateOnly ? <DesktopUpdateBanner /> : null}
@@ -335,6 +331,6 @@ export default function App(): JSX.Element {
           </>
         )}
       </Routes>
-    </>
+    </div>
   )
 }

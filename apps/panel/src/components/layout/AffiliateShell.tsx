@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import { BarChart3, Home, Link2, Shield } from 'lucide-react'
+import { BarChart3, Home, Link2, Menu, Shield, X } from 'lucide-react'
 import { Suspense } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AccountMenu } from '@/components/account/AccountMenu'
@@ -36,10 +37,9 @@ function NavItemLink({ item }: { item: NavItem }): JSX.Element {
           whileTap={{ scale: 0.98 }}
         >
           {isActive ? (
-            <motion.span
-              layoutId="affiliate-nav-pill"
+            <span
               className="absolute inset-0 rounded-xl bg-gradient-to-r from-sky-500/15 to-emerald-500/10 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.25)]"
-              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              aria-hidden
             />
           ) : null}
           <Icon
@@ -56,6 +56,7 @@ function NavItemLink({ item }: { item: NavItem }): JSX.Element {
 export function AffiliateShell(): JSX.Element {
   const { isAdmin } = useAuth()
   const { pathname } = useLocation()
+  const [mobileNav, setMobileNav] = useState(false)
   const meta = ROUTE_META[pathname] ?? ROUTE_META['/affiliate/offers']
 
   const mainNav: NavItem[] = [
@@ -65,10 +66,12 @@ export function AffiliateShell(): JSX.Element {
   const systemNav: NavItem[] = isAdmin
     ? [{ to: '/admin/affiliate', label: 'Адмін', icon: Shield }]
     : []
+  const allNav = [...mainNav, ...systemNav]
 
   return (
-    <div className="flex h-full min-h-0 bg-[#06080d]">
-      <Sidebar>
+    <div className="flex min-h-screen h-full bg-[#06080d]">
+      <div className="hidden lg:contents">
+        <Sidebar>
         <div className="mb-8 px-2">
           <PanelBrand layout="sidebar" homeTo="/affiliate/offers" />
         </div>
@@ -103,8 +106,9 @@ export function AffiliateShell(): JSX.Element {
           До 10 посилань на офер · окрема статистика кожного лінка.
         </div>
       </Sidebar>
+      </div>
 
-      <div className="relative flex min-w-0 flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
@@ -114,18 +118,29 @@ export function AffiliateShell(): JSX.Element {
           }}
         />
 
-        <header className="relative z-10 flex items-center justify-between gap-4 border-b border-white/[0.06] px-6 py-4 backdrop-blur-xl sm:px-8">
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
+        <header className="relative z-10 flex items-center justify-between gap-4 border-b border-white/[0.06] px-4 py-4 backdrop-blur-xl sm:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileNav(true)}
+              className="lg:hidden rounded-xl border border-white/[0.08] p-2 text-zinc-400"
+              aria-label="Меню"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="min-w-0"
+            >
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-400/80">
               {meta.kicker}
             </div>
-            <h1 className="text-lg font-semibold text-white sm:text-xl">{meta.title}</h1>
-          </motion.div>
+            <h1 className="truncate text-lg font-semibold text-white sm:text-xl">{meta.title}</h1>
+            </motion.div>
+          </div>
           <div className="flex items-center gap-2">
             <a
               href={getMarketingHomeUrl()}
@@ -143,6 +158,52 @@ export function AffiliateShell(): JSX.Element {
             <Outlet />
           </Suspense>
         </main>
+
+        <nav className="fixed bottom-0 left-0 right-0 z-20 flex border-t border-white/[0.08] bg-[#06080d]/95 backdrop-blur-xl lg:hidden">
+          {allNav.map((item) => {
+            const Icon = item.icon
+            const active = item.end ? pathname === item.to : pathname.startsWith(item.to)
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={`flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium ${
+                  active ? 'text-sky-300' : 'text-zinc-500'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                {item.label}
+              </NavLink>
+            )
+          })}
+        </nav>
+
+        {mobileNav ? (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/60"
+              aria-label="Закрити"
+              onClick={() => setMobileNav(false)}
+            />
+            <aside className="absolute left-0 top-0 flex h-full w-[min(280px,85vw)] flex-col border-r border-white/[0.08] bg-[#06080d] p-5">
+              <div className="mb-6 flex items-center justify-between">
+                <PanelBrand layout="sidebar" homeTo="/affiliate/offers" />
+                <button type="button" onClick={() => setMobileNav(false)} className="text-zinc-500">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-1">
+                {allNav.map((item) => (
+                  <div key={item.to} onClick={() => setMobileNav(false)}>
+                    <NavItemLink item={item} />
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </div>
+        ) : null}
       </div>
     </div>
   )
