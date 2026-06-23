@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Copy, Link2, Loader2, RefreshCw } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { BarChart3, Copy, Link2, Loader2, RefreshCw, RotateCcw } from 'lucide-react'
 import {
   apiAffiliateCategories,
   apiAffiliateGetLink,
@@ -9,6 +10,7 @@ import {
   type AffiliateLinkRow,
   type AffiliateOffer
 } from '@/lib/api'
+import { AFFILIATE_STATS_PATH } from '@/lib/panelRoutes'
 
 export function AffiliateOffersPage(): JSX.Element {
   const [categories, setCategories] = useState<AffiliateCategory[]>([])
@@ -49,10 +51,10 @@ export function AffiliateOffersPage(): JSX.Element {
     return m
   }, [myLinks])
 
-  async function getLink(offerId: string): Promise<void> {
+  async function getLink(offerId: string, force = false): Promise<void> {
     setLinkLoading(offerId)
     try {
-      const { link } = await apiAffiliateGetLink(offerId)
+      const { link } = await apiAffiliateGetLink(offerId, force)
       setMyLinks((prev) => {
         const rest = prev.filter((l) => l.offerId !== offerId)
         const offer = offers.find((o) => o.id === offerId)
@@ -176,7 +178,10 @@ export function AffiliateOffersPage(): JSX.Element {
                           <Link2 className="h-3.5 w-3.5" />
                           Ваше посилання
                           {link.joins != null ? (
-                            <span className="ml-auto text-cyan-400">{link.joins} підписників</span>
+                            <span className="ml-auto text-cyan-400">
+                              {link.joins} підписників
+                              {(link.leaves ?? 0) > 0 ? ` · −${link.leaves} відп.` : ''}
+                            </span>
                           ) : null}
                         </div>
                         <div className="mt-2 flex gap-2">
@@ -193,6 +198,26 @@ export function AffiliateOffersPage(): JSX.Element {
                             <Copy className="h-3.5 w-3.5" />
                             {copied === link.id ? 'OK' : 'Копіювати'}
                           </button>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Link
+                            to={`${AFFILIATE_STATS_PATH}?offer=${encodeURIComponent(offer.id)}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-200 hover:bg-cyan-500/15"
+                          >
+                            <BarChart3 className="h-3.5 w-3.5" />
+                            Статистика оферу
+                          </Link>
+                          {(link.joins ?? 0) === 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => void getLink(offer.id, true)}
+                              disabled={linkLoading === offer.id}
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/[0.1] px-3 py-1.5 text-xs text-zinc-400 hover:text-white disabled:opacity-50"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Перестворити посилання
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     ) : (

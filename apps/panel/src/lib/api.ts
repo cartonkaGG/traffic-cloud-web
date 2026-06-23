@@ -1232,6 +1232,8 @@ export type AffiliateLinkRow = {
   categoryName?: string
   inviteLink: string
   joins?: number
+  totalJoins?: number
+  leaves?: number
   payoutPerJoinUsd?: number
   createdAt: string
 }
@@ -1273,20 +1275,30 @@ export async function apiAffiliateOffers(category?: string): Promise<{ items: Af
   return fetchJson(`/v1/affiliate/offers${q}`)
 }
 
-export async function apiAffiliateGetLink(offerId: string): Promise<{ link: AffiliateLinkRow }> {
-  return fetchJson(`/v1/affiliate/offers/${offerId}/link`, { method: 'POST' })
+export async function apiAffiliateGetLink(
+  offerId: string,
+  force = false
+): Promise<{ link: AffiliateLinkRow }> {
+  const q = force ? '?force=1' : ''
+  return fetchJson(`/v1/affiliate/offers/${offerId}/link${q}`, { method: 'POST' })
 }
 
 export async function apiAffiliateMyLinks(): Promise<{ items: AffiliateLinkRow[] }> {
   return fetchJson('/v1/affiliate/my-links')
 }
 
-export async function apiAffiliateBalance(): Promise<AffiliateBalanceInfo> {
-  return fetchJson('/v1/affiliate/balance')
+export async function apiAffiliateBalance(offerId?: string): Promise<AffiliateBalanceInfo> {
+  const q = offerId ? `?offerId=${encodeURIComponent(offerId)}` : ''
+  return fetchJson(`/v1/affiliate/balance${q}`)
 }
 
-export async function apiAffiliateStats(days = 14): Promise<{ daily: AffiliateDailyStat[] }> {
-  return fetchJson(`/v1/affiliate/stats?days=${days}`)
+export async function apiAffiliateStats(
+  days = 14,
+  offerId?: string
+): Promise<{ daily: AffiliateDailyStat[]; offerId: string | null }> {
+  const params = new URLSearchParams({ days: String(days) })
+  if (offerId) params.set('offerId', offerId)
+  return fetchJson(`/v1/affiliate/stats?${params}`)
 }
 
 export async function apiAffiliateWithdrawals(): Promise<{ items: AffiliateWithdrawalRow[] }> {
@@ -1388,6 +1400,41 @@ export async function apiAdminSetupAffiliateBotWebhook(
   botId: string
 ): Promise<{ ok: boolean; webhookUrl: string }> {
   return fetchJson(`/v1/admin/affiliate/bots/${botId}/setup-webhook`, { method: 'POST' })
+}
+
+export async function apiAdminAffiliateBotWebhookStatus(botId: string): Promise<{
+  expectedUrl: string
+  configured: boolean
+  telegram: { url?: string; allowedUpdates?: string[]; error?: string }
+}> {
+  return fetchJson(`/v1/admin/affiliate/bots/${botId}/webhook-status`)
+}
+
+export type AdminAffiliateLinkRow = {
+  id: string
+  userId: string
+  userEmail: string
+  offerId: string
+  offerTitle: string
+  categoryName: string
+  inviteLink: string
+  joins: number
+  totalJoins: number
+  leaves: number
+  earnedUsd: number
+  payoutPerJoinUsd: number
+  createdAt: string
+}
+
+export async function apiAdminAffiliateLinks(filters?: {
+  offerId?: string
+  userId?: string
+}): Promise<{ items: AdminAffiliateLinkRow[] }> {
+  const params = new URLSearchParams()
+  if (filters?.offerId) params.set('offerId', filters.offerId)
+  if (filters?.userId) params.set('userId', filters.userId)
+  const q = params.toString() ? `?${params}` : ''
+  return fetchJson(`/v1/admin/affiliate/links${q}`)
 }
 
 export async function apiAdminDeleteAffiliateBot(botId: string): Promise<{ ok: boolean }> {

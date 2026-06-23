@@ -14,9 +14,11 @@ import {
   apiAdminAddAffiliateBotChannel,
   apiAdminAffiliateBots,
   apiAdminAffiliateCategories,
+  apiAdminAffiliateLinks,
   apiAdminAffiliateOffers,
   apiAdminAffiliateOverview,
   apiAdminAffiliateWithdrawals,
+  apiAdminAffiliateBotWebhookStatus,
   apiAdminCreateAffiliateBot,
   apiAdminCreateAffiliateCategory,
   apiAdminCreateAffiliateOffer,
@@ -30,11 +32,12 @@ import {
   apiAdminVerifyAffiliateBot,
   type AdminAffiliateBot,
   type AdminAffiliateCategory,
+  type AdminAffiliateLinkRow,
   type AdminAffiliateOffer,
   type AffiliateWithdrawalRow
 } from '@/lib/api'
 
-type Tab = 'bots' | 'offers' | 'categories' | 'withdrawals'
+type Tab = 'bots' | 'offers' | 'links' | 'categories' | 'withdrawals'
 
 function affiliateErrorMessage(code: string): string {
   const map: Record<string, string> = {
@@ -110,6 +113,9 @@ export function AdminAffiliatePage(): JSX.Element {
   const [offers, setOffers] = useState<AdminAffiliateOffer[]>([])
   const [bots, setBots] = useState<AdminAffiliateBot[]>([])
   const [withdrawals, setWithdrawals] = useState<AffiliateWithdrawalRow[]>([])
+  const [partnerLinks, setPartnerLinks] = useState<AdminAffiliateLinkRow[]>([])
+  const [linkOfferFilter, setLinkOfferFilter] = useState('')
+  const [webhookInfo, setWebhookInfo] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -167,6 +173,24 @@ export function AdminAffiliatePage(): JSX.Element {
   useEffect(() => {
     if (tab === 'offers') void load()
   }, [tab])
+
+  const loadPartnerLinks = useCallback(async () => {
+    setBusy('links')
+    try {
+      const res = await apiAdminAffiliateLinks({
+        offerId: linkOfferFilter || undefined
+      })
+      setPartnerLinks(res.items)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Помилка')
+    } finally {
+      setBusy(null)
+    }
+  }, [linkOfferFilter])
+
+  useEffect(() => {
+    if (tab === 'links') void loadPartnerLinks()
+  }, [tab, loadPartnerLinks])
 
   async function createBot(e: FormEvent): Promise<void> {
     e.preventDefault()
@@ -360,6 +384,22 @@ export function AdminAffiliatePage(): JSX.Element {
     }
   }
 
+  async function checkBotWebhook(botId: string): Promise<void> {
+    setBusy(`wh-check-${botId}`)
+    try {
+      const info = await apiAdminAffiliateBotWebhookStatus(botId)
+      const tg = info.telegram
+      const summary = tg.error
+        ? `Помилка: ${tg.error}`
+        : `URL: ${tg.url || '—'}\nОчікується: ${info.expectedUrl}\nПодії: ${(tg.allowedUpdates ?? []).join(', ') || '—'}`
+      setWebhookInfo((prev) => ({ ...prev, [botId]: summary }))
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function toggleOfferActive(o: AdminAffiliateOffer): Promise<void> {
     setBusy(`toggle-${o.id}`)
     try {
@@ -422,7 +462,7 @@ export function AdminAffiliatePage(): JSX.Element {
       ) : null}
 
       <div className="mt-8 flex flex-wrap gap-2 border-b border-white/[0.06] pb-2">
-        {(['bots', 'offers', 'categories', 'withdrawals'] as Tab[]).map((t) => (
+        {(['bots', 'offers', 'links', 'categories', 'withdrawals'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -432,7 +472,15 @@ export function AdminAffiliatePage(): JSX.Element {
               tab === t ? 'bg-violet-500/15 text-violet-200' : 'text-zinc-500 hover:text-zinc-300'
             ].join(' ')}
           >
-            {t === 'bots' ? 'Боти' : t === 'offers' ? 'Офери' : t === 'categories' ? 'Категорії' : 'Виведення'}
+            {t === 'bots'
+              ? 'Боти'
+              : t === 'offers'
+                ? 'Офери'
+                : t === 'links'
+                  ? 'Посилання'
+                  : t === 'categories'
+                    ? 'Категорії'
+                    : 'Виведення'}
           </button>
         ))}
       </div>
@@ -528,7 +576,17 @@ export function AdminAffiliatePage(): JSX.Element {
                       )}
                     </button>
                   ) : (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                      <button
+                        type="button"
+                        onClick={() => void checkBotWebhook(b.id)}
+                        disabled={busy === `wh-check-${b.id}`}
+                        className="rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-400 hover:text-white"
+                      >
+                        {busy === `wh-check-${b.id}` ? '…' : 'Перевірити'}
+                      </button>
+                    </div>
                   )}
                   <button
                     type="button"
@@ -544,6 +602,11 @@ export function AdminAffiliatePage(): JSX.Element {
                     )}
                   </button>
                 </div>
+                {webhookInfo[b.id] ? (
+                  <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-white/[0.06] bg-black/30 p-2 text-[10px] text-zinc-400">
+                    {webhookInfo[b.id]}
+                  </pre>
+                ) : null}
                 {b.channels.length > 0 ? (
                   <ul className="mt-4 flex flex-wrap gap-2">
                     {b.channels.map((c) => (
@@ -806,6 +869,84 @@ export function AdminAffiliatePage(): JSX.Element {
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {tab === 'links' ? (
+        <div className="mt-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={linkOfferFilter}
+              onChange={(e) => setLinkOfferFilter(e.target.value)}
+              className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white"
+            >
+              <option value="">Усі офери</option>
+              {offers.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void loadPartnerLinks()}
+              disabled={busy === 'links'}
+              className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2 text-sm text-zinc-400"
+            >
+              <RefreshCw className={`h-4 w-4 ${busy === 'links' ? 'animate-spin' : ''}`} />
+              Оновити
+            </button>
+          </div>
+
+          {partnerLinks.length === 0 ? (
+            <p className="text-sm text-zinc-500">Посилання партнерів ще не створені.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-zinc-500">
+                  <tr>
+                    <th className="px-3 py-2">Партнер</th>
+                    <th className="px-3 py-2">Офер</th>
+                    <th className="px-3 py-2">Підп.</th>
+                    <th className="px-3 py-2">Заробіток</th>
+                    <th className="px-3 py-2">Посилання</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {partnerLinks.map((l) => (
+                    <tr key={l.id} className="border-b border-white/[0.04] text-zinc-300">
+                      <td className="px-3 py-2">
+                        <div className="text-white">{l.userEmail}</div>
+                        <div className="text-[10px] text-zinc-600">{new Date(l.createdAt).toLocaleDateString()}</div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div>{l.offerTitle}</div>
+                        <div className="text-[10px] text-zinc-600">{l.categoryName}</div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="text-cyan-300">{l.joins}</span>
+                        {l.leaves > 0 ? (
+                          <span className="text-zinc-500"> / −{l.leaves}</span>
+                        ) : null}
+                        <div className="text-[10px] text-zinc-600">всього {l.totalJoins}</div>
+                      </td>
+                      <td className="px-3 py-2 text-emerald-300">${l.earnedUsd.toFixed(2)}</td>
+                      <td className="px-3 py-2">
+                        <a
+                          href={l.inviteLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="break-all font-mono text-[11px] text-violet-300 hover:underline"
+                        >
+                          {l.inviteLink}
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ) : null}
 

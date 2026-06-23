@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { DollarSign, Loader2, RefreshCw, Send, TrendingUp, Users, Wallet } from 'lucide-react'
 import { AffiliateStatsChart } from '@/components/affiliate/AffiliateStatsChart'
 import {
   apiAffiliateBalance,
+  apiAffiliateMyLinks,
   apiAffiliateRequestWithdrawal,
   apiAffiliateStats,
   apiAffiliateWithdrawals,
   type AffiliateBalanceInfo,
+  type AffiliateLinkRow,
   type AffiliateWithdrawalRow
 } from '@/lib/api'
 
@@ -22,9 +25,13 @@ function withdrawalStatusLabel(s: string): string {
 }
 
 export function AffiliateStatsPage(): JSX.Element {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const offerId = searchParams.get('offer') ?? ''
+
   const [balance, setBalance] = useState<AffiliateBalanceInfo | null>(null)
   const [daily, setDaily] = useState<{ date: string; joins: number; leaves: number; earnedUsd: number }[]>([])
   const [withdrawals, setWithdrawals] = useState<AffiliateWithdrawalRow[]>([])
+  const [myLinks, setMyLinks] = useState<AffiliateLinkRow[]>([])
   const [loading, setLoading] = useState(true)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawWallet, setWithdrawWallet] = useState('')
@@ -32,28 +39,44 @@ export function AffiliateStatsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [withdrawOk, setWithdrawOk] = useState(false)
 
+  const selectedOffer = useMemo(
+    () => myLinks.find((l) => l.offerId === offerId) ?? null,
+    [myLinks, offerId]
+  )
+
   const loadStats = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [bal, stats, wds] = await Promise.all([
-        apiAffiliateBalance(),
-        apiAffiliateStats(14),
-        apiAffiliateWithdrawals()
+      const filterOffer = offerId || undefined
+      const [bal, stats, wds, links] = await Promise.all([
+        apiAffiliateBalance(filterOffer),
+        apiAffiliateStats(14, filterOffer),
+        apiAffiliateWithdrawals(),
+        apiAffiliateMyLinks()
       ])
       setBalance(bal)
       setDaily(stats.daily)
       setWithdrawals(wds.items)
+      setMyLinks(links.items)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Помилка завантаження')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [offerId])
 
   useEffect(() => {
     void loadStats()
   }, [loadStats])
+
+  function onOfferFilterChange(nextOfferId: string): void {
+    if (nextOfferId) {
+      setSearchParams({ offer: nextOfferId })
+    } else {
+      setSearchParams({})
+    }
+  }
 
   async function submitWithdraw(e: FormEvent): Promise<void> {
     e.preventDefault()
@@ -80,7 +103,32 @@ export function AffiliateStatsPage(): JSX.Element {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <p className="text-sm text-zinc-500">Баланс, діаграми та виведення коштів.</p>
+        <div>
+          <p className="text-sm text-zinc-500">Баланс, діаграми та виведення коштів.</p>
+          {myLinks.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-zinc-600">Офер:</span>
+              <select
+                value={offerId}
+                onChange={(e) => onOfferFilterChange(e.target.value)}
+                className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-1.5 text-sm text-white"
+              >
+                <option value="">Усі офери</option>
+                {myLinks.map((l) => (
+                  <option key={l.offerId} value={l.offerId}>
+                    {l.offerTitle ?? l.offerId}
+                    {l.joins != null ? ` (${l.joins} підп.)` : ''}
+                  </option>
+                ))}
+              </select>
+              {selectedOffer ? (
+                <span className="text-xs text-zinc-500">
+                  {selectedOffer.joins ?? 0} активних · {selectedOffer.leaves ?? 0} відписок
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={() => void loadStats()}
@@ -106,15 +154,30 @@ export function AffiliateStatsPage(): JSX.Element {
           {balance ? (
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { label: 'Баланс', value: usd(balance.balanceUsd), icon: Wallet, accent: 'text-emerald-300' },
                 {
-                  label: 'Сьогодні підписників',
+                  label: offerId ? 'Баланс (загалом)' : 'Баланс',
+                  value: usd(balance.balanceUsd),
+                  icon: Wallet,
+                  accent: 'text-emerald-300'
+                },
+                {
+                  label: offerId ? 'Підписників (офер)' : 'Сьогодні підписників',
                   value: `${balance.today.joins}${balance.today.leaves ? ` (−${balance.today.leaves} відп.)` : ''}`,
                   icon: Users,
                   accent: 'text-cyan-300'
                 },
-                { label: 'Сьогодні заробіток', value: usd(balance.today.earnedUsd), icon: DollarSign, accent: 'text-amber-200' },
-                { label: 'Активних підписників', value: String(balance.today.activeJoins ?? balance.totalJoins), icon: TrendingUp, accent: 'text-violet-300' }
+                {
+                  label: offerId ? 'Заробіток оферу сьогодні' : 'Сьогодні заробіток',
+                  value: usd(balance.today.earnedUsd),
+                  icon: DollarSign,
+                  accent: 'text-amber-200'
+                },
+                {
+                  label: offerId ? 'Активних (офер)' : 'Активних підписників',
+                  value: String(balance.today.activeJoins ?? balance.totalJoins),
+                  icon: TrendingUp,
+                  accent: 'text-violet-300'
+                }
               ].map(({ label, value, icon: Icon, accent }) => (
                 <div
                   key={label}
