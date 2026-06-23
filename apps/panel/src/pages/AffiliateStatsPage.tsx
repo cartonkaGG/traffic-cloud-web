@@ -275,6 +275,16 @@ export function AffiliateStatsPage(): JSX.Element {
             </div>
           ) : null}
 
+          {daily.length > 0 ? (
+            <div className="mt-8">
+              <AffiliateStatsChart
+                daily={daily}
+                selectedDate={selectedChartDate}
+                onSelectDate={setSelectedChartDate}
+              />
+            </div>
+          ) : null}
+
           <section className="mt-8">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-white">Методи заливу</h3>
@@ -287,16 +297,6 @@ export function AffiliateStatsPage(): JSX.Element {
               showOffer={!offerId}
             />
           </section>
-
-          {daily.length > 0 ? (
-            <div className="mt-8">
-              <AffiliateStatsChart
-                daily={daily}
-                selectedDate={selectedChartDate}
-                onSelectDate={setSelectedChartDate}
-              />
-            </div>
-          ) : null}
 
           <section className="mt-10 grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e14]/60 p-5">

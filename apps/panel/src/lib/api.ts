@@ -1327,6 +1327,10 @@ export async function apiAffiliateRepairLink(linkId: string): Promise<{ link: Af
   return fetchJson(`/v1/affiliate/links/${linkId}/repair`, { method: 'POST' })
 }
 
+export async function apiAffiliateDeleteLink(linkId: string): Promise<{ ok: boolean }> {
+  return fetchJson(`/v1/affiliate/links/${linkId}`, { method: 'DELETE' })
+}
+
 export async function apiAffiliateGetLink(
   offerId: string,
   force = false,
@@ -1500,6 +1504,22 @@ export async function apiAdminAffiliateLinks(filters?: {
   if (filters?.userId) params.set('userId', filters.userId)
   const q = params.toString() ? `?${params}` : ''
   return fetchJson(`/v1/admin/affiliate/links${q}`)
+}
+
+export async function apiAdminDeleteAffiliateLink(
+  linkId: string,
+  force = false
+): Promise<{ ok: boolean }> {
+  const q = force ? '?force=1' : ''
+  return fetchJson(`/v1/admin/affiliate/links/${linkId}${q}`, { method: 'DELETE' })
+}
+
+export async function apiAdminDeleteOfferLinks(
+  offerId: string,
+  force = false
+): Promise<{ ok: boolean; deleted: number }> {
+  const q = force ? '?force=1' : ''
+  return fetchJson(`/v1/admin/affiliate/offers/${offerId}/links${q}`, { method: 'DELETE' })
 }
 
 export async function apiAdminDeleteAffiliateBot(botId: string): Promise<{ ok: boolean }> {

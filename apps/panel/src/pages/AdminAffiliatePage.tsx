@@ -24,7 +24,9 @@ import {
   apiAdminCreateAffiliateOffer,
   apiAdminDeleteAffiliateBot,
   apiAdminDeleteAffiliateBotChannel,
+  apiAdminDeleteAffiliateLink,
   apiAdminDeleteAffiliateOffer,
+  apiAdminDeleteOfferLinks,
   apiAdminSetupAffiliateBotWebhook,
   apiAdminUpdateAffiliateCategory,
   apiAdminUpdateAffiliateOffer,
@@ -191,6 +193,52 @@ export function AdminAffiliatePage(): JSX.Element {
   useEffect(() => {
     if (tab === 'links') void loadPartnerLinks()
   }, [tab, loadPartnerLinks])
+
+  async function deletePartnerLink(linkId: string, joins: number): Promise<void> {
+    const force =
+      joins > 0 &&
+      window.confirm(
+        'У цього посилання є активні підписники. Видалити примусово? Баланс партнера буде скориговано.'
+      )
+    if (joins > 0 && !force) return
+    if (!window.confirm('Видалити посилання? Воно буде відкликано в Telegram.')) return
+    setBusy(`del-${linkId}`)
+    setError(null)
+    try {
+      await apiAdminDeleteAffiliateLink(linkId, force)
+      await loadPartnerLinks()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не вдалося видалити')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function deleteAllOfferLinks(): Promise<void> {
+    if (!linkOfferFilter) return
+    const offer = offers.find((o) => o.id === linkOfferFilter)
+    const withJoins = partnerLinks.filter((l) => l.joins > 0).length
+    const force =
+      withJoins > 0 &&
+      window.confirm(
+        `${withJoins} посилань мають активних підписників. Видалити всі примусово? Баланси буде скориговано.`
+      )
+    if (withJoins > 0 && !force) return
+    if (!window.confirm(`Видалити всі посилання оферу «${offer?.title ?? ''}»?`)) return
+    setBusy('del-all')
+    setError(null)
+    try {
+      const res = await apiAdminDeleteOfferLinks(linkOfferFilter, force)
+      await loadPartnerLinks()
+      if (res.deleted === 0) {
+        setError('Немає посилань для видалення (можливо, у всіх є активні підписники)')
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не вдалося видалити')
+    } finally {
+      setBusy(null)
+    }
+  }
 
   async function createBot(e: FormEvent): Promise<void> {
     e.preventDefault()
@@ -896,6 +944,21 @@ export function AdminAffiliatePage(): JSX.Element {
               <RefreshCw className={`h-4 w-4 ${busy === 'links' ? 'animate-spin' : ''}`} />
               Оновити
             </button>
+            {linkOfferFilter ? (
+              <button
+                type="button"
+                onClick={() => void deleteAllOfferLinks()}
+                disabled={busy === 'del-all' || partnerLinks.length === 0}
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/15 disabled:opacity-50"
+              >
+                {busy === 'del-all' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Видалити всі посилання оферу
+              </button>
+            ) : null}
           </div>
 
           {partnerLinks.length === 0 ? (
@@ -911,6 +974,7 @@ export function AdminAffiliatePage(): JSX.Element {
                     <th className="px-3 py-2">Підп.</th>
                     <th className="px-3 py-2">Заробіток</th>
                     <th className="px-3 py-2">Посилання</th>
+                    <th className="px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -942,6 +1006,21 @@ export function AdminAffiliatePage(): JSX.Element {
                         >
                           {l.inviteLink}
                         </a>
+                      </td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          disabled={busy === `del-${l.id}`}
+                          onClick={() => void deletePartnerLink(l.id, l.joins)}
+                          className="cursor-pointer rounded-lg border border-red-400/20 p-2 text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                          title="Видалити посилання"
+                        >
+                          {busy === `del-${l.id}` ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
                       </td>
                     </tr>
                   ))}

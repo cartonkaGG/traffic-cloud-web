@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   apiAffiliateCategories,
   apiAffiliateCreateLink,
+  apiAffiliateDeleteLink,
   apiAffiliateMyLinks,
   apiAffiliateOffers,
   apiAffiliateRegenerateLink,
@@ -28,7 +29,8 @@ function linkErrorMessage(code: string): string {
     link_limit_reached: 'Максимум 10 посилань на один офер',
     telegram_invite_failed: 'Telegram не створив посилання — перевірте права бота',
     bot_not_configured: 'Бот не налаштований для цього оферу',
-    link_has_active_joins: 'Неможливо перестворити — є активні підписники'
+    link_has_active_joins: 'Неможливо перестворити — є активні підписники',
+    link_has_active_joins_delete: 'Спочатку дочекайтесь відписок або зверніться до адміна'
   }
   return map[code] ?? code
 }
@@ -151,6 +153,22 @@ export function AffiliateOffersPage(): JSX.Element {
     }
   }
 
+  async function deleteLink(linkId: string): Promise<void> {
+    if (!window.confirm('Видалити це посилання? Воно буде відкликано в Telegram.')) return
+    setLinkBusyId(linkId)
+    setError(null)
+    try {
+      await apiAffiliateDeleteLink(linkId)
+      setMyLinks((prev) => prev.filter((l) => l.id !== linkId))
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : 'Помилка'
+      const code = raw.replace(/\s*\(\d+\)\s*$/, '').trim()
+      setError(linkErrorMessage(code === 'link_has_active_joins' ? 'link_has_active_joins_delete' : code))
+    } finally {
+      setLinkBusyId(null)
+    }
+  }
+
   function copyLink(url: string, id: string): void {
     void navigator.clipboard.writeText(url)
     setCopied(id)
@@ -243,6 +261,7 @@ export function AffiliateOffersPage(): JSX.Element {
                 onRename={renameLink}
                 onRegenerate={regenerateLink}
                 onRepair={repairLink}
+                onDeleteLink={deleteLink}
               />
             ))
           )}

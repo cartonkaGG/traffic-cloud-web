@@ -30,6 +30,7 @@ type Props = {
   onRename: (linkId: string, label: string) => Promise<void>
   onRegenerate: (linkId: string) => Promise<void>
   onRepair: (linkId: string) => Promise<void>
+  onDeleteLink: (linkId: string) => Promise<void>
 }
 
 function usd(n: number): string {
@@ -48,7 +49,8 @@ export function AffiliateOfferCard({
   onCopy,
   onRename,
   onRegenerate,
-  onRepair
+  onRepair,
+  onDeleteLink
 }: Props): JSX.Element {
   const [newLabel, setNewLabel] = useState('')
   const totalJoins = links.reduce((s, l) => s + (l.joins ?? 0), 0)
@@ -154,6 +156,7 @@ export function AffiliateOfferCard({
                         onRename={onRename}
                         onRegenerate={onRegenerate}
                         onRepair={onRepair}
+                        onDelete={onDeleteLink}
                       />
                     ))}
                   </AnimatePresence>

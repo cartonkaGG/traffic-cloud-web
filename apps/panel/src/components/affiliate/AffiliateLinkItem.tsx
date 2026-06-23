@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  Trash2,
   Wrench
 } from 'lucide-react'
 import { useState } from 'react'
@@ -24,6 +25,7 @@ type Props = {
   onRename: (linkId: string, label: string) => Promise<void>
   onRegenerate: (linkId: string) => Promise<void>
   onRepair: (linkId: string) => Promise<void>
+  onDelete: (linkId: string) => Promise<void>
 }
 
 function joinLabel(link: AffiliateLinkRow, joinRequiresApproval?: boolean): string {
@@ -47,13 +49,15 @@ export function AffiliateLinkItem({
   onCopy,
   onRename,
   onRegenerate,
-  onRepair
+  onRepair,
+  onDelete
 }: Props): JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draftLabel, setDraftLabel] = useState(link.label ?? '')
   const isBusy = busyId === link.id
   const ready = link.isReady !== false && Boolean(link.inviteLink?.trim())
+  const canDelete = (link.joins ?? 0) === 0
 
   async function saveLabel(): Promise<void> {
     const next = draftLabel.trim()
@@ -200,6 +204,20 @@ export function AffiliateLinkItem({
                   <Pencil className="h-3.5 w-3.5" />
                   Перейменувати
                 </button>
+                {canDelete ? (
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      void onDelete(link.id)
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Видалити
+                  </button>
+                ) : null}
               </motion.div>
             </>
           ) : null}
