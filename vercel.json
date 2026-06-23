@@ -5,6 +5,18 @@
   "outputDirectory": "apps/marketing/dist",
   "rewrites": [
     {
+      "source": "/app/assets/:path*",
+      "destination": "/app/assets/:path*"
+    },
+    {
+      "source": "/app/ffmpeg/:path*",
+      "destination": "/app/ffmpeg/:path*"
+    },
+    {
+      "source": "/app/cloud-icon.png",
+      "destination": "/app/cloud-icon.png"
+    },
+    {
       "source": "/app",
       "destination": "/app/index.html"
     },
@@ -14,12 +26,7 @@
     },
     {
       "source": "/app/:path*",
-      "destination": "/app/index.html",
-      "missing": [
-        {
-          "type": "filesystem"
-        }
-      ]
+      "destination": "/app/index.html"
     }
   ],
   "headers": [
