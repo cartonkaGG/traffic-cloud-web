@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react'
-import { resolveIsPanelAdmin } from './panelAuth'
+import { getPanelAccessToken, getStoredPanelRole, resolveIsPanelAdmin } from './panelAuth'
 
 export function usePanelAdmin(): { isAdmin: boolean; ready: boolean } {
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [ready, setReady] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(() => getStoredPanelRole() === 'admin')
+  const [ready, setReady] = useState(() => !getPanelAccessToken() || getStoredPanelRole() === 'admin')
 
   useEffect(() => {
     let cancelled = false
+    const token = getPanelAccessToken()
+    if (!token) {
+      setIsAdmin(false)
+      setReady(true)
+      return
+    }
+    if (getStoredPanelRole() === 'admin') {
+      setIsAdmin(true)
+      setReady(true)
+      return
+    }
     const check = async (): Promise<void> => {
       const admin = await resolveIsPanelAdmin()
       if (!cancelled) {

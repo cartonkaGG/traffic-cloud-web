@@ -1,10 +1,10 @@
 import { FEATURES } from '@/config/features'
 import type { SubscriptionInfo } from '@/lib/api'
-import { FEATURES } from '@/config/features'
 import { hasPanelAccess } from '@/lib/subscriptionAccess'
 
 /** Головна сторінка партнерки (без підписки). */
-export const AFFILIATE_HOME_PATH = '/affiliate'
+export const AFFILIATE_HOME_PATH = '/affiliate/offers'
+export const AFFILIATE_STATS_PATH = '/affiliate/stats'
 
 /** Після входу — сторінка оформлення підписки (лише коли софти увімкнені). */
 export const BILLING_SUBSCRIBE_PATH = '/billing?gate=1'

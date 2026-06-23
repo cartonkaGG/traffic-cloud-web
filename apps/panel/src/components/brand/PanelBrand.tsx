@@ -15,7 +15,7 @@ export function PanelBrand({
   homeTo
 }: Props): JSX.Element {
   const markSize = layout === 'auth' ? 48 : layout === 'compact' ? 22 : 32
-  const target = homeTo === undefined ? (layout === 'auth' ? null : '/affiliate') : homeTo
+  const target = homeTo === undefined ? (layout === 'auth' ? null : '/affiliate/offers') : homeTo
 
   const inner = (
     <>

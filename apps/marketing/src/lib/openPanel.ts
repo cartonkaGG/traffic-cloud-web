@@ -2,7 +2,7 @@ type PanelEntry = 'affiliate' | 'admin'
 
 /** Відкрити веб-панель (партнерка / адмін оферів). */
 export function openPanelFromSite(entry: PanelEntry = 'affiliate'): void {
-  const webPath = entry === 'admin' ? '/app/admin/affiliate' : '/app/affiliate'
+  const webPath = entry === 'admin' ? '/app/admin/affiliate' : '/app/affiliate/offers'
   const targetUrl = `${window.location.origin}${webPath}`
   const deepLink = `trafficcloud://panel/affiliate?url=${encodeURIComponent(targetUrl)}`
 

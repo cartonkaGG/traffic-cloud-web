@@ -2,8 +2,8 @@ import { motion } from 'motion/react';
 import { BarChart3, Link2, TrendingUp, Wallet } from 'lucide-react';
 import { ScrollReveal, ScrollRevealStagger, staggerItem } from './ScrollReveal';
 
-const PANEL_OFFERS = '/app/affiliate';
-const PANEL_STATS = '/app/affiliate';
+const PANEL_OFFERS = '/app/affiliate/offers';
+const PANEL_STATS = '/app/affiliate/stats';
 
 export default function PartnerAffiliate() {
   const steps = [

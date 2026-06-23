@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, ArrowUpRight, MessageSquareCode, BarChart3, Link2, Shield } from 'lucide-react';
+import { Menu, X, MessageSquareCode, BarChart3, Link2, Shield } from 'lucide-react';
 import TrafficCloudMark from './brand/TrafficCloudMark';
 import { FEATURES } from '../config/features';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
 import { openPanelFromSite } from '../lib/openPanel';
+import SiteAuthMenu from './SiteAuthMenu';
 
 interface HeaderProps {
   onContactClick: () => void;
   activeSection: string;
 }
 
-const PANEL_AFFILIATE = '/app/affiliate';
+const PANEL_OFFERS = '/app/affiliate/offers';
+const PANEL_STATS = '/app/affiliate/stats';
 
 export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const { isAdmin } = usePanelAdmin();
@@ -22,8 +24,8 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const navItems = affiliate
     ? [
         { name: 'Головна', id: 'hero', href: null as string | null },
-        { name: 'Офери', id: 'offers', href: PANEL_AFFILIATE },
-        { name: 'Статистика', id: 'stats', href: PANEL_AFFILIATE },
+        { name: 'Офери', id: 'offers', href: PANEL_OFFERS },
+        { name: 'Статистика', id: 'stats', href: PANEL_STATS },
         { name: 'Контакти', id: 'contact', href: null }
       ]
     : [
@@ -121,22 +123,14 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                 <span>Адмін</span>
               </button>
             ) : null}
-            <a
-              href={PANEL_AFFILIATE}
-              className="relative overflow-hidden shimmer-btn bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-medium text-xs tracking-wider px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-[0_4px_20px_rgba(52,211,153,0.25)] transition-all uppercase"
-            >
-              <span>{affiliate ? 'Партнерка' : 'Увійти'}</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </a>
-            {!affiliate ? (
-              <button
-                type="button"
-                onClick={onContactClick}
-                className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 transition-all"
+            {affiliate ? <SiteAuthMenu /> : (
+              <a
+                href="/app/auth"
+                className="relative overflow-hidden shimmer-btn bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium text-xs tracking-wider px-5 py-2.5 rounded-lg uppercase"
               >
-                Контакти
-              </button>
-            ) : null}
+                Увійти
+              </a>
+            )}
           </div>
 
           <div className="flex md:hidden">
@@ -191,12 +185,11 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                   <span>Адмін</span>
                 </button>
               ) : null}
-              <a
-                href={PANEL_AFFILIATE}
-                className="w-full py-3 rounded-lg text-white font-medium text-sm text-center flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 uppercase"
-              >
-                Партнерка
-              </a>
+
+              <div className="pt-1">
+                <SiteAuthMenu />
+              </div>
+
               <button
                 type="button"
                 onClick={() => {

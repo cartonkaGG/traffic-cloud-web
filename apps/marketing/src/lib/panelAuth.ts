@@ -1,3 +1,4 @@
+const EMAIL_KEY = 'traffic-cloud-user-email'
 const TOKEN_KEY = 'traffic-cloud-access-token'
 const ROLE_KEY = 'traffic-cloud-user-role'
 
@@ -5,6 +6,28 @@ function apiBase(): string {
   const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined
   if (fromEnv?.trim()) return fromEnv.trim().replace(/\/$/, '')
   return 'http://127.0.0.1:8787'
+}
+
+export function getStoredPanelEmail(): string | null {
+  try {
+    return localStorage.getItem(EMAIL_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function clearPanelSession(): void {
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(EMAIL_KEY)
+    localStorage.removeItem(ROLE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isPanelLoggedIn(): boolean {
+  return Boolean(getPanelAccessToken())
 }
 
 export function getPanelAccessToken(): string | null {

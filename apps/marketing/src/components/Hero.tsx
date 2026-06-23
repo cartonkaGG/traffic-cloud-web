@@ -1,19 +1,22 @@
-import { ArrowRight, ChevronDown, Shield, TrendingUp } from 'lucide-react';
+import { ChevronDown, Shield, TrendingUp } from 'lucide-react';
 import CloudLogo3D from './CloudLogo3D';
 import HeroAmbient from './HeroAmbient';
 import { ScrollReveal } from './ScrollReveal';
 import { FEATURES } from '../config/features';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
+import { usePanelSession } from '../lib/usePanelSession';
 import { openPanelFromSite } from '../lib/openPanel';
 
 interface HeroProps {
   onContactClick: () => void;
 }
 
-const PANEL_AFFILIATE = '/app/affiliate';
+const PANEL_OFFERS = '/app/affiliate/offers';
+const PANEL_STATS = '/app/affiliate/stats';
 
 export default function Hero({ onContactClick }: HeroProps) {
   const { isAdmin } = usePanelAdmin();
+  const { isLoggedIn } = usePanelSession();
   const affiliate = FEATURES.affiliateOnlyMode;
 
   return (
@@ -75,12 +78,19 @@ export default function Hero({ onContactClick }: HeroProps) {
                   </button>
                 ) : null}
                 <a
-                  href={PANEL_AFFILIATE}
-                  className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 group touch-manipulation bg-gradient-to-r from-emerald-500 to-cyan-500"
+                  href={PANEL_OFFERS}
+                  className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 touch-manipulation bg-gradient-to-r from-emerald-500 to-cyan-500"
                 >
-                  <span>{affiliate ? 'Офери та статистика' : isAdmin ? 'Панель' : 'Увійти в панель'}</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <span>{affiliate ? 'Офери' : isLoggedIn ? 'Панель' : 'Увійти в панель'}</span>
                 </a>
+                {affiliate ? (
+                  <a
+                    href={PANEL_STATS}
+                    className="hero-cta-secondary min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-gray-200 text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center touch-manipulation border border-white/10"
+                  >
+                    Статистика
+                  </a>
+                ) : null}
                 <button
                   type="button"
                   onClick={onContactClick}

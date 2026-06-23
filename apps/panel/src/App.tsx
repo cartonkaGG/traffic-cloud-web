@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { FEATURES } from './config/features'
 import { useAuth } from './context/AuthContext'
@@ -22,8 +22,15 @@ import { InboxPage } from './pages/InboxPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AdminPage } from './pages/AdminPage'
-import { AdminAffiliatePage } from './pages/AdminAffiliatePage'
-import { AffiliatePage } from './pages/AffiliatePage'
+const AffiliateOffersPage = lazy(() =>
+  import('./pages/AffiliateOffersPage').then((m) => ({ default: m.AffiliateOffersPage }))
+)
+const AffiliateStatsPage = lazy(() =>
+  import('./pages/AffiliateStatsPage').then((m) => ({ default: m.AffiliateStatsPage }))
+)
+const AdminAffiliatePageLazy = lazy(() =>
+  import('./pages/AdminAffiliatePage').then((m) => ({ default: m.AdminAffiliatePage }))
+)
 import { BillingPage } from './pages/BillingPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
@@ -262,12 +269,16 @@ export default function App(): JSX.Element {
                 </Protected>
               }
             >
-              <Route path="/affiliate" element={<AffiliatePage />} />
+              <Route path="/affiliate" element={<Navigate to={AFFILIATE_HOME_PATH} replace />} />
+              <Route path="/affiliate/offers" element={<AffiliateOffersPage />} />
+              <Route path="/affiliate/stats" element={<AffiliateStatsPage />} />
               <Route
                 path="/admin/affiliate"
                 element={
                   <RequireAdmin>
-                    <AdminAffiliatePage />
+                    <Suspense fallback={<PanelLoadingScreen label="Завантаження…" />}>
+                      <AdminAffiliatePageLazy />
+                    </Suspense>
                   </RequireAdmin>
                 }
               />
@@ -283,7 +294,27 @@ export default function App(): JSX.Element {
               path="/affiliate"
               element={
                 <Protected>
-                  <AffiliatePage />
+                  <Navigate to={AFFILIATE_HOME_PATH} replace />
+                </Protected>
+              }
+            />
+            <Route
+              path="/affiliate/offers"
+              element={
+                <Protected>
+                  <Suspense fallback={<PanelLoadingScreen label="Завантаження…" />}>
+                    <AffiliateOffersPage />
+                  </Suspense>
+                </Protected>
+              }
+            />
+            <Route
+              path="/affiliate/stats"
+              element={
+                <Protected>
+                  <Suspense fallback={<PanelLoadingScreen label="Завантаження…" />}>
+                    <AffiliateStatsPage />
+                  </Suspense>
                 </Protected>
               }
             />
@@ -292,7 +323,9 @@ export default function App(): JSX.Element {
               element={
                 <Protected>
                   <RequireAdmin>
-                    <AdminAffiliatePage />
+                    <Suspense fallback={<PanelLoadingScreen label="Завантаження…" />}>
+                      <AdminAffiliatePageLazy />
+                    </Suspense>
                   </RequireAdmin>
                 </Protected>
               }

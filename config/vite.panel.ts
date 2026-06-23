@@ -47,7 +47,21 @@ export default defineConfig({
     outDir: resolve(repoRoot, 'apps/marketing/dist/app'),
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(panelRoot, 'index.web.html')
+      input: resolve(panelRoot, 'index.web.html'),
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            if (id.includes('AffiliateOffersPage') || id.includes('AffiliateStatsPage')) {
+              return 'affiliate'
+            }
+            if (id.includes('AdminAffiliatePage')) return 'affiliate-admin'
+            return undefined
+          }
+          if (id.includes('framer-motion')) return 'motion'
+          if (id.includes('lucide-react')) return 'icons'
+          return 'vendor'
+        }
+      }
     }
   },
   server: {

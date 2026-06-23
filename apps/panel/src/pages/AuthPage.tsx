@@ -29,7 +29,9 @@ export function AuthPage(): JSX.Element {
   const subscribeFlow = redirectTo.includes('/billing')
   const sessionRevoked = searchParams.get('reason') === 'session_revoked'
 
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [mode, setMode] = useState<'login' | 'register'>(() =>
+    searchParams.get('register') === '1' ? 'register' : 'login'
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
