@@ -1522,6 +1522,17 @@ export async function apiAdminAffiliateLinks(filters?: {
   return fetchJson(`/v1/admin/affiliate/links${q}`)
 }
 
+export async function apiAdminCreditAffiliateLink(
+  linkId: string,
+  telegramUserId: string
+): Promise<{ ok: boolean; conversionId: string; amountUsd: number }> {
+  return fetchJson(`/v1/admin/affiliate/links/${linkId}/credit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ telegramUserId })
+  })
+}
+
 export async function apiAdminDeleteAffiliateLink(
   linkId: string,
   force = false

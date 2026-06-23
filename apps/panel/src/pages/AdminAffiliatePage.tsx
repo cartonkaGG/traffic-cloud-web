@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Save,
   Trash2,
+  UserPlus,
   X
 } from 'lucide-react'
 import {
@@ -17,6 +18,7 @@ import {
   apiAdminAffiliateLinks,
   apiAdminAffiliateOffers,
   apiAdminAffiliateOverview,
+  apiAdminCreditAffiliateLink,
   apiAdminAffiliateWithdrawals,
   apiAdminAffiliateBotWebhookStatus,
   apiAdminCreateAffiliateBot,
@@ -49,7 +51,8 @@ function affiliateErrorMessage(code: string): string {
     channel_not_in_bot: 'Канал не в списку бота — додайте його в боті',
     offer_exists_for_channel: 'Для цього каналу вже є активний офер',
     invalid_payout: 'Виплата за підписника має бути більше 0',
-    channel_not_found: 'Канал не знайдено',
+    already_credited: 'Цей Telegram ID уже зарахований для оферу',
+    invalid_telegram_user_id: 'Вкажіть числовий Telegram user ID',
     bot_not_in_channel: 'Бот не в каналі — додайте адміном',
     bot_must_be_admin: 'Бот має бути адміном каналу',
     channel_has_offer: 'Спочатку видаліть офер для цього каналу',
@@ -119,6 +122,8 @@ export function AdminAffiliatePage(): JSX.Element {
   const [linkOfferFilter, setLinkOfferFilter] = useState('')
   const [webhookInfo, setWebhookInfo] = useState<Record<string, string>>({})
   const [webhookMismatch, setWebhookMismatch] = useState<Record<string, boolean>>({})
+  const [creditLink, setCreditLink] = useState<AdminAffiliateLinkRow | null>(null)
+  const [creditTelegramId, setCreditTelegramId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -210,6 +215,25 @@ export function AdminAffiliatePage(): JSX.Element {
       await loadPartnerLinks()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не вдалося видалити')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function submitManualCredit(e: FormEvent): Promise<void> {
+    e.preventDefault()
+    if (!creditLink || !creditTelegramId.trim()) return
+    setBusy(`credit-${creditLink.id}`)
+    setError(null)
+    try {
+      const res = await apiAdminCreditAffiliateLink(creditLink.id, creditTelegramId.trim())
+      const email = creditLink.userEmail
+      setCreditLink(null)
+      setCreditTelegramId('')
+      await loadPartnerLinks()
+      window.alert(`Зараховано $${res.amountUsd.toFixed(2)} партнеру ${email}`)
+    } catch (err) {
+      setError(parseApiError(err))
     } finally {
       setBusy(null)
     }
@@ -989,6 +1013,11 @@ export function AdminAffiliatePage(): JSX.Element {
             ) : null}
           </div>
 
+          <p className="text-xs text-zinc-500">
+            Якщо webhook не зарахував підписника — натисніть іконку людини та вкажіть Telegram user ID
+            (дізнатись: перешліть повідомлення від користувача боту @userinfobot або @getidsbot).
+          </p>
+
           {partnerLinks.length === 0 ? (
             <p className="text-sm text-zinc-500">Посилання партнерів ще не створені.</p>
           ) : (
@@ -1036,19 +1065,37 @@ export function AdminAffiliatePage(): JSX.Element {
                         </a>
                       </td>
                       <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          disabled={busy === `del-${l.id}`}
-                          onClick={() => void deletePartnerLink(l.id, l.joins)}
-                          className="cursor-pointer rounded-lg border border-red-400/20 p-2 text-red-300 hover:bg-red-500/10 disabled:opacity-50"
-                          title="Видалити посилання"
-                        >
-                          {busy === `del-${l.id}` ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={busy === `credit-${l.id}`}
+                            onClick={() => {
+                              setCreditLink(l)
+                              setCreditTelegramId('')
+                            }}
+                            className="cursor-pointer rounded-lg border border-emerald-400/25 p-2 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50"
+                            title="Зарахувати підписника вручну"
+                          >
+                            {busy === `credit-${l.id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <UserPlus className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy === `del-${l.id}`}
+                            onClick={() => void deletePartnerLink(l.id, l.joins)}
+                            className="cursor-pointer rounded-lg border border-red-400/20 p-2 text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                            title="Видалити посилання"
+                          >
+                            {busy === `del-${l.id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1160,6 +1207,61 @@ export function AdminAffiliatePage(): JSX.Element {
             >
               {busy === 'edit' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Зберегти
+            </button>
+          </form>
+        </div>
+      ) : null}
+
+      {creditLink ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <form
+            onSubmit={(e) => void submitManualCredit(e)}
+            className="w-full max-w-md rounded-2xl border border-white/[0.1] bg-[#0c1018] p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Зарахувати підписника</h3>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {creditLink.label} · {creditLink.userEmail}
+                </p>
+                <p className="mt-0.5 text-xs text-zinc-600">{creditLink.offerTitle}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCreditLink(null)
+                  setCreditTelegramId('')
+                }}
+                className="text-zinc-500 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <label className="mt-5 block text-xs font-medium text-zinc-400">
+              Telegram user ID (тільки цифри)
+            </label>
+            <input
+              autoFocus
+              value={creditTelegramId}
+              onChange={(e) => setCreditTelegramId(e.target.value)}
+              placeholder="напр. 123456789"
+              className="mt-2 w-full rounded-xl border border-white/[0.08] bg-black/40 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-400/40"
+            />
+            <p className="mt-2 text-[11px] leading-relaxed text-zinc-600">
+              Нарахує ${creditLink.payoutPerJoinUsd.toFixed(2)} на баланс партнера. ID можна дізнатись через
+              @userinfobot — перешліть йому повідомлення від користувача.
+            </p>
+            <button
+              type="submit"
+              disabled={busy === `credit-${creditLink.id}` || !creditTelegramId.trim()}
+              className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/15 py-2.5 text-sm font-medium text-emerald-200 disabled:opacity-50"
+            >
+              {busy === `credit-${creditLink.id}` ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserPlus className="h-4 w-4" />
+              )}
+              Зарахувати
             </button>
           </form>
         </div>
