@@ -67,7 +67,6 @@ export function AffiliateStatsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [withdrawError, setWithdrawError] = useState<string | null>(null)
   const [withdrawOk, setWithdrawOk] = useState(false)
-  const [selectedChartDate, setSelectedChartDate] = useState<string | null>(null)
 
   const selectedLink = useMemo(
     () => myLinks.find((l) => l.id === linkId) ?? null,
@@ -97,7 +96,6 @@ export function AffiliateStatsPage(): JSX.Element {
       setSummary(stats.summary)
       setWithdrawals(wds.items)
       setMyLinks(links.items)
-      setSelectedChartDate(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Помилка завантаження')
     } finally {
@@ -294,11 +292,7 @@ export function AffiliateStatsPage(): JSX.Element {
 
           {daily.length > 0 ? (
             <div className="mt-8">
-              <AffiliateStatsChart
-                daily={daily}
-                selectedDate={selectedChartDate}
-                onSelectDate={setSelectedChartDate}
-              />
+              <AffiliateStatsChart daily={daily} />
             </div>
           ) : null}
 

@@ -1,11 +1,9 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { BarChart3 } from 'lucide-react'
 import type { AffiliateDailyStat } from '@/lib/api'
 
 type Props = {
   daily: AffiliateDailyStat[]
-  selectedDate: string | null
-  onSelectDate: (date: string | null) => void
 }
 
 const CHART_HEIGHT_PX = 112
@@ -15,212 +13,141 @@ function formatDayLabel(iso: string): string {
   return d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })
 }
 
-function formatFullDate(iso: string): string {
-  const d = new Date(`${iso}T12:00:00`)
-  return d.toLocaleDateString('uk-UA', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
-  })
+function ChartTooltip({
+  children,
+  className = ''
+}: {
+  children: ReactNode
+  className?: string
+}): JSX.Element {
+  return (
+    <div
+      className={[
+        'pointer-events-none absolute bottom-[calc(100%-0.25rem)] left-1/2 z-20 -translate-x-1/2',
+        'opacity-0 transition-opacity duration-150 group-hover:opacity-100',
+        className
+      ].join(' ')}
+    >
+      <div className="rounded-lg border border-white/[0.12] bg-[#121820] px-2.5 py-2 text-[10px] leading-snug text-zinc-200 shadow-xl shadow-black/40">
+        {children}
+      </div>
+      <div className="mx-auto h-0 w-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-white/[0.12]" />
+    </div>
+  )
 }
 
-export function AffiliateStatsChart({ daily, selectedDate, onSelectDate }: Props): JSX.Element {
+export function AffiliateStatsChart({ daily }: Props): JSX.Element {
   const maxJoins = Math.max(1, ...daily.map((d) => d.joins + (d.leaves ?? 0)))
   const maxEarned = Math.max(0.01, ...daily.map((d) => d.earnedUsd))
-  const selected = selectedDate ? daily.find((d) => d.date === selectedDate) ?? null : null
   const hasActivity = daily.some(
     (d) => d.joins > 0 || (d.leaves ?? 0) > 0 || d.earnedUsd > 0 || (d.lostUsd ?? 0) > 0
   )
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e14]/80 p-5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-              Підписки / відписки
-            </span>
-            <span className="text-[10px] text-zinc-600">{daily.length} днів</span>
-          </div>
-          {hasActivity ? (
-            <div className="mt-5 flex h-32 items-end gap-1">
-              {daily.map((d) => {
-                const active = selectedDate === d.date
-                const joinPx = Math.round((d.joins / maxJoins) * CHART_HEIGHT_PX)
-                const leavePx = Math.round(((d.leaves ?? 0) / maxJoins) * CHART_HEIGHT_PX)
-                return (
-                  <button
-                    key={d.date}
-                    type="button"
-                    onClick={() => onSelectDate(active ? null : d.date)}
-                    className="group flex h-32 min-w-0 flex-1 cursor-pointer flex-col items-center justify-end gap-2 focus:outline-none"
-                    aria-pressed={active}
-                  >
-                    <div
-                      className="flex w-full max-w-[2.25rem] flex-col items-stretch justify-end gap-0.5"
-                      style={{ height: CHART_HEIGHT_PX }}
-                    >
-                      {joinPx > 0 ? (
-                        <motion.div
-                          layout
-                          className={[
-                            'w-full rounded-t-md bg-gradient-to-t from-cyan-500/25 to-cyan-400/80 transition-opacity',
-                            active ? 'ring-1 ring-cyan-300/60' : 'group-hover:opacity-90'
-                          ].join(' ')}
-                          style={{ height: joinPx }}
-                        />
-                      ) : null}
-                      {leavePx > 0 ? (
-                        <motion.div
-                          layout
-                          className="w-full rounded-t-md bg-gradient-to-t from-rose-500/25 to-rose-400/70"
-                          style={{ height: leavePx }}
-                        />
-                      ) : null}
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e14]/80 p-5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            Підписки / відписки
+          </span>
+          <span className="text-[10px] text-zinc-600">{daily.length} днів</span>
+        </div>
+        {hasActivity ? (
+          <div className="mt-5 flex h-32 items-end gap-1">
+            {daily.map((d) => {
+              const joinPx = Math.round((d.joins / maxJoins) * CHART_HEIGHT_PX)
+              const leavePx = Math.round(((d.leaves ?? 0) / maxJoins) * CHART_HEIGHT_PX)
+              return (
+                <div
+                  key={d.date}
+                  className="group relative flex h-32 min-w-0 flex-1 cursor-default flex-col items-center justify-end gap-2"
+                >
+                  <ChartTooltip>
+                    <div className="font-medium text-white">{formatDayLabel(d.date)}</div>
+                    <div className="mt-1 space-y-0.5 text-zinc-400">
+                      <div className="text-cyan-300">+{d.joins} підп.</div>
+                      <div className="text-rose-300">−{d.leaves ?? 0} відп.</div>
                     </div>
-                    <span
-                      className={[
-                        'text-[9px] font-medium transition-colors',
-                        active ? 'text-cyan-300' : 'text-zinc-600 group-hover:text-zinc-400'
-                      ].join(' ')}
-                    >
-                      {d.date.slice(8)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="mt-5 flex h-32 flex-col items-center justify-center gap-2 text-center">
-              <BarChart3 className="h-8 w-8 text-zinc-700" />
-              <p className="text-xs text-zinc-500">Немає підписок і відписок за обраний період</p>
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e14]/80 p-5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-            Заробіток USD
-          </div>
-          {hasActivity ? (
-            <div className="mt-5 flex h-32 items-end gap-1">
-              {daily.map((d) => {
-                const active = selectedDate === d.date
-                const earnPx = Math.max(d.earnedUsd > 0 ? 4 : 0, Math.round((d.earnedUsd / maxEarned) * CHART_HEIGHT_PX))
-                return (
-                  <button
-                    key={`e-${d.date}`}
-                    type="button"
-                    onClick={() => onSelectDate(active ? null : d.date)}
-                    className="group flex h-32 min-w-0 flex-1 cursor-pointer flex-col items-center justify-end gap-2 focus:outline-none"
-                    aria-pressed={active}
+                  </ChartTooltip>
+                  <div
+                    className="flex w-full max-w-[2.25rem] flex-col items-stretch justify-end gap-0.5"
+                    style={{ height: CHART_HEIGHT_PX }}
                   >
-                    <motion.div
-                      layout
-                      className={[
-                        'w-full max-w-[2.25rem] rounded-t-md bg-gradient-to-t from-emerald-500/25 to-emerald-400/80 transition-opacity',
-                        active ? 'ring-1 ring-emerald-300/60' : 'group-hover:opacity-90'
-                      ].join(' ')}
-                      style={{ height: earnPx }}
-                    />
-                    <span
-                      className={[
-                        'text-[9px] font-medium transition-colors',
-                        active ? 'text-emerald-300' : 'text-zinc-600 group-hover:text-zinc-400'
-                      ].join(' ')}
-                    >
-                      {d.date.slice(8)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="mt-5 flex h-32 flex-col items-center justify-center gap-2 text-center">
-              <BarChart3 className="h-8 w-8 text-zinc-700" />
-              <p className="text-xs text-zinc-500">Немає нарахувань за обраний період</p>
-            </div>
-          )}
-        </div>
+                    {joinPx > 0 ? (
+                      <div
+                        className="w-full rounded-t-md bg-gradient-to-t from-cyan-500/25 to-cyan-400/80 transition-opacity group-hover:opacity-90"
+                        style={{ height: joinPx }}
+                      />
+                    ) : null}
+                    {leavePx > 0 ? (
+                      <div
+                        className="w-full rounded-t-md bg-gradient-to-t from-rose-500/25 to-rose-400/70"
+                        style={{ height: leavePx }}
+                      />
+                    ) : (
+                      <div className="min-h-[2px] w-full" />
+                    )}
+                  </div>
+                  <span className="text-[9px] font-medium text-zinc-600 transition-colors group-hover:text-zinc-400">
+                    {d.date.slice(8)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="mt-5 flex h-32 flex-col items-center justify-center gap-2 text-center">
+            <BarChart3 className="h-8 w-8 text-zinc-700" />
+            <p className="text-xs text-zinc-500">Немає підписок і відписок за обраний період</p>
+          </div>
+        )}
       </div>
 
-      <AnimatePresence mode="wait">
-        {selected ? (
-          <motion.div
-            key={selected.date}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-transparent p-5"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-white">
-                  <CalendarDays className="h-4 w-4 text-zinc-500" />
-                  {formatFullDate(selected.date)}
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0a0e14]/80 p-5">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          Заробіток USD
+        </div>
+        {hasActivity ? (
+          <div className="mt-5 flex h-32 items-end gap-1">
+            {daily.map((d) => {
+              const earnPx = Math.max(
+                d.earnedUsd > 0 ? 4 : 0,
+                Math.round((d.earnedUsd / maxEarned) * CHART_HEIGHT_PX)
+              )
+              const lost = d.lostUsd ?? 0
+              return (
+                <div
+                  key={`e-${d.date}`}
+                  className="group relative flex h-32 min-w-0 flex-1 cursor-default flex-col items-center justify-end gap-2"
+                >
+                  <ChartTooltip>
+                    <div className="font-medium text-white">{formatDayLabel(d.date)}</div>
+                    <div className="mt-1 space-y-0.5 text-zinc-400">
+                      <div className="text-emerald-300">+${d.earnedUsd.toFixed(2)}</div>
+                      {lost > 0 ? <div className="text-rose-300">−${lost.toFixed(2)}</div> : null}
+                    </div>
+                  </ChartTooltip>
+                  <div
+                    className={[
+                      'w-full max-w-[2.25rem] rounded-t-md bg-gradient-to-t from-emerald-500/25 to-emerald-400/80 transition-opacity group-hover:opacity-90',
+                      earnPx === 0 ? 'min-h-[2px]' : ''
+                    ].join(' ')}
+                    style={{ height: earnPx > 0 ? earnPx : 2 }}
+                  />
+                  <span className="text-[9px] font-medium text-zinc-600 transition-colors group-hover:text-zinc-400">
+                    {d.date.slice(8)}
+                  </span>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500">Деталі за обраний день</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => onSelectDate(null)}
-                className="cursor-pointer rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
-              >
-                Закрити
-              </button>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
-                  <TrendingUp className="h-3.5 w-3.5 text-cyan-400" />
-                  Підписки
-                </div>
-                <div className="mt-1 text-2xl font-semibold text-cyan-200">+{selected.joins}</div>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
-                  <TrendingDown className="h-3.5 w-3.5 text-rose-400" />
-                  Відписки
-                </div>
-                <div className="mt-1 text-2xl font-semibold text-rose-200">−{selected.leaves ?? 0}</div>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
-                  <Wallet className="h-3.5 w-3.5 text-emerald-400" />
-                  Нараховано
-                </div>
-                <div className="mt-1 text-2xl font-semibold text-emerald-200">
-                  ${selected.earnedUsd.toFixed(2)}
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/25 px-4 py-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
-                  <TrendingDown className="h-3.5 w-3.5 text-rose-300" />
-                  Списано
-                </div>
-                <div className="mt-1 text-2xl font-semibold text-rose-200">
-                  −${(selected.lostUsd ?? 0).toFixed(2)}
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-zinc-600">
-              Чистий приріст: {selected.joins - (selected.leaves ?? 0)} · чистий прибуток:{' '}
-              ${((selected.earnedUsd ?? 0) - (selected.lostUsd ?? 0)).toFixed(2)} ·{' '}
-              {formatDayLabel(selected.date)}
-            </p>
-          </motion.div>
-        ) : hasActivity ? (
-          <motion.p
-            key="hint"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center text-xs text-zinc-600"
-          >
-            Натисніть на стовпчик графіка, щоб переглянути деталі за день
-          </motion.p>
-        ) : null}
-      </AnimatePresence>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="mt-5 flex h-32 flex-col items-center justify-center gap-2 text-center">
+            <BarChart3 className="h-8 w-8 text-zinc-700" />
+            <p className="text-xs text-zinc-500">Немає нарахувань за обраний період</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
