@@ -2,12 +2,16 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import {
   Bot,
   CheckCircle2,
+  DollarSign,
+  Link2,
   Loader2,
   Pencil,
   Plus,
   RefreshCw,
   Save,
   Trash2,
+  TrendingDown,
+  TrendingUp,
   UserPlus,
   X
 } from 'lucide-react'
@@ -104,13 +108,74 @@ function parseApiError(err: unknown): string {
   return affiliateErrorMessage(code)
 }
 
+function usd(n: number): string {
+  return `$${n.toFixed(2)}`
+}
+
+function OfferStatsGrid({ stats, linkCount }: { stats: AdminAffiliateOffer['stats']; linkCount: number }): JSX.Element {
+  return (
+    <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {[
+        {
+          label: 'Залито всього',
+          value: `+${stats.totalJoins}`,
+          sub: `${stats.activeJoins} активн. · ${stats.pendingJoins} очік.`,
+          icon: TrendingUp,
+          accent: 'text-cyan-300'
+        },
+        {
+          label: 'Відписки',
+          value: `−${stats.leaves}`,
+          sub: `чистий приріст +${stats.netJoins}`,
+          icon: TrendingDown,
+          accent: 'text-rose-300'
+        },
+        {
+          label: 'Трафік',
+          value: `${linkCount} посил.`,
+          sub: `${stats.partnerCount} партнерів`,
+          icon: Link2,
+          accent: 'text-violet-300'
+        },
+        {
+          label: 'Виплати',
+          value: usd(stats.netEarnedUsd),
+          sub:
+            stats.lostUsd > 0
+              ? `нараховано ${usd(stats.earnedUsd)} · списано ${usd(stats.lostUsd)}`
+              : `нараховано ${usd(stats.earnedUsd)}`,
+          icon: DollarSign,
+          accent: 'text-emerald-300'
+        }
+      ].map(({ label, value, sub, icon: Icon, accent }) => (
+        <div
+          key={label}
+          className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-500">
+            <Icon className="h-3 w-3" />
+            {label}
+          </div>
+          <div className={`mt-1 text-lg font-semibold tabular-nums ${accent}`}>{value}</div>
+          <div className="mt-0.5 text-[10px] text-zinc-600">{sub}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function AdminAffiliatePage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('bots')
   const [loading, setLoading] = useState(true)
   const [overview, setOverview] = useState<{
     activeOffers: number
-    totalConversions: number
+    totalJoins: number
+    activeJoins: number
+    leaves: number
+    netJoins: number
     totalEarnedUsd: number
+    lostUsd: number
+    netEarnedUsd: number
     pendingWithdrawals: number
     totalPaidUsd: number
   } | null>(null)
@@ -536,13 +601,16 @@ export function AdminAffiliatePage(): JSX.Element {
       ) : null}
 
       {overview ? (
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           {[
             ['Активні офери', overview.activeOffers],
-            ['Конверсії', overview.totalConversions],
-            ['Зароблено', `$${overview.totalEarnedUsd.toFixed(2)}`],
+            ['Залито всього', `+${overview.totalJoins}`],
+            ['Активні підп.', overview.activeJoins],
+            ['Відписки', `−${overview.leaves}`],
+            ['Чистий приріст', `+${overview.netJoins}`],
+            ['Нараховано', usd(overview.totalEarnedUsd)],
             ['Очікують виведення', overview.pendingWithdrawals],
-            ['Виплачено', `$${overview.totalPaidUsd.toFixed(2)}`]
+            ['Виплачено', usd(overview.totalPaidUsd)]
           ].map(([label, val]) => (
             <div key={String(label)} className="admin-stat-card">
               <div className="text-[10px] uppercase tracking-wider text-zinc-500">{label}</div>
@@ -858,7 +926,7 @@ export function AdminAffiliatePage(): JSX.Element {
                     <h3 className="font-semibold text-white">{o.title}</h3>
                     <p className="mt-1 text-xs text-zinc-500">
                       {o.channelUsername ? `@${o.channelUsername}` : o.channelTelegramId} · $
-                      {o.payoutPerJoinUsd}/підп. · {o.conversionCount} підп. ·{' '}
+                      {o.payoutPerJoinUsd}/підп. ·{' '}
                       {o.joinRequiresApproval ? 'заявки з апрувом' : 'вхід без апруву'}
                     </p>
                   </div>
@@ -913,6 +981,7 @@ export function AdminAffiliatePage(): JSX.Element {
                     </button>
                   </div>
                 </div>
+                {o.stats ? <OfferStatsGrid stats={o.stats} linkCount={o.linkCount} /> : null}
               </div>
             ))}
           </div>

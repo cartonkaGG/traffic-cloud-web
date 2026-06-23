@@ -1419,6 +1419,18 @@ export type AdminAffiliateCategory = AffiliateCategory & {
   createdAt: string
 }
 
+export type AdminAffiliateOfferStats = {
+  totalJoins: number
+  activeJoins: number
+  pendingJoins: number
+  leaves: number
+  netJoins: number
+  earnedUsd: number
+  lostUsd: number
+  netEarnedUsd: number
+  partnerCount: number
+}
+
 export type AdminAffiliateOffer = {
   id: string
   categoryId: string
@@ -1438,7 +1450,8 @@ export type AdminAffiliateOffer = {
   botVerified: boolean
   linkCount: number
   conversionCount: number
-  createdAt: string
+  stats: AdminAffiliateOfferStats
+  createdAt?: string
 }
 
 export type AdminAffiliateBot = {
@@ -1584,7 +1597,14 @@ export async function apiAdminDeleteAffiliateOffer(offerId: string): Promise<{ o
 export async function apiAdminAffiliateOverview(): Promise<{
   activeOffers: number
   totalConversions: number
+  totalJoins: number
+  activeJoins: number
+  pendingJoins: number
+  leaves: number
+  netJoins: number
   totalEarnedUsd: number
+  lostUsd: number
+  netEarnedUsd: number
   pendingWithdrawals: number
   totalPaidUsd: number
 }> {
