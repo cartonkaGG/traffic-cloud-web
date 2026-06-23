@@ -4,9 +4,23 @@
   "buildCommand": "npm run build",
   "outputDirectory": "apps/marketing/dist",
   "rewrites": [
-    { "source": "/app", "destination": "/app/index.html" },
-    { "source": "/app/", "destination": "/app/index.html" },
-    { "source": "/app/:path*", "destination": "/app/index.html" }
+    {
+      "source": "/app",
+      "destination": "/app/index.html"
+    },
+    {
+      "source": "/app/",
+      "destination": "/app/index.html"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/app/index.html",
+      "missing": [
+        {
+          "type": "filesystem"
+        }
+      ]
+    }
   ],
   "headers": [
     {

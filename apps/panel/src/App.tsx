@@ -8,6 +8,7 @@ import { hasPanelAccess } from './lib/subscriptionAccess'
 import { SessionRevokedListener } from './components/auth/SessionRevokedListener'
 import { DesktopUpdateBanner } from './components/desktop/DesktopUpdateBanner'
 import { DesktopUpdateOverlay } from './components/desktop/DesktopUpdateOverlay'
+import { PanelErrorBoundary } from './components/layout/PanelErrorBoundary'
 import { PanelVersionSync } from './components/layout/PanelVersionSync'
 import { AppShell } from './components/layout/AppShell'
 import { AffiliateShell } from './components/layout/AffiliateShell'
@@ -216,9 +217,10 @@ export default function App(): JSX.Element {
   const affiliateOnly = FEATURES.affiliateOnlyMode
 
   return (
-    <div className="min-h-screen h-full">
-      <SessionRevokedListener />
-      <PanelVersionSync />
+    <PanelErrorBoundary>
+      <div className="min-h-screen h-full">
+        <SessionRevokedListener />
+        <PanelVersionSync />
       {!affiliateOnly ? <DesktopUpdateBanner /> : null}
       {!affiliateOnly ? <DesktopUpdateOverlay /> : null}
       {!affiliateOnly ? <SoftwareLaunchOverlay /> : null}
@@ -331,6 +333,7 @@ export default function App(): JSX.Element {
           </>
         )}
       </Routes>
-    </div>
+      </div>
+    </PanelErrorBoundary>
   )
 }

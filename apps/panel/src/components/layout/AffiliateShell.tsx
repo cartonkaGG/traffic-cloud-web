@@ -70,7 +70,7 @@ export function AffiliateShell(): JSX.Element {
 
   return (
     <div className="flex min-h-screen h-full bg-[#06080d]">
-      <div className="hidden lg:contents">
+      <div className="hidden shrink-0 lg:block">
         <Sidebar>
         <div className="mb-8 px-2">
           <PanelBrand layout="sidebar" homeTo="/affiliate/offers" />
@@ -105,7 +105,7 @@ export function AffiliateShell(): JSX.Element {
         <div className="mt-4 rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent px-3 py-3 text-[11px] leading-relaxed text-zinc-500">
           До 10 посилань на офер · окрема статистика кожного лінка.
         </div>
-      </Sidebar>
+        </Sidebar>
       </div>
 
       <div className="relative flex min-w-0 flex-1 flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
