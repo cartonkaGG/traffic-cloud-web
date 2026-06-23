@@ -1258,6 +1258,17 @@ export type AffiliateDailyStat = {
   activeJoins?: number
 }
 
+export type AffiliateLinkStat = {
+  linkId: string
+  label: string
+  offerId: string
+  offerTitle?: string
+  joins: number
+  leaves: number
+  earnedUsd: number
+  activeJoins: number
+}
+
 export type AffiliateWithdrawalRow = {
   id: string
   amountUsd: number
@@ -1340,10 +1351,17 @@ export async function apiAffiliateBalance(offerId?: string): Promise<AffiliateBa
 
 export async function apiAffiliateStats(
   days = 14,
-  offerId?: string
-): Promise<{ daily: AffiliateDailyStat[]; offerId: string | null }> {
+  offerId?: string,
+  linkId?: string
+): Promise<{
+  daily: AffiliateDailyStat[]
+  offerId: string | null
+  linkId: string | null
+  byLink: AffiliateLinkStat[]
+}> {
   const params = new URLSearchParams({ days: String(days) })
   if (offerId) params.set('offerId', offerId)
+  if (linkId) params.set('linkId', linkId)
   return fetchJson(`/v1/affiliate/stats?${params}`)
 }
 

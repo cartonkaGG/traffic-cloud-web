@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Loader2, RefreshCw, Zap } from 'lucide-react'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   apiAffiliateCategories,
@@ -158,39 +158,26 @@ export function AffiliateOffersPage(): JSX.Element {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 lg:px-8">
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 lg:px-8 lg:py-8">
       <motion.div
-        initial={{ opacity: 0, y: -8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-emerald-500/[0.08] via-transparent to-sky-500/[0.08] p-6 sm:p-8"
+        className="flex flex-wrap items-end justify-between gap-4 border-b border-white/[0.06] pb-6"
       >
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-sky-500/20 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-200">
-              <Zap className="h-3.5 w-3.5" />
-              Партнерська панель
-            </div>
-            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Офери та посилання
-            </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-              Створюйте до 10 іменованих invite-лінків на кожен офер — як у Telegram. Кожне
-              посилання рахує своїх підписників окремо.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void loadOffers()}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.1] bg-black/30 px-4 py-2.5 text-sm text-zinc-300 transition hover:border-white/20 hover:text-white"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Оновити
-          </button>
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Офери</h2>
+          <p className="mt-1 max-w-lg text-sm text-zinc-500">
+            Оберіть офер, створіть до 10 посилань з назвою методу заливу — статистика рахується окремо.
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => void loadOffers()}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-sm text-zinc-400 transition hover:text-white"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Оновити
+        </button>
       </motion.div>
 
       {error ? (
@@ -203,7 +190,7 @@ export function AffiliateOffersPage(): JSX.Element {
         </motion.div>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-wrap gap-2">
         {['', ...categories.map((c) => c.slug)].map((slug) => {
           const label = slug ? categories.find((c) => c.slug === slug)?.name ?? slug : 'Усі'
           const active = activeCategory === slug
@@ -213,10 +200,10 @@ export function AffiliateOffersPage(): JSX.Element {
               type="button"
               onClick={() => setActiveCategory(slug)}
               className={[
-                'cursor-pointer rounded-full border px-4 py-2 text-xs font-medium transition-all duration-200',
+                'cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                 active
-                  ? 'border-sky-400/40 bg-sky-500/15 text-sky-100 shadow-[0_0_24px_-8px_rgba(56,189,248,0.5)]'
-                  : 'border-white/10 text-zinc-500 hover:border-white/20 hover:text-zinc-200'
+                  ? 'border-white/20 bg-white/[0.08] text-white'
+                  : 'border-white/[0.06] text-zinc-500 hover:border-white/12 hover:text-zinc-300'
               ].join(' ')}
             >
               {label}

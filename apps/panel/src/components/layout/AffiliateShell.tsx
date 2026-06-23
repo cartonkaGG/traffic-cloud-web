@@ -76,7 +76,7 @@ export function AffiliateShell(): JSX.Element {
           <PanelBrand layout="sidebar" homeTo="/affiliate/offers" />
         </div>
 
-        <nav className="flex flex-1 flex-col gap-6 overflow-y-auto pr-1">
+        <nav className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pr-1">
           <div>
             <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-600">
               Партнерка
@@ -102,7 +102,7 @@ export function AffiliateShell(): JSX.Element {
           ) : null}
         </nav>
 
-        <div className="mt-4 rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent px-3 py-3 text-[11px] leading-relaxed text-zinc-500">
+        <div className="mt-auto shrink-0 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-[11px] leading-relaxed text-zinc-500">
           До 10 посилань на офер · окрема статистика кожного лінка.
         </div>
         </Sidebar>

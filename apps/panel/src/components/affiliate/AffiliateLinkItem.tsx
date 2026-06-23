@@ -3,7 +3,6 @@ import {
   BarChart3,
   Check,
   Copy,
-  Link2,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -36,7 +35,6 @@ function joinLabel(link: AffiliateLinkRow, joinRequiresApproval?: boolean): stri
   const parts: string[] = []
   if (joins > 0) parts.push(`${joins} підписник${joins === 1 ? '' : joins < 5 ? 'и' : 'ів'}`)
   if (leaves > 0) parts.push(`−${leaves} відп.`)
-  if (joinRequiresApproval && joins === 0) parts.push('очікує схвалення')
   return parts.join(' · ')
 }
 
@@ -71,16 +69,12 @@ export function AffiliateLinkItem({
   return (
     <motion.li
       layout
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      className="group relative rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent p-3 transition-colors hover:border-sky-400/20 hover:bg-sky-500/[0.04]"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="rounded-xl border border-white/[0.06] bg-[#06080d]/80 p-3"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sky-300 ring-1 ring-sky-400/20">
-          <Link2 className="h-4 w-4" aria-hidden />
-        </div>
-
         <div className="min-w-0 flex-1">
           {editing ? (
             <div className="flex gap-2">
@@ -93,13 +87,13 @@ export function AffiliateLinkItem({
                   if (e.key === 'Enter') void saveLabel()
                   if (e.key === 'Escape') setEditing(false)
                 }}
-                className="min-w-0 flex-1 rounded-lg border border-sky-400/30 bg-black/40 px-2.5 py-1.5 text-sm text-white outline-none focus:ring-2 focus:ring-sky-400/30"
+                className="min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white outline-none"
               />
               <button
                 type="button"
                 onClick={() => void saveLabel()}
                 disabled={isBusy}
-                className="rounded-lg bg-sky-500/20 px-2.5 py-1.5 text-sky-200"
+                className="cursor-pointer rounded-lg border border-white/10 px-2.5 py-1.5 text-zinc-300"
               >
                 {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               </button>
@@ -111,40 +105,40 @@ export function AffiliateLinkItem({
                 setDraftLabel(link.label ?? '')
                 setEditing(true)
               }}
-              className="flex max-w-full items-center gap-1.5 text-left text-sm font-medium text-white hover:text-sky-200"
+              className="group flex max-w-full cursor-pointer items-center gap-1.5 text-left text-sm font-medium text-white"
             >
               <span className="truncate">{link.label || 'Посилання'}</span>
-              <Pencil className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+              <Pencil className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-50" />
             </button>
           )}
 
-          <p className="mt-0.5 text-xs text-zinc-500">{joinLabel(link, joinRequiresApproval)}</p>
+          <p className="mt-0.5 text-xs text-zinc-600">{joinLabel(link, joinRequiresApproval)}</p>
 
           {ready ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-white/[0.06] bg-black/30 px-3 py-2">
-                <span className="truncate font-mono text-[11px] text-zinc-400">{link.inviteLink}</span>
-              </div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.06] bg-black/30 px-3 py-2 font-mono text-[11px] text-zinc-400">
+                {link.inviteLink}
+              </code>
               <button
                 type="button"
                 onClick={() => onCopy(link.inviteLink, link.id)}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-sky-500/90 px-3 py-2 text-xs font-medium text-white transition hover:bg-sky-400"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white transition hover:bg-white/[0.08]"
               >
                 {copiedId === link.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copiedId === link.id ? 'Скопійовано' : 'Копіювати'}
               </button>
             </div>
           ) : (
-            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2">
-              <span className="text-xs text-amber-100/90">Посилання не згенеровано</span>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-amber-400/15 bg-amber-500/5 px-3 py-2">
+              <span className="text-xs text-amber-100/80">Посилання не в каналі</span>
               <button
                 type="button"
                 disabled={isBusy}
                 onClick={() => void onRepair(link.id)}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-amber-500/20 px-2.5 py-1 text-xs text-amber-100 hover:bg-amber-500/30"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-amber-400/20 px-2.5 py-1 text-xs text-amber-100"
               >
                 {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wrench className="h-3 w-3" />}
-                Створити
+                Створити в Telegram
               </button>
             </div>
           )}
@@ -153,9 +147,9 @@ export function AffiliateLinkItem({
         <div className="relative shrink-0">
           <button
             type="button"
-            aria-label="Меню посилання"
+            aria-label="Меню"
             onClick={() => setMenuOpen((v) => !v)}
-            className="cursor-pointer rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.06] hover:text-white"
+            className="cursor-pointer rounded-lg p-2 text-zinc-500 hover:bg-white/[0.05] hover:text-white"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
@@ -164,18 +158,18 @@ export function AffiliateLinkItem({
               <button
                 type="button"
                 className="fixed inset-0 z-10 cursor-default"
-                aria-label="Закрити меню"
+                aria-label="Закрити"
                 onClick={() => setMenuOpen(false)}
               />
               <motion.div
-                initial={{ opacity: 0, y: 4, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-white/10 bg-[#12161f] py-1 shadow-2xl"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-white/10 bg-[#0c1018] py-1 shadow-xl"
               >
                 <Link
                   to={`${AFFILIATE_STATS_PATH}?offer=${encodeURIComponent(offerId)}&link=${encodeURIComponent(link.id)}`}
                   onClick={() => setMenuOpen(false)}
-                  className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.05]"
                 >
                   <BarChart3 className="h-3.5 w-3.5" />
                   Статистика
@@ -188,7 +182,7 @@ export function AffiliateLinkItem({
                       setMenuOpen(false)
                       void onRegenerate(link.id)
                     }}
-                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.05]"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     Перестворити
@@ -201,7 +195,7 @@ export function AffiliateLinkItem({
                     setEditing(true)
                     setMenuOpen(false)
                   }}
-                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-white/[0.05]"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Перейменувати
