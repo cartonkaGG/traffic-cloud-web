@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
-import { Clapperboard, Flame, Megaphone } from 'lucide-react'
+import { Clapperboard, Flame, Megaphone, TrendingUp } from 'lucide-react'
 
-export type SoftwareId = 'dm-outreach' | 'video-uniquify' | 'tiktok-warmup'
+export type SoftwareId = 'dm-outreach' | 'video-uniquify' | 'tiktok-warmup' | 'traffic-affiliate'
 
 export type SoftwareStatus = 'active' | 'coming_soon'
 
@@ -52,6 +52,18 @@ export const SOFTWARE_PRODUCTS: SoftwareProduct[] = [
     icon: Flame,
     accent: 'from-fuchsia-500/25 via-violet-400/10 to-transparent',
     glow: 'rgba(217,70,239,0.42)'
+  },
+  {
+    id: 'traffic-affiliate',
+    name: 'Залив трафіку',
+    shortName: 'Traffic',
+    description:
+      'Обирайте офери Telegram-каналів, отримуйте унікальні посилання та заробляйте за підписників.',
+    version: '1.0.0',
+    status: 'active',
+    icon: TrendingUp,
+    accent: 'from-emerald-500/25 via-teal-400/10 to-transparent',
+    glow: 'rgba(52,211,153,0.42)'
   }
 ]
 

@@ -16,9 +16,10 @@ import {
   Search,
   Shield,
   TrendingUp,
+  TrendingUp,
   XCircle
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AdminAmbient } from '@/components/admin/AdminAmbient'
 import { AdminPlanPreview } from '@/components/admin/AdminPlanPreview'
 import { AdminWeeklyActivity } from '@/components/admin/AdminWeeklyActivity'
@@ -328,6 +329,13 @@ export function AdminPage(): JSX.Element {
             <Home className="h-4 w-4" />
             <span className="hidden sm:inline">Головна</span>
           </a>
+          <Link
+            to="/admin/affiliate"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 transition-colors hover:border-emerald-400/35"
+          >
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">Трафік</span>
+          </Link>
           <button
             type="button"
             onClick={() => navigate('/hub')}

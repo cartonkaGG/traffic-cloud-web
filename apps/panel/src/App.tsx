@@ -20,6 +20,8 @@ import { InboxPage } from './pages/InboxPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AdminPage } from './pages/AdminPage'
+import { AdminAffiliatePage } from './pages/AdminAffiliatePage'
+import { AffiliatePage } from './pages/AffiliatePage'
 import { BillingPage } from './pages/BillingPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
@@ -157,6 +159,24 @@ export default function App(): JSX.Element {
         element={
           <Protected>
             <BillingPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/affiliate"
+        element={
+          <Protected>
+            <AffiliatePage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/admin/affiliate"
+        element={
+          <Protected>
+            <RequireAdmin>
+              <AdminAffiliatePage />
+            </RequireAdmin>
           </Protected>
         }
       />

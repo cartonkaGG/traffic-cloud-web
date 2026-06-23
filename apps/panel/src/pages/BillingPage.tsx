@@ -151,6 +151,14 @@ export function BillingPage(): JSX.Element {
             </button>
           ) : null}
           {isAuthenticated ? (
+            <Link
+              to="/affiliate"
+              className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200"
+            >
+              Залив трафіку
+            </Link>
+          ) : null}
+          {isAuthenticated ? (
             <AccountMenu redirectAfterSwitch={BILLING_SUBSCRIBE_PATH} />
           ) : null}
         </div>

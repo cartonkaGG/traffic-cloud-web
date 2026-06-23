@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, Home, Lock, Play, Shield, Sparkles } from 'lucide-react'
+import { CreditCard, Home, Lock, Play, Shield, Sparkles, TrendingUp } from 'lucide-react'
 import { AccountMenu } from '@/components/account/AccountMenu'
 import { Link, useNavigate } from 'react-router-dom'
 import { DesktopUpdatePill } from '@/components/desktop/DesktopUpdatePill'
@@ -151,7 +151,13 @@ export function SoftwareHubPage(): JSX.Element {
         ? '/uniquify'
         : product.id === 'tiktok-warmup'
           ? '/tiktok'
-          : '/'
+          : product.id === 'traffic-affiliate'
+            ? '/affiliate'
+            : '/'
+    if (product.id === 'traffic-affiliate') {
+      navigate('/affiliate')
+      return
+    }
     launchSoftware(product.id, () => {
       navigate(canEnterPanel ? target : '/billing?gate=1&from=hub')
     })
@@ -185,6 +191,13 @@ export function SoftwareHubPage(): JSX.Element {
             <Home className="h-4 w-4" />
             <span className="hidden sm:inline">Головна</span>
           </a>
+          <Link
+            to="/affiliate"
+            className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 transition-colors hover:border-emerald-400/35"
+          >
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">Залив трафіку</span>
+          </Link>
           <Link
             to="/billing"
             className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2 text-sm text-zinc-400 transition-colors hover:border-accent/25 hover:text-zinc-200"
@@ -224,7 +237,7 @@ export function SoftwareHubPage(): JSX.Element {
             <div key={product.id}>
               <SoftwareTile
                 product={product}
-                needsSubscription={!canEnterPanel}
+                needsSubscription={product.id !== 'traffic-affiliate' && !canEnterPanel}
                 onLaunch={launch}
               />
             </div>

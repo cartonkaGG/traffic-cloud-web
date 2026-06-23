@@ -1194,3 +1194,232 @@ export function wsUrlFromHttpBase(base: string, token?: string | null): string {
   if (token) u.searchParams.set('token', token)
   return u.toString()
 }
+
+// ——— Affiliate / Traffic offers ———
+
+export type AffiliateCategory = {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  offerCount: number
+}
+
+export type AffiliateOffer = {
+  id: string
+  categoryId: string
+  categoryName: string | null
+  categorySlug: string | null
+  title: string
+  description: string | null
+  channelUsername: string | null
+  payoutPerJoinUsd: number
+  minWithdrawalUsd: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export type AffiliateLinkRow = {
+  id: string
+  offerId: string
+  offerTitle?: string
+  categoryName?: string
+  inviteLink: string
+  joins?: number
+  payoutPerJoinUsd?: number
+  createdAt: string
+}
+
+export type AffiliateBalanceInfo = {
+  balanceUsd: number
+  pendingUsd: number
+  totalEarnedUsd: number
+  totalWithdrawnUsd: number
+  totalJoins: number
+  today: { joins: number; earnedUsd: number }
+}
+
+export type AffiliateDailyStat = { date: string; joins: number; earnedUsd: number }
+
+export type AffiliateWithdrawalRow = {
+  id: string
+  amountUsd: number
+  status: string
+  walletInfo: string | null
+  adminNote: string | null
+  createdAt: string
+  updatedAt: string
+  userEmail?: string
+}
+
+export async function apiAffiliateCategories(): Promise<{ items: AffiliateCategory[] }> {
+  return fetchJson('/v1/affiliate/categories')
+}
+
+export async function apiAffiliateOffers(category?: string): Promise<{ items: AffiliateOffer[] }> {
+  const q = category ? `?category=${encodeURIComponent(category)}` : ''
+  return fetchJson(`/v1/affiliate/offers${q}`)
+}
+
+export async function apiAffiliateGetLink(offerId: string): Promise<{ link: AffiliateLinkRow }> {
+  return fetchJson(`/v1/affiliate/offers/${offerId}/link`, { method: 'POST' })
+}
+
+export async function apiAffiliateMyLinks(): Promise<{ items: AffiliateLinkRow[] }> {
+  return fetchJson('/v1/affiliate/my-links')
+}
+
+export async function apiAffiliateBalance(): Promise<AffiliateBalanceInfo> {
+  return fetchJson('/v1/affiliate/balance')
+}
+
+export async function apiAffiliateStats(days = 14): Promise<{ daily: AffiliateDailyStat[] }> {
+  return fetchJson(`/v1/affiliate/stats?days=${days}`)
+}
+
+export async function apiAffiliateWithdrawals(): Promise<{ items: AffiliateWithdrawalRow[] }> {
+  return fetchJson('/v1/affiliate/withdrawals')
+}
+
+export async function apiAffiliateRequestWithdrawal(
+  amountUsd: number,
+  walletInfo: string
+): Promise<{ withdrawal: AffiliateWithdrawalRow }> {
+  return fetchJson('/v1/affiliate/withdrawals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amountUsd, walletInfo })
+  })
+}
+
+export type AdminAffiliateCategory = AffiliateCategory & {
+  sortOrder: number
+  isActive: boolean
+  createdAt: string
+}
+
+export type AdminAffiliateOffer = {
+  id: string
+  categoryId: string
+  categoryName: string
+  title: string
+  description: string | null
+  channelUsername: string | null
+  channelTelegramId: string
+  hasBotToken: boolean
+  payoutPerJoinUsd: number
+  minWithdrawalUsd: number
+  isActive: boolean
+  sortOrder: number
+  webhookConfigured: boolean
+  botVerified: boolean
+  linkCount: number
+  conversionCount: number
+  createdAt: string
+}
+
+export async function apiAdminAffiliateOverview(): Promise<{
+  activeOffers: number
+  totalConversions: number
+  totalEarnedUsd: number
+  pendingWithdrawals: number
+  totalPaidUsd: number
+}> {
+  return fetchJson('/v1/admin/affiliate/overview')
+}
+
+export async function apiAdminAffiliateCategories(): Promise<{ items: AdminAffiliateCategory[] }> {
+  return fetchJson('/v1/admin/affiliate/categories')
+}
+
+export async function apiAdminCreateAffiliateCategory(body: {
+  name: string
+  slug?: string
+  description?: string
+}): Promise<{ category: AdminAffiliateCategory }> {
+  return fetchJson('/v1/admin/affiliate/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiAdminUpdateAffiliateCategory(
+  id: string,
+  body: Partial<{ name: string; slug: string; description: string | null; isActive: boolean }>
+): Promise<{ category: AdminAffiliateCategory }> {
+  return fetchJson(`/v1/admin/affiliate/categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiAdminAffiliateOffers(): Promise<{ items: AdminAffiliateOffer[] }> {
+  return fetchJson('/v1/admin/affiliate/offers')
+}
+
+export async function apiAdminCreateAffiliateOffer(body: {
+  categoryId: string
+  title: string
+  description?: string
+  channelUsername?: string
+  channelTelegramId: string
+  botToken: string
+  payoutPerJoinUsd: number
+  minWithdrawalUsd?: number
+}): Promise<{ offer: { id: string; title: string } }> {
+  return fetchJson('/v1/admin/affiliate/offers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiAdminUpdateAffiliateOffer(
+  id: string,
+  body: Partial<{
+    title: string
+    description: string | null
+    channelUsername: string
+    channelTelegramId: string
+    botToken: string
+    payoutPerJoinUsd: number
+    minWithdrawalUsd: number
+    isActive: boolean
+    categoryId: string
+  }>
+): Promise<{ offer: { id: string; title: string; isActive: boolean } }> {
+  return fetchJson(`/v1/admin/affiliate/offers/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiAdminVerifyAffiliateBot(
+  offerId: string
+): Promise<{ ok: boolean; botId?: number }> {
+  return fetchJson(`/v1/admin/affiliate/offers/${offerId}/verify-bot`, { method: 'POST' })
+}
+
+export async function apiAdminSetupAffiliateWebhook(
+  offerId: string
+): Promise<{ ok: boolean; webhookUrl: string }> {
+  return fetchJson(`/v1/admin/affiliate/offers/${offerId}/setup-webhook`, { method: 'POST' })
+}
+
+export async function apiAdminAffiliateWithdrawals(): Promise<{ items: AffiliateWithdrawalRow[] }> {
+  return fetchJson('/v1/admin/affiliate/withdrawals')
+}
+
+export async function apiAdminUpdateAffiliateWithdrawal(
+  id: string,
+  body: { status: string; adminNote?: string }
+): Promise<{ withdrawal: AffiliateWithdrawalRow }> {
+  return fetchJson(`/v1/admin/affiliate/withdrawals/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
