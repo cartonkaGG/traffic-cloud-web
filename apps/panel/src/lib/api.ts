@@ -1242,10 +1242,16 @@ export type AffiliateBalanceInfo = {
   totalEarnedUsd: number
   totalWithdrawnUsd: number
   totalJoins: number
-  today: { joins: number; earnedUsd: number }
+  today: { joins: number; leaves: number; earnedUsd: number; activeJoins: number }
 }
 
-export type AffiliateDailyStat = { date: string; joins: number; earnedUsd: number }
+export type AffiliateDailyStat = {
+  date: string
+  joins: number
+  leaves: number
+  earnedUsd: number
+  activeJoins?: number
+}
 
 export type AffiliateWithdrawalRow = {
   id: string
@@ -1312,7 +1318,9 @@ export type AdminAffiliateOffer = {
   description: string | null
   channelUsername: string | null
   channelTelegramId: string
+  botId: string | null
   hasBotToken: boolean
+  joinRequiresApproval: boolean
   payoutPerJoinUsd: number
   minWithdrawalUsd: number
   isActive: boolean
@@ -1322,6 +1330,64 @@ export type AdminAffiliateOffer = {
   linkCount: number
   conversionCount: number
   createdAt: string
+}
+
+export type AdminAffiliateBot = {
+  id: string
+  label: string
+  botUsername: string | null
+  botTelegramId: string | null
+  webhookConfigured: boolean
+  channelCount: number
+  offerCount: number
+  channels: {
+    id: string
+    channelTelegramId: string
+    channelUsername: string | null
+    channelTitle: string | null
+  }[]
+  createdAt: string
+}
+
+export async function apiAdminAffiliateBots(): Promise<{ items: AdminAffiliateBot[] }> {
+  return fetchJson('/v1/admin/affiliate/bots')
+}
+
+export async function apiAdminCreateAffiliateBot(body: {
+  token: string
+  label?: string
+}): Promise<{
+  bot: {
+    id: string
+    label: string
+    botUsername: string | null
+    webhookConfigured: boolean
+    webhookUrl: string
+    webhookError: string | null
+  }
+}> {
+  return fetchJson('/v1/admin/affiliate/bots', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+export async function apiAdminAddAffiliateBotChannel(
+  botId: string,
+  channel: string
+): Promise<{ channel: { id: string; channelTelegramId: string } }> {
+  return fetchJson(`/v1/admin/affiliate/bots/${botId}/channels`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channel })
+  })
+}
+
+export async function apiAdminSetupAffiliateBotWebhook(
+  botId: string
+): Promise<{ ok: boolean; webhookUrl: string }> {
+  return fetchJson(`/v1/admin/affiliate/bots/${botId}/setup-webhook`, { method: 'POST' })
 }
 
 export async function apiAdminAffiliateOverview(): Promise<{
@@ -1369,9 +1435,9 @@ export async function apiAdminCreateAffiliateOffer(body: {
   categoryId: string
   title: string
   description?: string
-  channelUsername?: string
-  channelTelegramId?: string
-  botToken: string
+  botId: string
+  channelTelegramId: string
+  joinRequiresApproval?: boolean
   payoutPerJoinUsd: number
   minWithdrawalUsd?: number
 }): Promise<{ offer: { id: string; title: string } }> {
@@ -1394,8 +1460,19 @@ export async function apiAdminUpdateAffiliateOffer(
     minWithdrawalUsd: number
     isActive: boolean
     categoryId: string
+    joinRequiresApproval: boolean
   }>
-): Promise<{ offer: { id: string; title: string; isActive: boolean } }> {
+): Promise<{
+  offer: {
+    id: string
+    title: string
+    isActive: boolean
+    joinRequiresApproval: boolean
+    payoutPerJoinUsd: number
+    minWithdrawalUsd: number
+    description: string | null
+  }
+}> {
   return fetchJson(`/v1/admin/affiliate/offers/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

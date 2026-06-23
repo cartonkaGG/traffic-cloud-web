@@ -23,7 +23,7 @@ function withdrawalStatusLabel(s: string): string {
 
 export function AffiliateStatsPage(): JSX.Element {
   const [balance, setBalance] = useState<AffiliateBalanceInfo | null>(null)
-  const [daily, setDaily] = useState<{ date: string; joins: number; earnedUsd: number }[]>([])
+  const [daily, setDaily] = useState<{ date: string; joins: number; leaves: number; earnedUsd: number }[]>([])
   const [withdrawals, setWithdrawals] = useState<AffiliateWithdrawalRow[]>([])
   const [loading, setLoading] = useState(true)
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -107,9 +107,14 @@ export function AffiliateStatsPage(): JSX.Element {
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: 'Баланс', value: usd(balance.balanceUsd), icon: Wallet, accent: 'text-emerald-300' },
-                { label: 'Сьогодні підписників', value: String(balance.today.joins), icon: Users, accent: 'text-cyan-300' },
+                {
+                  label: 'Сьогодні підписників',
+                  value: `${balance.today.joins}${balance.today.leaves ? ` (−${balance.today.leaves} відп.)` : ''}`,
+                  icon: Users,
+                  accent: 'text-cyan-300'
+                },
                 { label: 'Сьогодні заробіток', value: usd(balance.today.earnedUsd), icon: DollarSign, accent: 'text-amber-200' },
-                { label: 'Всього перегнано', value: String(balance.totalJoins), icon: TrendingUp, accent: 'text-violet-300' }
+                { label: 'Активних підписників', value: String(balance.today.activeJoins ?? balance.totalJoins), icon: TrendingUp, accent: 'text-violet-300' }
               ].map(({ label, value, icon: Icon, accent }) => (
                 <div
                   key={label}
