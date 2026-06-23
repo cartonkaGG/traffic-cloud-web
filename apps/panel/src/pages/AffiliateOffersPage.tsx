@@ -99,7 +99,7 @@ export function AffiliateOffersPage(): JSX.Element {
     })
   }
 
-  async function repairLink(linkId: string): Promise<void> {
+  async function createLink(offerId: string, label: string): Promise<void> {
     setCreatingOfferId(offerId)
     setError(null)
     try {
