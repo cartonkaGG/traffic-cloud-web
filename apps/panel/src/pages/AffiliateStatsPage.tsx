@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DollarSign, Loader2, RefreshCw, Send, TrendingUp, Users, Wallet } from 'lucide-react'
@@ -27,6 +28,7 @@ function withdrawalStatusLabel(s: string): string {
 export function AffiliateStatsPage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams()
   const offerId = searchParams.get('offer') ?? ''
+  const linkId = searchParams.get('link') ?? ''
 
   const [balance, setBalance] = useState<AffiliateBalanceInfo | null>(null)
   const [daily, setDaily] = useState<{ date: string; joins: number; leaves: number; earnedUsd: number }[]>([])
@@ -39,8 +41,13 @@ export function AffiliateStatsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [withdrawOk, setWithdrawOk] = useState(false)
 
-  const selectedOffer = useMemo(
-    () => myLinks.find((l) => l.offerId === offerId) ?? null,
+  const selectedLink = useMemo(
+    () => myLinks.find((l) => l.id === linkId) ?? null,
+    [myLinks, linkId]
+  )
+
+  const offerLinks = useMemo(
+    () => (offerId ? myLinks.filter((l) => l.offerId === offerId) : []),
     [myLinks, offerId]
   )
 
@@ -71,11 +78,16 @@ export function AffiliateStatsPage(): JSX.Element {
   }, [loadStats])
 
   function onOfferFilterChange(nextOfferId: string): void {
-    if (nextOfferId) {
-      setSearchParams({ offer: nextOfferId })
-    } else {
-      setSearchParams({})
-    }
+    const params: Record<string, string> = {}
+    if (nextOfferId) params.offer = nextOfferId
+    setSearchParams(params)
+  }
+
+  function onLinkFilterChange(nextLinkId: string): void {
+    const params: Record<string, string> = {}
+    if (offerId) params.offer = offerId
+    if (nextLinkId) params.link = nextLinkId
+    setSearchParams(params)
   }
 
   async function submitWithdraw(e: FormEvent): Promise<void> {
@@ -102,7 +114,11 @@ export function AffiliateStatsPage(): JSX.Element {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-wrap items-end justify-between gap-4"
+      >
         <div>
           <p className="text-sm text-zinc-500">Баланс, діаграми та виведення коштів.</p>
           {myLinks.length > 0 ? (
@@ -114,16 +130,32 @@ export function AffiliateStatsPage(): JSX.Element {
                 className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-1.5 text-sm text-white"
               >
                 <option value="">Усі офери</option>
-                {myLinks.map((l) => (
+                {[...new Map(myLinks.map((l) => [l.offerId, l])).values()].map((l) => (
                   <option key={l.offerId} value={l.offerId}>
                     {l.offerTitle ?? l.offerId}
-                    {l.joins != null ? ` (${l.joins} підп.)` : ''}
                   </option>
                 ))}
               </select>
-              {selectedOffer ? (
+              {offerId && offerLinks.length > 0 ? (
+                <>
+                  <span className="text-xs text-zinc-600">Посилання:</span>
+                  <select
+                    value={linkId}
+                    onChange={(e) => onLinkFilterChange(e.target.value)}
+                    className="rounded-lg border border-white/[0.08] bg-black/30 px-3 py-1.5 text-sm text-white"
+                  >
+                    <option value="">Усі лінки оферу</option>
+                    {offerLinks.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.label || 'Посилання'} ({l.joins ?? 0} підп.)
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : null}
+              {selectedLink ? (
                 <span className="text-xs text-zinc-500">
-                  {selectedOffer.joins ?? 0} активних · {selectedOffer.leaves ?? 0} відписок
+                  {selectedLink.label}: {selectedLink.joins ?? 0} активних
                 </span>
               ) : null}
             </div>
@@ -137,7 +169,7 @@ export function AffiliateStatsPage(): JSX.Element {
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Оновити
         </button>
-      </div>
+      </motion.div>
 
       {error ? (
         <div className="mt-6 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

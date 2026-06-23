@@ -1223,17 +1223,20 @@ export type AffiliateOffer = {
   minWithdrawalUsd: number
   isActive: boolean
   sortOrder: number
+  joinRequiresApproval?: boolean
 }
 
 export type AffiliateLinkRow = {
   id: string
   offerId: string
+  label?: string
   offerTitle?: string
   categoryName?: string
   inviteLink: string
   joins?: number
   totalJoins?: number
   leaves?: number
+  isReady?: boolean
   payoutPerJoinUsd?: number
   createdAt: string
 }
@@ -1275,12 +1278,55 @@ export async function apiAffiliateOffers(category?: string): Promise<{ items: Af
   return fetchJson(`/v1/affiliate/offers${q}`)
 }
 
+export async function apiAffiliateOfferLinks(offerId: string): Promise<{
+  items: AffiliateLinkRow[]
+  limit: number
+  count: number
+}> {
+  return fetchJson(`/v1/affiliate/offers/${offerId}/links`)
+}
+
+export async function apiAffiliateCreateLink(
+  offerId: string,
+  label: string
+): Promise<{ link: AffiliateLinkRow }> {
+  return fetchJson(`/v1/affiliate/offers/${offerId}/links`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label })
+  })
+}
+
+export async function apiAffiliateRenameLink(
+  linkId: string,
+  label: string
+): Promise<{ link: AffiliateLinkRow }> {
+  return fetchJson(`/v1/affiliate/links/${linkId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label })
+  })
+}
+
+export async function apiAffiliateRegenerateLink(linkId: string): Promise<{ link: AffiliateLinkRow }> {
+  return fetchJson(`/v1/affiliate/links/${linkId}/regenerate`, { method: 'POST' })
+}
+
+export async function apiAffiliateRepairLink(linkId: string): Promise<{ link: AffiliateLinkRow }> {
+  return fetchJson(`/v1/affiliate/links/${linkId}/repair`, { method: 'POST' })
+}
+
 export async function apiAffiliateGetLink(
   offerId: string,
-  force = false
+  force = false,
+  label = ''
 ): Promise<{ link: AffiliateLinkRow }> {
   const q = force ? '?force=1' : ''
-  return fetchJson(`/v1/affiliate/offers/${offerId}/link${q}`, { method: 'POST' })
+  return fetchJson(`/v1/affiliate/offers/${offerId}/link${q}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label })
+  })
 }
 
 export async function apiAffiliateMyLinks(): Promise<{ items: AffiliateLinkRow[] }> {
@@ -1417,6 +1463,7 @@ export type AdminAffiliateLinkRow = {
   offerId: string
   offerTitle: string
   categoryName: string
+  label: string
   inviteLink: string
   joins: number
   totalJoins: number

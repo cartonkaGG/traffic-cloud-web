@@ -906,6 +906,7 @@ export function AdminAffiliatePage(): JSX.Element {
                 <thead className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-zinc-500">
                   <tr>
                     <th className="px-3 py-2">Партнер</th>
+                    <th className="px-3 py-2">Назва</th>
                     <th className="px-3 py-2">Офер</th>
                     <th className="px-3 py-2">Підп.</th>
                     <th className="px-3 py-2">Заробіток</th>
@@ -919,6 +920,7 @@ export function AdminAffiliatePage(): JSX.Element {
                         <div className="text-white">{l.userEmail}</div>
                         <div className="text-[10px] text-zinc-600">{new Date(l.createdAt).toLocaleDateString()}</div>
                       </td>
+                      <td className="px-3 py-2 font-medium text-sky-200">{l.label}</td>
                       <td className="px-3 py-2">
                         <div>{l.offerTitle}</div>
                         <div className="text-[10px] text-zinc-600">{l.categoryName}</div>
