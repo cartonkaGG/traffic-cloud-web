@@ -1390,6 +1390,23 @@ export async function apiAdminSetupAffiliateBotWebhook(
   return fetchJson(`/v1/admin/affiliate/bots/${botId}/setup-webhook`, { method: 'POST' })
 }
 
+export async function apiAdminDeleteAffiliateBot(botId: string): Promise<{ ok: boolean }> {
+  return fetchJson(`/v1/admin/affiliate/bots/${botId}`, { method: 'DELETE' })
+}
+
+export async function apiAdminDeleteAffiliateBotChannel(
+  botId: string,
+  channelId: string
+): Promise<{ ok: boolean }> {
+  return fetchJson(`/v1/admin/affiliate/bots/${botId}/channels/${channelId}`, {
+    method: 'DELETE'
+  })
+}
+
+export async function apiAdminDeleteAffiliateOffer(offerId: string): Promise<{ ok: boolean }> {
+  return fetchJson(`/v1/admin/affiliate/offers/${offerId}`, { method: 'DELETE' })
+}
+
 export async function apiAdminAffiliateOverview(): Promise<{
   activeOffers: number
   totalConversions: number

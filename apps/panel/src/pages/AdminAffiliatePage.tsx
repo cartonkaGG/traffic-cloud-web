@@ -7,6 +7,7 @@ import {
   Plus,
   RefreshCw,
   Save,
+  Trash2,
   X
 } from 'lucide-react'
 import {
@@ -19,6 +20,9 @@ import {
   apiAdminCreateAffiliateBot,
   apiAdminCreateAffiliateCategory,
   apiAdminCreateAffiliateOffer,
+  apiAdminDeleteAffiliateBot,
+  apiAdminDeleteAffiliateBotChannel,
+  apiAdminDeleteAffiliateOffer,
   apiAdminSetupAffiliateBotWebhook,
   apiAdminUpdateAffiliateCategory,
   apiAdminUpdateAffiliateOffer,
@@ -35,7 +39,7 @@ type Tab = 'bots' | 'offers' | 'categories' | 'withdrawals'
 function affiliateErrorMessage(code: string): string {
   const map: Record<string, string> = {
     missing_required_fields: 'Заповніть обовʼязкові поля',
-    missing_channel: 'Вкажіть канал (@username)',
+    missing_channel: 'Вкажіть канал (@username або -100… для приватного)',
     bot_required: 'Спочатку додайте бота у вкладці «Боти»',
     channel_not_in_bot: 'Канал не в списку бота — додайте його в боті',
     offer_exists_for_channel: 'Для цього каналу вже є активний офер',
@@ -43,9 +47,47 @@ function affiliateErrorMessage(code: string): string {
     channel_not_found: 'Канал не знайдено',
     bot_not_in_channel: 'Бот не в каналі — додайте адміном',
     bot_must_be_admin: 'Бот має бути адміном каналу',
+    channel_has_offer: 'Спочатку видаліть офер для цього каналу',
+    bot_has_offers: 'Спочатку видаліть офери цього бота',
     bot_needs_invite_permission: 'Боту потрібне право запрошувати користувачів'
   }
   return map[code] ?? code
+}
+
+const offerFormDefaults = {
+  categoryId: '',
+  botId: '',
+  channelTelegramId: '',
+  title: '',
+  description: '',
+  payoutPerJoinUsd: '0.5',
+  minWithdrawalUsd: '10',
+  joinRequiresApproval: false
+}
+
+function syncOfferForm(
+  f: typeof offerFormDefaults,
+  cats: AdminAffiliateCategory[],
+  bts: AdminAffiliateBot[]
+): typeof offerFormDefaults {
+  const validBotId =
+    f.botId && bts.some((b) => b.id === f.botId) ? f.botId : bts[0]?.id ?? ''
+  const bot = bts.find((b) => b.id === validBotId)
+  const channels = bot?.channels ?? []
+  const validChannelId =
+    f.channelTelegramId &&
+    channels.some((c) => String(c.channelTelegramId) === String(f.channelTelegramId))
+      ? String(f.channelTelegramId)
+      : channels[0]
+        ? String(channels[0].channelTelegramId)
+        : ''
+  return {
+    ...f,
+    categoryId:
+      f.categoryId && cats.some((c) => c.id === f.categoryId) ? f.categoryId : cats[0]?.id ?? '',
+    botId: validBotId,
+    channelTelegramId: validChannelId
+  }
 }
 
 function parseApiError(err: unknown): string {
@@ -77,16 +119,7 @@ export function AdminAffiliatePage(): JSX.Element {
   const [addChannelBotId, setAddChannelBotId] = useState('')
   const [addChannelRef, setAddChannelRef] = useState('')
 
-  const [offerForm, setOfferForm] = useState({
-    categoryId: '',
-    botId: '',
-    channelTelegramId: '',
-    title: '',
-    description: '',
-    payoutPerJoinUsd: '0.5',
-    minWithdrawalUsd: '10',
-    joinRequiresApproval: false
-  })
+  const [offerForm, setOfferForm] = useState(offerFormDefaults)
 
   const [editing, setEditing] = useState<AdminAffiliateOffer | null>(null)
   const [editForm, setEditForm] = useState({
@@ -118,11 +151,7 @@ export function AdminAffiliatePage(): JSX.Element {
       setOffers(offs.items)
       setBots(bts.items)
       setWithdrawals(wds.items)
-      setOfferForm((f) => ({
-        ...f,
-        categoryId: f.categoryId || cats.items[0]?.id || '',
-        botId: f.botId || bts.items[0]?.id || ''
-      }))
+      setOfferForm((f) => syncOfferForm(f, cats.items, bts.items))
       if (!addChannelBotId && bts.items[0]) setAddChannelBotId(bts.items[0].id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Помилка')
@@ -134,6 +163,10 @@ export function AdminAffiliatePage(): JSX.Element {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (tab === 'offers') void load()
+  }, [tab])
 
   async function createBot(e: FormEvent): Promise<void> {
     e.preventDefault()
@@ -165,6 +198,53 @@ export function AdminAffiliatePage(): JSX.Element {
     } finally {
       setBusy(null)
     }
+  }
+
+  async function deleteBot(botId: string): Promise<void> {
+    if (!window.confirm('Видалити бота? Канали теж зникнуть. Офери спочатку треба видалити.')) return
+    setBusy(`del-bot-${botId}`)
+    setError(null)
+    try {
+      await apiAdminDeleteAffiliateBot(botId)
+      await load()
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function deleteChannel(botId: string, channelId: string): Promise<void> {
+    if (!window.confirm('Видалити канал зі списку бота?')) return
+    setBusy(`del-ch-${channelId}`)
+    try {
+      await apiAdminDeleteAffiliateBotChannel(botId, channelId)
+      await load()
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function deleteOffer(offerId: string): Promise<void> {
+    if (!window.confirm('Видалити офер? Посилання партнерів і статистика по ньому зникнуть.')) return
+    setBusy(`del-offer-${offerId}`)
+    try {
+      await apiAdminDeleteAffiliateOffer(offerId)
+      await load()
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  function useChannelForOffer(botId: string, channelTelegramId: string): void {
+    setTab('offers')
+    setOfferForm((f) =>
+      syncOfferForm({ ...f, botId, channelTelegramId: String(channelTelegramId) }, categories, bots)
+    )
   }
 
   async function createCategory(e: FormEvent): Promise<void> {
@@ -397,7 +477,7 @@ export function AdminAffiliatePage(): JSX.Element {
             <input
               value={addChannelRef}
               onChange={(e) => setAddChannelRef(e.target.value)}
-              placeholder="@channel (бот має бути адміном)"
+              placeholder="@channel або -1001234567890"
               className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white"
             />
             <button
@@ -409,8 +489,11 @@ export function AdminAffiliatePage(): JSX.Element {
               Додати канал
             </button>
             <p className="text-xs text-zinc-500 lg:col-span-3">
-              Після додавання бота в канал як адміна можна вказати @username — канал зʼявиться в списку.
-              Якщо додали бота в новий канал, натисніть «Додати канал» з @username.
+              Публічний канал — вкажіть @username. Приватний — числовий id на кшталт{' '}
+              <span className="font-mono text-zinc-400">-1001234567890</span> (бот має бути адміном).
+              Id дізнаєтесь: перешліть будь-який пост з каналу боту @userinfobot або @getidsbot.
+              Якщо webhook увімкнено, канал може зʼявитися сам після додавання бота адміном — натисніть
+              «Оновити».
             </p>
           </form>
 
@@ -447,15 +530,42 @@ export function AdminAffiliatePage(): JSX.Element {
                   ) : (
                     <CheckCircle2 className="h-5 w-5 text-emerald-400" />
                   )}
+                  <button
+                    type="button"
+                    onClick={() => void deleteBot(b.id)}
+                    disabled={busy === `del-bot-${b.id}`}
+                    className="rounded-lg border border-red-500/30 px-2 py-1.5 text-xs text-red-300 hover:bg-red-500/10"
+                    title="Видалити бота"
+                  >
+                    {busy === `del-bot-${b.id}` ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                  </button>
                 </div>
                 {b.channels.length > 0 ? (
                   <ul className="mt-4 flex flex-wrap gap-2">
                     {b.channels.map((c) => (
-                      <li
-                        key={c.id}
-                        className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-zinc-300"
-                      >
-                        {c.channelTitle || (c.channelUsername ? `@${c.channelUsername}` : c.channelTelegramId)}
+                      <li key={c.id} className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => useChannelForOffer(b.id, c.channelTelegramId)}
+                          className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-1.5 text-xs text-zinc-300 hover:border-emerald-500/30 hover:text-emerald-200"
+                          title="Створити офер для цього каналу"
+                        >
+                          {c.channelTitle ||
+                            (c.channelUsername ? `@${c.channelUsername}` : c.channelTelegramId)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteChannel(b.id, c.id)}
+                          disabled={busy === `del-ch-${c.id}`}
+                          className="rounded-lg border border-white/10 p-1 text-zinc-500 hover:text-red-300"
+                          title="Видалити канал"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -488,9 +598,16 @@ export function AdminAffiliatePage(): JSX.Element {
             </select>
             <select
               value={offerForm.botId}
-              onChange={(e) =>
-                setOfferForm((f) => ({ ...f, botId: e.target.value, channelTelegramId: '' }))
-              }
+              onChange={(e) => {
+                const botId = e.target.value
+                const bot = bots.find((b) => b.id === botId)
+                const firstCh = bot?.channels[0]
+                setOfferForm((f) => ({
+                  ...f,
+                  botId,
+                  channelTelegramId: firstCh ? String(firstCh.channelTelegramId) : ''
+                }))
+              }}
               className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white"
             >
               {bots.map((b) => (
@@ -501,16 +618,28 @@ export function AdminAffiliatePage(): JSX.Element {
             </select>
             <select
               value={offerForm.channelTelegramId}
-              onChange={(e) => setOfferForm((f) => ({ ...f, channelTelegramId: e.target.value }))}
+              onChange={(e) =>
+                setOfferForm((f) => ({ ...f, channelTelegramId: e.target.value }))
+              }
               className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white lg:col-span-2"
             >
-              <option value="">Оберіть канал</option>
+              <option value="">
+                {(selectedBot?.channels.length ?? 0) === 0
+                  ? 'Немає каналів — додайте на вкладці «Боти»'
+                  : 'Оберіть канал'}
+              </option>
               {(selectedBot?.channels ?? []).map((c) => (
-                <option key={c.id} value={c.channelTelegramId}>
-                  {c.channelTitle || (c.channelUsername ? `@${c.channelUsername}` : c.channelTelegramId)}
+                <option key={c.id} value={String(c.channelTelegramId)}>
+                  {c.channelTitle ||
+                    (c.channelUsername ? `@${c.channelUsername}` : c.channelTelegramId)}
                 </option>
               ))}
             </select>
+            {(selectedBot?.channels.length ?? 0) > 0 ? (
+              <p className="text-xs text-zinc-600 lg:col-span-2">
+                Або натисніть канал на вкладці «Боти» — він підставиться сюди автоматично.
+              </p>
+            ) : null}
             <input
               value={offerForm.title}
               onChange={(e) => setOfferForm((f) => ({ ...f, title: e.target.value }))}
@@ -605,6 +734,19 @@ export function AdminAffiliatePage(): JSX.Element {
                       ].join(' ')}
                     >
                       {o.isActive ? 'Активний' : 'Вимкнений'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteOffer(o.id)}
+                      disabled={busy === `del-offer-${o.id}`}
+                      className="flex items-center gap-1 rounded-lg border border-red-500/30 px-2 py-1 text-xs text-red-300"
+                    >
+                      {busy === `del-offer-${o.id}` ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                      Видалити
                     </button>
                   </div>
                 </div>
