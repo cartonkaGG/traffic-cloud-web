@@ -12,8 +12,8 @@ export function SessionRevokedListener(): null {
   useEffect(() => {
     const onRevoked = (): void => {
       logout()
-      pushToast('Вхід виконано з іншого пристрою. Увійдіть знову.', 'info')
-      navigate('/auth?reason=session_revoked', { replace: true })
+      pushToast('Сесія недійсна. Увійдіть знову.', 'info')
+      navigate('/auth?reason=session_expired', { replace: true })
     }
     window.addEventListener(SESSION_REVOKED_EVENT, onRevoked)
     return () => window.removeEventListener(SESSION_REVOKED_EVENT, onRevoked)

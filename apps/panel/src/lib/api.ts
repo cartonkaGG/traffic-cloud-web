@@ -169,11 +169,17 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* not JSON */
     }
-    if (res.status === 401 && errKey === 'session_revoked') {
-      emitSessionRevoked()
-      throw new Error(
-        hint ?? 'Вхід виконано з іншого пристрою. Увійдіть знову.'
-      )
+    if (res.status === 401) {
+      const shouldReauth =
+        errKey === 'session_revoked' || errKey === 'invalid_token' || errKey === 'unauthorized'
+      if (shouldReauth) {
+        emitSessionRevoked()
+        throw new Error(
+          errKey === 'session_revoked'
+            ? (hint ?? 'Вхід виконано з іншого пристрою. Увійдіть знову.')
+            : (hint ?? 'Сесія закінчилась. Увійдіть знову.')
+        )
+      }
     }
     const message =
       hint ??
