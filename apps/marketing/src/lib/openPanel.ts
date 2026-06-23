@@ -1,10 +1,10 @@
-type PanelEntry = 'hub' | 'admin'
+type PanelEntry = 'affiliate' | 'admin'
 
-/** Спроба відкрити desktop-додаток; якщо не встановлено — веб-панель. */
-export function openPanelFromSite(entry: PanelEntry = 'hub'): void {
-  const webPath = entry === 'admin' ? '/app/admin' : '/app/hub'
+/** Відкрити веб-панель (партнерка / адмін оферів). */
+export function openPanelFromSite(entry: PanelEntry = 'affiliate'): void {
+  const webPath = entry === 'admin' ? '/app/admin/affiliate' : '/app/affiliate'
   const targetUrl = `${window.location.origin}${webPath}`
-  const deepLink = `trafficcloud://panel/${entry === 'admin' ? 'hub' : entry}?url=${encodeURIComponent(targetUrl)}`
+  const deepLink = `trafficcloud://panel/affiliate?url=${encodeURIComponent(targetUrl)}`
 
   let opened = false
   const fallbackTimer = window.setTimeout(() => {

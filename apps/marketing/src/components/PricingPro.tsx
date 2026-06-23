@@ -4,7 +4,7 @@ import { ArrowRight, Check, Crown, Sparkles } from 'lucide-react'
 import { ScrollReveal } from './ScrollReveal'
 import { fetchPublicBillingPlan } from '../lib/api'
 
-const PANEL_SUBSCRIBE_HREF = '/app/subscribe'
+const PANEL_ENTRY_HREF = '/app/auth'
 
 function formatUsd(n: number): string {
   if (Number.isInteger(n)) return String(n)
@@ -126,7 +126,7 @@ export default function PricingPro() {
               </ul>
 
               <a
-                href={PANEL_SUBSCRIBE_HREF}
+                href={PANEL_ENTRY_HREF}
                 className="mt-8 flex w-full min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-white shadow-[0_4px_24px_rgba(6,182,212,0.35)] transition-all hover:from-cyan-500 hover:to-blue-500"
               >
                 Оформити підписку

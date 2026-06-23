@@ -54,7 +54,7 @@ export function AccountMenu({
     setOpen(false)
     logout()
     const safe =
-      redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/hub'
+      redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/affiliate'
     navigate(`/auth?redirect=${encodeURIComponent(safe)}`)
   }
 

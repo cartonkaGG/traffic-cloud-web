@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
+import { FEATURES } from './config/features'
 import { useAuth } from './context/AuthContext'
 import { useWorkspaceData } from './context/WorkspaceDataContext'
 import { useSoftware } from './context/SoftwareContext'
@@ -9,6 +10,7 @@ import { DesktopUpdateBanner } from './components/desktop/DesktopUpdateBanner'
 import { DesktopUpdateOverlay } from './components/desktop/DesktopUpdateOverlay'
 import { PanelVersionSync } from './components/layout/PanelVersionSync'
 import { AppShell } from './components/layout/AppShell'
+import { AffiliateShell } from './components/layout/AffiliateShell'
 import { PanelLoadingScreen } from './components/layout/PanelLoadingScreen'
 import { SoftwareLaunchOverlay } from './components/layout/SoftwareLaunchOverlay'
 import { AccountsPage } from './pages/AccountsPage'
@@ -33,6 +35,7 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { VideoUniquifyShell } from './components/layout/VideoUniquifyShell'
 import { TikTokWarmupShell } from './components/layout/TikTokWarmupShell'
 import {
+  AFFILIATE_HOME_PATH,
   BILLING_SUBSCRIBE_PATH,
   resolvePostAuthPath,
   SUBSCRIBE_ENTRY_PATH
@@ -43,18 +46,17 @@ function PostAuthRedirect(): JSX.Element {
   const { subscription, status, bundle } = useWorkspaceData()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect')
-  const bootstrapped = subscription !== null || bundle !== null || status === 'online'
 
+  if (FEATURES.affiliateOnlyMode) {
+    return <Navigate to={resolvePostAuthPath(redirectTo, null, isAdmin)} replace />
+  }
+
+  const bootstrapped = subscription !== null || bundle !== null || status === 'online'
   if (status === 'loading' && !bootstrapped) {
     return <PanelLoadingScreen label="Завантаження…" />
   }
 
-  return (
-    <Navigate
-      to={resolvePostAuthPath(redirectTo, subscription, isAdmin)}
-      replace
-    />
-  )
+  return <Navigate to={resolvePostAuthPath(redirectTo, subscription, isAdmin)} replace />
 }
 
 function Protected({
@@ -106,7 +108,7 @@ function RequireTikTokWarmup({ children }: { children: ReactNode }): JSX.Element
 
 function RequireAdmin({ children }: { children: ReactNode }): JSX.Element {
   const { isAdmin } = useAuth()
-  if (!isAdmin) return <Navigate to="/hub" replace />
+  if (!isAdmin) return <Navigate to={AFFILIATE_HOME_PATH} replace />
   return <>{children}</>
 }
 
@@ -123,27 +125,9 @@ function RequireSubscription({ children }: { children: ReactNode }): JSX.Element
   return <>{children}</>
 }
 
-export default function App(): JSX.Element {
+function SoftwareRoutes(): JSX.Element {
   return (
     <>
-      <SessionRevokedListener />
-      <PanelVersionSync />
-      <DesktopUpdateBanner />
-      <DesktopUpdateOverlay />
-      <SoftwareLaunchOverlay />
-      <Routes>
-      <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
-      <Route
-        path="/auth"
-        element={
-          <Protected invert>
-            <AuthPage />
-          </Protected>
-        }
-      />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/hub"
         element={
@@ -151,32 +135,6 @@ export default function App(): JSX.Element {
             <RequireSubscription>
               <SoftwareHubPage />
             </RequireSubscription>
-          </Protected>
-        }
-      />
-      <Route
-        path="/billing"
-        element={
-          <Protected>
-            <BillingPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/affiliate"
-        element={
-          <Protected>
-            <AffiliatePage />
-          </Protected>
-        }
-      />
-      <Route
-        path="/admin/affiliate"
-        element={
-          <Protected>
-            <RequireAdmin>
-              <AdminAffiliatePage />
-            </RequireAdmin>
           </Protected>
         }
       />
@@ -247,8 +205,91 @@ export default function App(): JSX.Element {
         <Route path="logs" element={<Navigate to="/" replace />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </>
+  )
+}
+
+export default function App(): JSX.Element {
+  const affiliateOnly = FEATURES.affiliateOnlyMode
+
+  return (
+    <>
+      <SessionRevokedListener />
+      <PanelVersionSync />
+      {!affiliateOnly ? <DesktopUpdateBanner /> : null}
+      {!affiliateOnly ? <DesktopUpdateOverlay /> : null}
+      {!affiliateOnly ? <SoftwareLaunchOverlay /> : null}
+      <Routes>
+        <Route path="/subscribe" element={<Navigate to={SUBSCRIBE_ENTRY_PATH} replace />} />
+        <Route
+          path="/auth"
+          element={
+            <Protected invert>
+              <AuthPage />
+            </Protected>
+          }
+        />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/billing"
+          element={
+            <Protected>
+              <BillingPage />
+            </Protected>
+          }
+        />
+
+        {affiliateOnly ? (
+          <>
+            <Route
+              element={
+                <Protected>
+                  <AffiliateShell />
+                </Protected>
+              }
+            >
+              <Route path="/affiliate" element={<AffiliatePage />} />
+              <Route
+                path="/admin/affiliate"
+                element={
+                  <RequireAdmin>
+                    <AdminAffiliatePage />
+                  </RequireAdmin>
+                }
+              />
+            </Route>
+            <Route path="/" element={<Navigate to={AFFILIATE_HOME_PATH} replace />} />
+            <Route path="/hub" element={<Navigate to={AFFILIATE_HOME_PATH} replace />} />
+            <Route path="/admin" element={<Navigate to="/admin/affiliate" replace />} />
+            <Route path="*" element={<Navigate to={AFFILIATE_HOME_PATH} replace />} />
+          </>
+        ) : (
+          <>
+            <Route
+              path="/affiliate"
+              element={
+                <Protected>
+                  <AffiliatePage />
+                </Protected>
+              }
+            />
+            <Route
+              path="/admin/affiliate"
+              element={
+                <Protected>
+                  <RequireAdmin>
+                    <AdminAffiliatePage />
+                  </RequireAdmin>
+                </Protected>
+              }
+            />
+            <SoftwareRoutes />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
+      </Routes>
     </>
   )
 }

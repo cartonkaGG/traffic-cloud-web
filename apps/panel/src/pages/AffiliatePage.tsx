@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft,
   Copy,
   DollarSign,
-  Home,
   Link2,
   Loader2,
   RefreshCw,
@@ -13,10 +11,7 @@ import {
   Users,
   Wallet
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { AccountMenu } from '@/components/account/AccountMenu'
 import { AffiliateStatsChart } from '@/components/affiliate/AffiliateStatsChart'
-import { PanelBrand } from '@/components/brand/PanelBrand'
 import {
   apiAffiliateBalance,
   apiAffiliateCategories,
@@ -32,7 +27,6 @@ import {
   type AffiliateOffer,
   type AffiliateWithdrawalRow
 } from '@/lib/api'
-import { getMarketingHomeUrl } from '@/lib/site'
 
 function usd(n: number): string {
   return `$${n.toFixed(2)}`
@@ -46,7 +40,6 @@ function withdrawalStatusLabel(s: string): string {
 }
 
 export function AffiliatePage(): JSX.Element {
-  const navigate = useNavigate()
   const [categories, setCategories] = useState<AffiliateCategory[]>([])
   const [offers, setOffers] = useState<AffiliateOffer[]>([])
   const [myLinks, setMyLinks] = useState<AffiliateLinkRow[]>([])
@@ -157,46 +150,11 @@ export function AffiliatePage(): JSX.Element {
   }
 
   return (
-    <div className="relative flex min-h-full flex-col overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 50% at 50% -10%, rgba(52,211,153,0.12), transparent 55%), linear-gradient(180deg, #030712 0%, #060a12 100%)'
-        }}
-      />
-
-      <header className="relative z-10 flex items-center justify-between gap-4 border-b border-white/[0.06] px-6 py-4 backdrop-blur-xl lg:px-8">
-        <PanelBrand layout="sidebar" />
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate('/hub')}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2 text-sm text-zinc-400 hover:text-zinc-200"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Назад</span>
-          </button>
-          <a
-            href={getMarketingHomeUrl()}
-            className="hidden items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2 text-sm text-zinc-400 hover:text-zinc-200 sm:flex"
-          >
-            <Home className="h-4 w-4" />
-          </a>
-          <AccountMenu redirectAfterSwitch="/affiliate" />
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-400/80">
-              Traffic Cloud
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-white lg:text-3xl">Залив трафіку</h1>
-            <p className="mt-2 max-w-xl text-sm text-zinc-500">
-              Обирайте офер, отримуйте унікальне посилання та заробляйте за кожного підписника в Telegram-канал.
+            <p className="text-sm text-zinc-500">
+              Обирайте офер, отримуйте унікальне посилання та заробляйте за кожного підписника.
             </p>
           </div>
           <button
@@ -418,7 +376,6 @@ export function AffiliatePage(): JSX.Element {
             </section>
           </>
         )}
-      </main>
     </div>
   )
 }

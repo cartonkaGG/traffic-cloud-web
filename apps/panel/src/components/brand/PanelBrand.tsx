@@ -5,7 +5,7 @@ type Props = {
   /** compact — sidebar; auth — login card */
   layout?: 'sidebar' | 'compact' | 'auth'
   className?: string
-  /** Куди вести по кліку; null — не клікабельний. За замовчуванням /hub (крім auth). */
+  /** Куди вести по кліку; null — не клікабельний. За замовчуванням /affiliate (крім auth). */
   homeTo?: string | null
 }
 
@@ -15,7 +15,7 @@ export function PanelBrand({
   homeTo
 }: Props): JSX.Element {
   const markSize = layout === 'auth' ? 48 : layout === 'compact' ? 22 : 32
-  const target = homeTo === undefined ? (layout === 'auth' ? null : '/hub') : homeTo
+  const target = homeTo === undefined ? (layout === 'auth' ? null : '/affiliate') : homeTo
 
   const inner = (
     <>
@@ -39,7 +39,7 @@ export function PanelBrand({
           TRAFFIC CLOUD
         </div>
         {layout === 'auth' ? (
-          <div className="mt-0.5 text-sm font-medium text-zinc-400">Панель outreach</div>
+          <div className="mt-0.5 text-sm font-medium text-zinc-400">Партнерська панель</div>
         ) : null}
       </div>
     </>
@@ -51,7 +51,7 @@ export function PanelBrand({
     return (
       <Link
         to={target}
-        title="Traffic Cloud Hub"
+        title="Traffic Cloud"
         className={`${rootClass} rounded-xl transition-opacity hover:opacity-90`}
       >
         {inner}

@@ -1,7 +1,11 @@
+import { FEATURES } from '@/config/features'
 import type { SubscriptionInfo } from '@/lib/api'
 import { hasPanelAccess } from '@/lib/subscriptionAccess'
 
-/** Після входу — сторінка оформлення підписки. */
+/** Головна сторінка партнерки (без підписки). */
+export const AFFILIATE_HOME_PATH = '/affiliate'
+
+/** Після входу — сторінка оформлення підписки (лише коли софти увімкнені). */
 export const BILLING_SUBSCRIBE_PATH = '/billing?gate=1'
 
 export const HUB_PATH = '/hub'
@@ -11,7 +15,7 @@ export const BILLING_SUBSCRIBE_REDIRECT = encodeURIComponent(BILLING_SUBSCRIBE_P
 /** Єдиний вхід на оформлення підписки: спочатку auth, потім billing. */
 export const SUBSCRIBE_ENTRY_PATH = `/auth?redirect=${BILLING_SUBSCRIBE_REDIRECT}`
 
-/** Куди відправити після входу: hub якщо підписка вже є, інакше billing або явний redirect. */
+/** Куди відправити після входу. */
 export function resolvePostAuthPath(
   redirectTo: string | null | undefined,
   subscription: SubscriptionInfo | null | undefined,
@@ -19,6 +23,15 @@ export function resolvePostAuthPath(
 ): string {
   const safe =
     redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null
+
+  if (FEATURES.affiliateOnlyMode) {
+    if (safe) {
+      if (safe.startsWith('/hub') || safe === '/') return AFFILIATE_HOME_PATH
+      return safe
+    }
+    return AFFILIATE_HOME_PATH
+  }
+
   const hasAccess = hasPanelAccess(subscription, isAdmin)
 
   if (safe) {

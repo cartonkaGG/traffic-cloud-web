@@ -111,7 +111,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
             ) : null}
             <button
               type="button"
-              onClick={() => openPanelFromSite('hub')}
+              onClick={() => openPanelFromSite('affiliate')}
               className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 hover:bg-gray-900/80 transition-all flex items-center gap-2"
             >
               <LayoutDashboard className="w-4 h-4 text-blue-400" />
@@ -182,7 +182,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
-                  openPanelFromSite('hub');
+                  openPanelFromSite('affiliate');
                 }}
                 className="w-full py-3 rounded-lg text-white font-medium text-sm text-center flex items-center justify-center gap-2 border border-gray-700 bg-gray-900 uppercase"
               >

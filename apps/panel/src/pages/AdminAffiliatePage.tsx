@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import {
-  ArrowLeft,
   Bot,
   CheckCircle2,
   Loader2,
   Plus,
   RefreshCw,
   Save,
-  Shield,
   Webhook
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { AccountMenu } from '@/components/account/AccountMenu'
-import { PanelBrand } from '@/components/brand/PanelBrand'
 import {
   apiAdminAffiliateCategories,
   apiAdminAffiliateOffers,
@@ -180,29 +175,10 @@ export function AdminAffiliatePage(): JSX.Element {
   }
 
   return (
-    <div className="relative min-h-full bg-[#060a12]">
-      <header className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-6 py-4 lg:px-8">
-        <PanelBrand layout="sidebar" />
-        <div className="flex items-center gap-2">
-          <Link
-            to="/admin"
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2 text-sm text-zinc-400 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Адмін
-          </Link>
-          <AccountMenu redirectAfterSwitch="/admin/affiliate" />
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-violet-300">
-              <Shield className="h-5 w-5" />
-              <span className="text-sm font-medium">Адмін · Залив трафіку</span>
-            </div>
-            <h1 className="mt-1 text-2xl font-semibold text-white">Офери та партнери</h1>
+            <p className="text-sm text-zinc-500">Категорії, офери, боти та виведення партнерів.</p>
           </div>
           <button
             type="button"
@@ -469,7 +445,6 @@ export function AdminAffiliatePage(): JSX.Element {
             )}
           </div>
         ) : null}
-      </main>
     </div>
   )
 }
