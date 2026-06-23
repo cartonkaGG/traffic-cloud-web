@@ -7,6 +7,7 @@ import HeroPromoVideo from './components/HeroPromoVideo';
 import About from './components/About';
 import { FEATURES } from './config/features';
 import PricingPro from './components/PricingPro';
+import PartnerAffiliate from './components/PartnerAffiliate';
 import ContactForm from './components/ContactForm';
 import ScrollProgressBar from './components/ScrollProgressBar';
 import { ScrollReveal } from './components/ScrollReveal';
@@ -25,7 +26,9 @@ export default function App() {
   useEffect(() => {
     if (isLoading) return;
 
-    const sections = ['hero', 'about', 'pricing', 'contact'];
+    const sections = FEATURES.affiliateOnlyMode
+      ? ['hero', 'offers', 'stats', 'contact']
+      : ['hero', 'about', 'pricing', 'contact'];
     const observers = sections.map((secId) => {
       const el = document.getElementById(secId);
       if (!el) return null;
@@ -174,8 +177,8 @@ export default function App() {
           <main className="flex-grow relative z-10">
             <Hero onContactClick={scrollToContact} />
             {FEATURES.heroPromoVideo ? <HeroPromoVideo /> : null}
-            <About />
-            <PricingPro />
+            {FEATURES.affiliateOnlyMode ? <PartnerAffiliate /> : <About />}
+            {!FEATURES.affiliateOnlyMode ? <PricingPro /> : null}
             <ContactForm />
           </main>
 
@@ -188,7 +191,9 @@ export default function App() {
                       TRAFFIC CLOUD
                     </span>
                     <p className="text-xs text-gray-500 font-sans mt-2 max-w-md">
-                      Панель для Telegram outreach: акаунти, джерела, кампанії та аналітика.
+                      {FEATURES.affiliateOnlyMode
+                        ? 'Партнерська платформа: офери Telegram-каналів, трекінг підписників, статистика та виведення.'
+                        : 'Панель для Telegram outreach: акаунти, джерела, кампанії та аналітика.'}
                     </p>
                   </div>
                   <p className="text-[10px] text-gray-600 font-sans">

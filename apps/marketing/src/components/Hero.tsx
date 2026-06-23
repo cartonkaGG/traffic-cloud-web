@@ -1,7 +1,8 @@
-import { ArrowRight, ChevronDown, Shield } from 'lucide-react';
+import { ArrowRight, ChevronDown, Shield, TrendingUp } from 'lucide-react';
 import CloudLogo3D from './CloudLogo3D';
 import HeroAmbient from './HeroAmbient';
 import { ScrollReveal } from './ScrollReveal';
+import { FEATURES } from '../config/features';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
 import { openPanelFromSite } from '../lib/openPanel';
 
@@ -9,8 +10,11 @@ interface HeroProps {
   onContactClick: () => void;
 }
 
+const PANEL_AFFILIATE = '/app/affiliate';
+
 export default function Hero({ onContactClick }: HeroProps) {
   const { isAdmin } = usePanelAdmin();
+  const affiliate = FEATURES.affiliateOnlyMode;
 
   return (
     <section
@@ -28,14 +32,35 @@ export default function Hero({ onContactClick }: HeroProps) {
             className="lg:col-span-6 flex flex-col justify-center text-center lg:text-left order-2 lg:order-1"
           >
             <div className="hero-copy self-center lg:self-start max-w-xl w-full">
+              {affiliate ? (
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Партнерська платформа
+                </div>
+              ) : null}
+
               <h1 className="hero-title mb-4 sm:mb-5">
-                <span className="hero-title-glow">Traffic Cloud</span>
+                <span className="hero-title-glow">
+                  {affiliate ? 'Заливай трафік' : 'Traffic Cloud'}
+                </span>
               </h1>
 
               <p className="hero-lead mb-6 sm:mb-8">
-                Ми займаємося трафіком: заливаємо обсяги на різні платформи, масштабуємо кампанії
-                та працюємо з цільовою аудиторією в потрібних гео. Допомагаємо партнерам отримувати{' '}
-                <span className="text-cyan-200/95">стабільний потік лідів</span> і рости в прибутку.
+                {affiliate ? (
+                  <>
+                    Обирай офери Telegram-каналів, отримуй{' '}
+                    <span className="text-emerald-200/95">унікальне посилання</span> і заробляй за
+                    кожного підписника. Статистика та виведення — в особистому кабінеті.
+                  </>
+                ) : (
+                  <>
+                    Ми займаємося трафіком: заливаємо обсяги на різні платформи, масштабуємо
+                    кампанії та працюємо з цільовою аудиторією в потрібних гео. Допомагаємо
+                    партнерам отримувати{' '}
+                    <span className="text-cyan-200/95">стабільний потік лідів</span> і рости в
+                    прибутку.
+                  </>
+                )}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -46,17 +71,16 @@ export default function Hero({ onContactClick }: HeroProps) {
                     className="hero-cta-secondary min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-amber-100 text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 border border-amber-500/35 bg-amber-950/25 hover:bg-amber-950/40 touch-manipulation"
                   >
                     <Shield className="w-4 h-4 text-amber-300" />
-                    <span>Адмін-панель</span>
+                    <span>Адмін</span>
                   </button>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => openPanelFromSite('affiliate')}
-                  className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 group touch-manipulation"
+                <a
+                  href={PANEL_AFFILIATE}
+                  className="hero-cta-primary shimmer-btn min-h-[48px] px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center gap-2 group touch-manipulation bg-gradient-to-r from-emerald-500 to-cyan-500"
                 >
-                  <span>{isAdmin ? 'Панель' : 'Увійти в панель'}</span>
+                  <span>{affiliate ? 'Офери та статистика' : isAdmin ? 'Панель' : 'Увійти в панель'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </a>
                 <button
                   type="button"
                   onClick={onContactClick}
@@ -81,10 +105,14 @@ export default function Hero({ onContactClick }: HeroProps) {
 
       <button
         type="button"
-        onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+        onClick={() =>
+          document
+            .getElementById(affiliate ? 'offers' : 'about')
+            ?.scrollIntoView({ behavior: 'smooth' })
+        }
         className="hero-scroll-hint hidden sm:flex absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex-col items-center gap-1 text-[10px] font-mono text-gray-500 hover:text-cyan-300 transition-colors cursor-pointer touch-manipulation"
       >
-        <span>ДІЗНАТИСЬ БІЛЬШЕ</span>
+        <span>{affiliate ? 'ЯК ЦЕ ПРАЦЮЄ' : 'ДІЗНАТИСЬ БІЛЬШЕ'}</span>
         <ChevronDown className="w-4 h-4 hero-scroll-chevron" />
       </button>
     </section>

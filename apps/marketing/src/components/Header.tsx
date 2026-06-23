@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, ArrowUpRight, MessageSquareCode, LayoutDashboard, Shield } from 'lucide-react';
+import { Menu, X, ArrowUpRight, MessageSquareCode, BarChart3, Link2, Shield } from 'lucide-react';
 import TrafficCloudMark from './brand/TrafficCloudMark';
+import { FEATURES } from '../config/features';
 import { usePanelAdmin } from '../lib/usePanelAdmin';
 import { openPanelFromSite } from '../lib/openPanel';
 
@@ -10,26 +11,30 @@ interface HeaderProps {
   activeSection: string;
 }
 
+const PANEL_AFFILIATE = '/app/affiliate';
+
 export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const { isAdmin } = usePanelAdmin();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const affiliate = FEATURES.affiliateOnlyMode;
 
-  const navItems = [
-    { name: 'Головна', id: 'hero' },
-    { name: 'Можливості', id: 'about' },
-    { name: 'Pro', id: 'pricing' },
-    { name: 'Контакти', id: 'contact' },
-  ];
+  const navItems = affiliate
+    ? [
+        { name: 'Головна', id: 'hero', href: null as string | null },
+        { name: 'Офери', id: 'offers', href: PANEL_AFFILIATE },
+        { name: 'Статистика', id: 'stats', href: PANEL_AFFILIATE },
+        { name: 'Контакти', id: 'contact', href: null }
+      ]
+    : [
+        { name: 'Головна', id: 'hero', href: null },
+        { name: 'Можливості', id: 'about', href: null },
+        { name: 'Pro', id: 'pricing', href: null },
+        { name: 'Контакти', id: 'contact', href: null }
+      ];
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 40) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -37,15 +42,20 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
   const scrollToSection = (id: string) => {
     setIsOpen(false);
     const element = document.getElementById(id);
-    if (element) {
-      const headerOffset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+    if (!element) return;
+    const headerOffset = 80;
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+  };
+
+  const handleNav = (item: (typeof navItems)[number]) => {
+    if (item.href) {
+      setIsOpen(false);
+      window.location.assign(item.href);
+      return;
     }
+    scrollToSection(item.id);
   };
 
   return (
@@ -58,9 +68,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          
-          {/* Logo Brand Brand */}
-          <div 
+          <div
             onClick={() => scrollToSection('hero')}
             className="flex items-center gap-2 cursor-pointer group"
           >
@@ -72,32 +80,36 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
             </span>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
+              const isPanelLink = Boolean(item.href);
               return (
                 <button
                   key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  type="button"
+                  onClick={() => handleNav(item)}
                   className={`relative px-4 py-2 text-sm font-medium tracking-wide transition-colors ${
                     isActive ? 'text-white' : 'text-gray-400 hover:text-white'
-                  }`}
+                  } ${isPanelLink ? 'text-emerald-300/90 hover:text-emerald-200' : ''}`}
                 >
-                  {isActive && (
+                  {isActive && !isPanelLink && (
                     <motion.span
                       layoutId="activeNavIndicator"
                       className="absolute inset-0 rounded-lg bg-gray-800/40 border border-gray-800"
                       transition={{ type: 'spring', damping: 25, stiffness: 220 }}
                     />
                   )}
-                  <span className="relative z-10">{item.name}</span>
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {item.id === 'offers' ? <Link2 className="h-3.5 w-3.5" /> : null}
+                    {item.id === 'stats' ? <BarChart3 className="h-3.5 w-3.5" /> : null}
+                    {item.name}
+                  </span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Right Action Controls */}
           <div className="hidden md:flex items-center gap-3">
             {isAdmin ? (
               <button
@@ -106,29 +118,30 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                 className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-amber-500/40 text-amber-100 hover:text-white hover:border-amber-400/60 hover:bg-amber-950/40 transition-all flex items-center gap-2"
               >
                 <Shield className="w-4 h-4 text-amber-300" />
-                <span>Адмін-панель</span>
+                <span>Адмін</span>
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={() => openPanelFromSite('affiliate')}
-              className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 hover:bg-gray-900/80 transition-all flex items-center gap-2"
+            <a
+              href={PANEL_AFFILIATE}
+              className="relative overflow-hidden shimmer-btn bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-medium text-xs tracking-wider px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-[0_4px_20px_rgba(52,211,153,0.25)] transition-all uppercase"
             >
-              <LayoutDashboard className="w-4 h-4 text-blue-400" />
-              <span>{isAdmin ? 'Панель' : 'Увійти'}</span>
-            </button>
-            <button
-              onClick={onContactClick}
-              className="relative overflow-hidden shimmer-btn bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs tracking-wider px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-[0_4px_20px_rgba(59,130,246,0.25)] hover:shadow-[0_4px_25px_rgba(59,130,246,0.35)] transition-all cursor-pointer group uppercase"
-            >
-              <span>Почати Співпрацю</span>
-              <ArrowUpRight className="w-4 h-4 text-blue-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </button>
+              <span>{affiliate ? 'Партнерка' : 'Увійти'}</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </a>
+            {!affiliate ? (
+              <button
+                type="button"
+                onClick={onContactClick}
+                className="px-4 py-2.5 rounded-lg text-xs font-medium tracking-wider uppercase border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 transition-all"
+              >
+                Контакти
+              </button>
+            ) : null}
           </div>
 
-          {/* Mobile hamburger menu */}
           <div className="flex md:hidden">
             <button
+              type="button"
               onClick={() => setIsOpen(!isOpen)}
               className="p-2.5 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white cursor-pointer touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
@@ -138,7 +151,6 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
         </div>
       </header>
 
-      {/* Mobile nav Drawer overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -153,10 +165,11 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                 {navItems.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => scrollToSection(item.id)}
+                    type="button"
+                    onClick={() => handleNav(item)}
                     className={`text-left px-4 py-3 rounded-lg text-sm font-medium tracking-wide border transition-all ${
                       activeSection === item.id
-                        ? 'bg-blue-950/40 border-blue-800 text-blue-400'
+                        ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
                         : 'border-transparent text-gray-400 hover:bg-gray-900 hover:text-white'
                     }`}
                   >
@@ -164,7 +177,7 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                   </button>
                 ))}
               </div>
-              
+
               {isAdmin ? (
                 <button
                   type="button"
@@ -175,29 +188,25 @@ export default function Header({ onContactClick, activeSection }: HeaderProps) {
                   className="w-full py-3 rounded-lg text-amber-100 font-medium text-sm text-center flex items-center justify-center gap-2 border border-amber-500/40 bg-amber-950/30 uppercase"
                 >
                   <Shield className="w-4 h-4 text-amber-300" />
-                  <span>Адмін-панель</span>
+                  <span>Адмін</span>
                 </button>
               ) : null}
+              <a
+                href={PANEL_AFFILIATE}
+                className="w-full py-3 rounded-lg text-white font-medium text-sm text-center flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 uppercase"
+              >
+                Партнерка
+              </a>
               <button
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
-                  openPanelFromSite('affiliate');
+                  onContactClick();
                 }}
                 className="w-full py-3 rounded-lg text-white font-medium text-sm text-center flex items-center justify-center gap-2 border border-gray-700 bg-gray-900 uppercase"
               >
-                <LayoutDashboard className="w-4 h-4 text-blue-400" />
-                <span>{isAdmin ? 'Панель' : 'Увійти в панель'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  onContactClick();
-                }}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-3 rounded-lg text-white font-medium text-sm text-center flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(59,130,246,0.2)] uppercase"
-              >
                 <MessageSquareCode className="w-4 h-4" />
-                <span>Зв'язатись у Telegram</span>
+                <span>Telegram</span>
               </button>
             </div>
           </motion.div>
