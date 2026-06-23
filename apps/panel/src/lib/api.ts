@@ -1370,7 +1370,7 @@ export async function apiAdminCreateAffiliateOffer(body: {
   title: string
   description?: string
   channelUsername?: string
-  channelTelegramId: string
+  channelTelegramId?: string
   botToken: string
   payoutPerJoinUsd: number
   minWithdrawalUsd?: number

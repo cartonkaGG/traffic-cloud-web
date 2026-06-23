@@ -27,6 +27,20 @@ import {
 
 type Tab = 'offers' | 'categories' | 'withdrawals'
 
+function affiliateErrorMessage(code: string): string {
+  const map: Record<string, string> = {
+    missing_required_fields: 'Заповніть назву, канал, токен бота та виплату',
+    missing_channel: 'Вкажіть канал (@username)',
+    invalid_payout: 'Виплата за підписника має бути більше 0',
+    channel_not_found: 'Канал не знайдено. Перевірте @username і що бот доданий у канал',
+    not_a_channel: 'Це не Telegram-канал',
+    bot_not_in_channel: 'Бот не в каналі — додайте його адміном',
+    bot_must_be_admin: 'Бот має бути адміном каналу',
+    bot_needs_invite_permission: 'Боту потрібне право запрошувати користувачів'
+  }
+  return map[code] ?? code
+}
+
 export function AdminAffiliatePage(): JSX.Element {
   const [tab, setTab] = useState<Tab>('offers')
   const [loading, setLoading] = useState(true)
@@ -50,8 +64,7 @@ export function AdminAffiliatePage(): JSX.Element {
     categoryId: '',
     title: '',
     description: '',
-    channelUsername: '',
-    channelTelegramId: '',
+    channel: '',
     botToken: '',
     payoutPerJoinUsd: '0.5',
     minWithdrawalUsd: '10'
@@ -102,29 +115,39 @@ export function AdminAffiliatePage(): JSX.Element {
 
   async function createOffer(e: FormEvent): Promise<void> {
     e.preventDefault()
+    if (!offerForm.title.trim() || !offerForm.channel.trim() || !offerForm.botToken.trim()) {
+      setError('Заповніть назву, канал (@username) та токен бота')
+      return
+    }
+    const payout = Number(offerForm.payoutPerJoinUsd)
+    if (!payout || payout <= 0) {
+      setError('Вкажіть виплату за підписника (більше 0)')
+      return
+    }
     setBusy('offer')
+    setError(null)
     try {
       await apiAdminCreateAffiliateOffer({
         categoryId: offerForm.categoryId,
         title: offerForm.title.trim(),
         description: offerForm.description.trim() || undefined,
-        channelUsername: offerForm.channelUsername.trim() || undefined,
-        channelTelegramId: offerForm.channelTelegramId.trim(),
+        channelUsername: offerForm.channel.trim(),
         botToken: offerForm.botToken.trim(),
-        payoutPerJoinUsd: Number(offerForm.payoutPerJoinUsd),
-        minWithdrawalUsd: Number(offerForm.minWithdrawalUsd)
+        payoutPerJoinUsd: payout,
+        minWithdrawalUsd: Number(offerForm.minWithdrawalUsd) || 10
       })
       setOfferForm((f) => ({
         ...f,
         title: '',
         description: '',
-        channelUsername: '',
-        channelTelegramId: '',
+        channel: '',
         botToken: ''
       }))
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Помилка')
+      const raw = err instanceof Error ? err.message : 'Помилка'
+      const code = raw.replace(/\s*\(\d+\)\s*$/, '').trim()
+      setError(affiliateErrorMessage(code))
     } finally {
       setBusy(null)
     }
@@ -304,16 +327,10 @@ export function AdminAffiliatePage(): JSX.Element {
                 className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white"
               />
               <input
-                value={offerForm.channelUsername}
-                onChange={(e) => setOfferForm((f) => ({ ...f, channelUsername: e.target.value }))}
-                placeholder="@channel (для відображення)"
-                className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white"
-              />
-              <input
-                value={offerForm.channelTelegramId}
-                onChange={(e) => setOfferForm((f) => ({ ...f, channelTelegramId: e.target.value }))}
-                placeholder="Chat ID каналу (-100…)"
-                className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white"
+                value={offerForm.channel}
+                onChange={(e) => setOfferForm((f) => ({ ...f, channel: e.target.value }))}
+                placeholder="Канал @username"
+                className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white lg:col-span-2"
               />
               <input
                 value={offerForm.botToken}
@@ -341,8 +358,9 @@ export function AdminAffiliatePage(): JSX.Element {
                 className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-sm text-white lg:col-span-2"
               />
               <p className="text-xs text-zinc-500 lg:col-span-2">
-                1. Створіть бота в @BotFather · 2. Додайте його адміном у канал з правом «запрошувати користувачів» · 3.
-                Після створення оферу натисніть «Перевірити бота» та «Webhook».
+                1. Створіть бота в @BotFather · 2. Додайте його адміном у канал з правом «запрошувати
+                користувачів» · 3. Вкажіть лише @username каналу — chat id визначиться автоматично · 4.
+                Після створення натисніть «Перевірити бота» та «Webhook».
               </p>
               <button
                 type="submit"
